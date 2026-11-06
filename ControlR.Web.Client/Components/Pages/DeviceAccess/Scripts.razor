@@ -65,4 +65,43 @@
       <pre class="script-output script-output-error">@result.StandardError</pre>
     }
   }
+
+  <MudDivider Class="my-4" />
+
+  <MudText Typo="Typo.h6" GutterBottom>History</MudText>
+
+  @if (_history.Length == 0)
+  {
+    <MudText Typo="Typo.body2">No scripts have been run on this device.</MudText>
+  }
+  else
+  {
+    <MudSimpleTable Dense Hover>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Status</th>
+          <th>Run by</th>
+          <th>Script</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @foreach (var item in _history)
+        {
+          <tr @key="item.ScriptRunId">
+            <td>@item.CreatedAt.ToLocalTime().ToString("g")</td>
+            <td>
+              <MudChip T="string" Color="@ScriptShellOptions.GetStatusColor(item.Status)" Size="Size.Small">@item.Status</MudChip>
+            </td>
+            <td>@item.InitiatedBy</td>
+            <td class="script-preview">@item.ContentPreview</td>
+            <td>
+              <MudButton Size="Size.Small" Disabled="_isRunning" OnClick="@(() => ShowRun(item.ScriptRunId))">View</MudButton>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </MudSimpleTable>
+  }
 </div>

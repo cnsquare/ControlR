@@ -82,6 +82,50 @@ public class ScriptsPageTests
   }
 
   [Fact]
+  public async Task History_ShowsRunsAndViewLoadsOutputAndScript()
+  {
+    await using var ctx = new BunitContext();
+    var api = new Mock<IScriptRunsApi>();
+    api
+      .Setup(x => x.GetScriptRun(_runId, _tenantId, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(ApiResult.Ok(Run(Result(ScriptResultStatus.Succeeded, exitCode: 0, stdout: "past output"))));
+    var cut = RenderPage(ctx, api, SystemPlatform.Linux, HistoryItem(ScriptResultStatus.Succeeded));
+
+    Assert.Contains("tester", cut.Markup);
+    Assert.Contains("echo preview", cut.Find(".script-preview").TextContent);
+
+    await cut.FindAll("button").Single(x => x.TextContent.Contains("View")).ClickAsync(new());
+
+    cut.WaitForAssertion(() => Assert.Contains("past output", cut.Find("pre").TextContent));
+    Assert.Equal("echo hi", cut.Find("textarea").TextContent);
+  }
+
+  [Fact]
+  public async Task History_ViewingPendingRun_ResumesPolling()
+  {
+    await using var ctx = new BunitContext();
+    var api = new Mock<IScriptRunsApi>();
+    api
+      .SetupSequence(x => x.GetScriptRun(_runId, _tenantId, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(ApiResult.Ok(Run(Result(ScriptResultStatus.Pending))))
+      .ReturnsAsync(ApiResult.Ok(Run(Result(ScriptResultStatus.Succeeded, exitCode: 0, stdout: "finished"))));
+    var cut = RenderPage(ctx, api, SystemPlatform.Linux, HistoryItem(ScriptResultStatus.Pending));
+
+    await cut.FindAll("button").Single(x => x.TextContent.Contains("View")).ClickAsync(new());
+
+    cut.WaitForAssertion(() => Assert.Contains("finished", cut.Find("pre").TextContent), TimeSpan.FromSeconds(10));
+  }
+
+  [Fact]
+  public async Task History_WhenEmpty_SaysSo()
+  {
+    await using var ctx = new BunitContext();
+    var cut = RenderPage(ctx, new Mock<IScriptRunsApi>(), SystemPlatform.Linux);
+
+    Assert.Contains("No scripts have been run", cut.Markup);
+  }
+
+  [Fact]
   public async Task Run_PendingResult_PollsUntilOutputArrives()
   {
     await using var ctx = new BunitContext();
@@ -177,6 +221,18 @@ public class ScriptsPageTests
       IsOutdated: false);
   }
 
+  private static ScriptRunHistoryItemDto HistoryItem(ScriptResultStatus status)
+  {
+    return new ScriptRunHistoryItemDto(
+      _runId,
+      ScriptShell.Bash,
+      "echo preview",
+      "tester",
+      DateTimeOffset.UtcNow,
+      status,
+      ExitCode: null);
+  }
+
   private static DeviceAccessPermissionsDto Permissions(bool canUseTerminal, bool canRunScripts)
   {
     return new DeviceAccessPermissionsDto(
@@ -199,8 +255,13 @@ public class ScriptsPageTests
   private static IRenderedComponent<Scripts> RenderPage(
     BunitContext ctx,
     Mock<IScriptRunsApi> scriptRuns,
-    SystemPlatform platform)
+    SystemPlatform platform,
+    params ScriptRunHistoryItemDto[] history)
   {
+    scriptRuns
+      .Setup(x => x.GetScriptRunHistory(_deviceId, _tenantId, It.IsAny<int>(), It.IsAny<CancellationToken>()))
+      .ReturnsAsync(ApiResult.Ok(history));
+
     var v1 = new Mock<IControlrV1Api>();
     v1.SetupGet(x => x.ScriptRuns).Returns(scriptRuns.Object);
     var api = new Mock<IControlrApi>();

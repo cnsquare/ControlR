@@ -150,6 +150,102 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   }
 
   [Fact]
+  public async Task GetScriptRunHistory_DeviceInAnotherTenant_ReturnsNotFound()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var otherTenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var foreignDevice = await testApp.Services.CreateTestDevice(otherTenant.Id);
+    await SeedRun(testApp, otherTenant.Id, foreignDevice.Id);
+
+    using var scope = testApp.Services.CreateScope();
+    var controller = await scope.CreateControllerWithUser<ScriptRunsController>(user);
+
+    var response = await controller.GetScriptRunHistory(foreignDevice.Id, tenant.Id, cancellationToken: Ct);
+
+    ActionResultAsserts.AssertHttpStatus(response.Result, StatusCodes404);
+  }
+
+  [Fact]
+  public async Task GetScriptRunHistory_ListsOnlyThisDeviceNewestFirstAndHonorsLimit()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    var otherDevice = await testApp.Services.CreateTestDevice(tenant.Id);
+    await Grant(testApp, user, device.Id, PermissionNames.DeviceScriptRun);
+    var now = DateTimeOffset.UtcNow;
+
+    var oldest = await SeedRun(testApp, tenant.Id, device.Id);
+    var middle = await SeedRun(testApp, tenant.Id, device.Id);
+    var newest = await SeedRun(testApp, tenant.Id, device.Id);
+    var elsewhere = await SeedRun(testApp, tenant.Id, otherDevice.Id);
+    await SetRunAge(testApp, oldest, now.AddHours(-3), timeoutSeconds: 30);
+    await SetRunAge(testApp, middle, now.AddHours(-2), timeoutSeconds: 30);
+    await SetRunAge(testApp, newest, now.AddHours(-1), timeoutSeconds: 30);
+    await SetRunAge(testApp, elsewhere, now, timeoutSeconds: 30);
+
+    using var scope = testApp.Services.CreateScope();
+    var controller = await scope.CreateControllerWithUser<ScriptRunsController>(user);
+
+    var all = await controller.GetScriptRunHistory(device.Id, tenant.Id, cancellationToken: Ct);
+    var limited = await controller.GetScriptRunHistory(device.Id, tenant.Id, limit: 2, cancellationToken: Ct);
+
+    var allItems = Assert.IsType<V1Dtos.ScriptRunHistoryItemDto[]>(Assert.IsType<OkObjectResult>(all.Result).Value);
+    Assert.Equal([newest, middle, oldest], allItems.Select(x => x.ScriptRunId));
+
+    var limitedItems = Assert.IsType<V1Dtos.ScriptRunHistoryItemDto[]>(Assert.IsType<OkObjectResult>(limited.Result).Value);
+    Assert.Equal([newest, middle], limitedItems.Select(x => x.ScriptRunId));
+  }
+
+  [Fact]
+  public async Task GetScriptRunHistory_LongScript_ReturnsShortPreview()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    await Grant(testApp, user, device.Id, PermissionNames.DeviceScriptRun);
+    var runId = await SeedRun(testApp, tenant.Id, device.Id);
+
+    using (var seedScope = testApp.Services.CreateScope())
+    {
+      var db = seedScope.ServiceProvider.GetRequiredService<AppDb>();
+      var run = await db.ScriptRuns.IgnoreQueryFilters().SingleAsync(x => x.Id == runId, Ct);
+      run.Content = new string('x', ScriptLimits.ContentPreviewLength * 3);
+      await db.SaveChangesAsync(Ct);
+    }
+
+    using var scope = testApp.Services.CreateScope();
+    var controller = await scope.CreateControllerWithUser<ScriptRunsController>(user);
+
+    var response = await controller.GetScriptRunHistory(device.Id, tenant.Id, cancellationToken: Ct);
+
+    var items = Assert.IsType<V1Dtos.ScriptRunHistoryItemDto[]>(Assert.IsType<OkObjectResult>(response.Result).Value);
+    Assert.Equal(ScriptLimits.ContentPreviewLength, Assert.Single(items).ContentPreview.Length);
+  }
+
+  [Fact]
+  public async Task GetScriptRunHistory_WithoutPermission_IsForbidden()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    await Grant(testApp, user, device.Id, PermissionNames.DeviceTerminalUse);
+    await SeedRun(testApp, tenant.Id, device.Id);
+
+    using var scope = testApp.Services.CreateScope();
+    var controller = await scope.CreateControllerWithUser<ScriptRunsController>(user);
+
+    var response = await controller.GetScriptRunHistory(device.Id, tenant.Id, cancellationToken: Ct);
+
+    Assert.IsType<ForbidResult>(response.Result);
+  }
+
+  [Fact]
   public async Task GetScriptRun_HidesResultsForDevicesWithoutPermission()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);

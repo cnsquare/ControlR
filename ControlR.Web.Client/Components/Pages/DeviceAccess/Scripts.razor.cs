@@ -13,6 +13,7 @@ public partial class Scripts : IDisposable
   private readonly CancellationTokenSource _disposeCts = new();
 
   private string _content = string.Empty;
+  private ScriptRunHistoryItemDto[] _history = [];
   private bool _isRunning;
   private ScriptResultDto? _result;
   private ScriptShell _shell;
@@ -41,10 +42,40 @@ public partial class Scripts : IDisposable
     GC.SuppressFinalize(this);
   }
 
-  protected override void OnInitialized()
+  protected override async Task OnInitializedAsync()
   {
-    base.OnInitialized();
+    await base.OnInitializedAsync();
     _shell = AvailableShells[0];
+    await LoadHistory();
+  }
+
+  private async Task LoadHistory()
+  {
+    if (DeviceState.TryGetCurrentDevice() is not { } device)
+    {
+      return;
+    }
+
+    try
+    {
+      var historyResult = await ControlrApi.V1.ScriptRuns.GetScriptRunHistory(
+        DeviceId,
+        device.TenantId,
+        cancellationToken: _disposeCts.Token);
+
+      if (!historyResult.IsSuccess)
+      {
+        Logger.LogError("Failed to load script history: {Error}", historyResult.Reason);
+        Snackbar.Add($"Failed to load script history: {historyResult.Reason}", Severity.Error);
+        return;
+      }
+
+      _history = historyResult.Value;
+    }
+    catch (OperationCanceledException)
+    {
+      // The user left the page.
+    }
   }
 
   private async Task PollUntilSettled(Guid scriptRunId, Guid tenantId, CancellationToken cancellationToken)
@@ -101,6 +132,7 @@ public partial class Scripts : IDisposable
       await InvokeAsync(StateHasChanged);
 
       await PollUntilSettled(createResult.Value.Id, tenantId, _disposeCts.Token);
+      await LoadHistory();
     }
     catch (OperationCanceledException)
     {
@@ -110,6 +142,62 @@ public partial class Scripts : IDisposable
     {
       Logger.LogError(ex, "Error while running script.");
       Snackbar.Add("An error occurred while running the script.", Severity.Error);
+    }
+    finally
+    {
+      _isRunning = false;
+      if (!_disposeCts.IsCancellationRequested)
+      {
+        await InvokeAsync(StateHasChanged);
+      }
+    }
+  }
+
+  private async Task ShowRun(Guid scriptRunId)
+  {
+    if (_isRunning)
+    {
+      return;
+    }
+
+    _isRunning = true;
+
+    try
+    {
+      var tenantId = DeviceState.CurrentDevice.TenantId;
+      var runResult = await ControlrApi.V1.ScriptRuns.GetScriptRun(scriptRunId, tenantId, _disposeCts.Token);
+      if (!runResult.IsSuccess)
+      {
+        Logger.LogError("Failed to read script run: {Error}", runResult.Reason);
+        Snackbar.Add($"Failed to read the script run: {runResult.Reason}", Severity.Error);
+        return;
+      }
+
+      var run = runResult.Value;
+      _content = run.Content;
+      _timeoutSeconds = run.TimeoutSeconds;
+      _result = run.Results.FirstOrDefault(x => x.DeviceId == DeviceId);
+      if (AvailableShells.Contains(run.Shell))
+      {
+        _shell = run.Shell;
+      }
+
+      await InvokeAsync(StateHasChanged);
+
+      if (_result?.Status == ScriptResultStatus.Pending)
+      {
+        await PollUntilSettled(scriptRunId, tenantId, _disposeCts.Token);
+        await LoadHistory();
+      }
+    }
+    catch (OperationCanceledException)
+    {
+      // The user left the page.
+    }
+    catch (Exception ex)
+    {
+      Logger.LogError(ex, "Error while reading script run.");
+      Snackbar.Add("An error occurred while reading the script run.", Severity.Error);
     }
     finally
     {

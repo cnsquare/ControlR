@@ -15,6 +15,15 @@ public record CreateScriptRunRequestDto(
   [property: Range(ScriptLimits.MinTimeoutSeconds, ScriptLimits.MaxTimeoutSeconds)]
   int TimeoutSeconds = ScriptLimits.DefaultTimeoutSeconds);
 
+public record ScriptRunHistoryItemDto(
+  Guid ScriptRunId,
+  ScriptShell Shell,
+  string ContentPreview,
+  string InitiatedBy,
+  DateTimeOffset CreatedAt,
+  ScriptResultStatus Status,
+  int? ExitCode);
+
 public record ScriptResultDto(
   Guid Id,
   Guid DeviceId,

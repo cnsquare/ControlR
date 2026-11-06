@@ -8445,6 +8445,146 @@
             "PersonalAccessToken": [ ]
           }
         ]
+      },
+      "get": {
+        "tags": [
+          "ScriptRuns"
+        ],
+        "summary": "Lists a device's script runs, newest first. Output is left out, so read a run for its detail.",
+        "parameters": [
+          {
+            "name": "deviceId",
+            "in": "query",
+            "description": "Lists a device's script runs, newest first. Output is left out, so read a run for its detail.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "query",
+            "description": "Lists a device's script runs, newest first. Output is left out, so read a run for its detail.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Lists a device's script runs, newest first. Output is left out, so read a run for its detail.",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          },
+          {
+            "name": "api-version",
+            "in": "query",
+            "description": "The requested API version",
+            "schema": {
+              "enum": [
+                "1.0"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScriptRunHistoryItemDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScriptRunHistoryItemDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScriptRunHistoryItemDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ServiceAccountCredential": [ ]
+          },
+          {
+            "Cookie": [ ]
+          },
+          {
+            "PersonalAccessToken": [ ]
+          }
+        ]
       }
     },
     "/api/v1/script-runs/{scriptRunId}": {
@@ -18013,6 +18153,48 @@
             "items": {
               "$ref": "#/components/schemas/ScriptResultDto"
             }
+          }
+        }
+      },
+      "ScriptRunHistoryItemDto": {
+        "required": [
+          "scriptRunId",
+          "shell",
+          "contentPreview",
+          "initiatedBy",
+          "createdAt",
+          "status",
+          "exitCode"
+        ],
+        "type": "object",
+        "properties": {
+          "scriptRunId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "shell": {
+            "$ref": "#/components/schemas/ScriptShell"
+          },
+          "contentPreview": {
+            "type": "string"
+          },
+          "initiatedBy": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ScriptResultStatus"
+          },
+          "exitCode": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
           }
         }
       },

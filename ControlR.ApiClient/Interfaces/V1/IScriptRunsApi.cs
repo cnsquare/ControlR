@@ -17,6 +17,16 @@ public interface IScriptRunsApi
     CancellationToken cancellationToken = default);
 
   /// <summary>
+  /// Lists a device's script runs, newest first. Output is left out, so read a run for its detail.
+  /// </summary>
+  [ApiRoute($"{HttpConstants.V1.ScriptRunsEndpoint}?deviceId={{deviceId}}&tenantId={{tenantId}}&limit={{limit}}", "GET")]
+  Task<ApiResult<ScriptRunHistoryItemDto[]>> GetScriptRunHistory(
+    Guid deviceId,
+    Guid tenantId,
+    int limit = ScriptLimits.HistoryDefaultCount,
+    CancellationToken cancellationToken = default);
+
+  /// <summary>
   /// Reads a script run. Results are limited to the devices the caller may run scripts on.
   /// </summary>
   [ApiRoute($"{HttpConstants.V1.ScriptRunsEndpoint}/{{scriptRunId}}?tenantId={{tenantId}}", "GET")]

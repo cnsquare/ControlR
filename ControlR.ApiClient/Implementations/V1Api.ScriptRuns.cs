@@ -22,6 +22,21 @@ internal partial class V1Api
     });
   }
 
+  async Task<ApiResult<ScriptRunHistoryItemDto[]>> IScriptRunsApi.GetScriptRunHistory(
+    Guid deviceId,
+    Guid tenantId,
+    int limit,
+    CancellationToken cancellationToken)
+  {
+    return await _client.ExecuteApiCall(async () =>
+    {
+      using var response = await _client.HttpClient.GetAsync(
+        $"{HttpConstants.V1.ScriptRunsEndpoint}?deviceId={deviceId}&tenantId={tenantId}&limit={limit}", cancellationToken);
+      await response.EnsureSuccessStatusCodeWithDetails();
+      return await response.Content.ReadFromJsonAsync<ScriptRunHistoryItemDto[]>(cancellationToken);
+    });
+  }
+
   async Task<ApiResult<ScriptRunDto>> IScriptRunsApi.GetScriptRun(
     Guid scriptRunId,
     Guid tenantId,

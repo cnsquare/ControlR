@@ -99,6 +99,60 @@ public class ScriptRunsController(
   }
 
   /// <summary>
+  /// Lists a device's script runs, newest first. Output is left out, so read a run for its detail.
+  /// </summary>
+  [HttpGet]
+  [ProducesResponseType(typeof(V1Dtos.ScriptRunHistoryItemDto[]), StatusCodes.Status200OK)]
+  [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
+  [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden, "application/problem+json")]
+  [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+  public async Task<ActionResult<V1Dtos.ScriptRunHistoryItemDto[]>> GetScriptRunHistory(
+    [FromQuery] Guid deviceId,
+    [FromQuery] Guid tenantId,
+    [FromQuery] int limit = ScriptLimits.HistoryDefaultCount,
+    CancellationToken cancellationToken = default)
+  {
+    if (!User.TryResolveTenantId(tenantId, out var resolvedTenantId))
+    {
+      return Forbid();
+    }
+
+    var device = await _appDb.Devices
+      .AsNoTracking()
+      .FirstOrDefaultAsync(x => x.Id == deviceId && x.TenantId == resolvedTenantId, cancellationToken);
+
+    if (device is null)
+    {
+      return Problem(statusCode: StatusCodes.Status404NotFound, title: V1ProblemTitles.NotFound);
+    }
+
+    var authResult = await _authorizationService.AuthorizeAsync(User, device, DeviceResourcePolicies.ScriptRun);
+    if (!authResult.Succeeded)
+    {
+      return Forbid();
+    }
+
+    var history = await _appDb.ScriptResults
+      .AsNoTracking()
+      .Where(x => x.DeviceId == deviceId && x.TenantId == resolvedTenantId)
+      .OrderByDescending(x => x.ScriptRun!.CreatedAt)
+      .Take(Math.Clamp(limit, 1, ScriptLimits.HistoryMaxCount))
+      .Select(x => new V1Dtos.ScriptRunHistoryItemDto(
+        x.ScriptRunId,
+        x.ScriptRun!.Shell,
+        x.ScriptRun.Content.Length > ScriptLimits.ContentPreviewLength
+          ? x.ScriptRun.Content.Substring(0, ScriptLimits.ContentPreviewLength)
+          : x.ScriptRun.Content,
+        x.ScriptRun.InitiatedBy,
+        x.ScriptRun.CreatedAt,
+        x.Status,
+        x.ExitCode))
+      .ToArrayAsync(cancellationToken);
+
+    return Ok(history);
+  }
+
+  /// <summary>
   /// Reads a script run. Results are limited to the devices the caller may run scripts on.
   /// </summary>
   [HttpGet("{scriptRunId:guid}")]

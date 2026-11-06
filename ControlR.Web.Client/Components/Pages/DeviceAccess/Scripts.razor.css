@@ -9,6 +9,14 @@
   word-break: break-word;
 }
 
+.script-preview {
+  font-family: monospace;
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .script-output-error {
   color: var(--mud-palette-error);
 }

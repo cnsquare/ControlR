@@ -2,7 +2,10 @@ namespace ControlR.Libraries.Api.Contracts.Constants;
 
 public static class ScriptLimits
 {
+  public const int ContentPreviewLength = 120;
   public const int DefaultTimeoutSeconds = 300;
+  public const int HistoryDefaultCount = 50;
+  public const int HistoryMaxCount = 100;
   public const int MaxContentLength = 256 * 1024;
 
   // Stdout and stderr travel in one hub message, and the server rejects messages
