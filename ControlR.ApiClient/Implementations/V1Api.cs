@@ -20,6 +20,7 @@ internal partial class V1Api(ControlrApi client) :
   IPermissionAssignmentsApi,
   IPersonalAccessTokensApi,
   IPublicServerSettingsApi,
+  IScriptRunsApi,
   IServerAlertApi,
   IServerLogsApi,
   IServerServiceAccountsApi,
@@ -54,6 +55,7 @@ internal partial class V1Api(ControlrApi client) :
   public IPermissionAssignmentsApi PermissionAssignments => this;
   public IPersonalAccessTokensApi PersonalAccessTokens => this;
   public IPublicServerSettingsApi PublicServerSettings => this;
+  public IScriptRunsApi ScriptRuns => this;
   public IServerAlertApi ServerAlert => this;
   public IServerLogsApi ServerLogs => this;
   public IServerServiceAccountsApi ServerServiceAccounts => this;

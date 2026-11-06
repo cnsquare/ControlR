@@ -2,6 +2,7 @@ using Bitbound.SimpleMessenger;
 using ControlR.Agent.Common.Interfaces;
 using ControlR.Agent.Common.Services;
 using ControlR.Agent.Common.Services.FileManager;
+using ControlR.Agent.Common.Services.Scripting;
 using ControlR.Agent.Common.Services.Terminal;
 using ControlR.Agent.Shared.Interfaces;
 using ControlR.Agent.Shared.Services;
@@ -156,6 +157,7 @@ public class AgentHubClientPermissionPreflightTests
       systemEnvironment.Object,
       Mock.Of<IMessenger>(),
       Mock.Of<ITerminalStore>(),
+      Mock.Of<IScriptRunService>(),
       Mock.Of<IDesktopSessionProvider>(),
       serverStore,
       Mock.Of<IDesktopClientFileVerifier>(),

@@ -3,6 +3,7 @@ using System.Threading.Channels;
 using ControlR.Agent.Common.Interfaces;
 using ControlR.Agent.Common.Models.Messages;
 using ControlR.Agent.Common.Services.FileManager;
+using ControlR.Agent.Common.Services.Scripting;
 using ControlR.Agent.Common.Services.Terminal;
 using ControlR.Libraries.Api.Contracts.Dtos.Devices;
 using ControlR.Libraries.Api.Contracts.Dtos.HubDtos.PwshCommandCompletions;
@@ -24,6 +25,7 @@ internal class AgentHubClient(
   ISystemEnvironment systemEnvironment,
   IMessenger messenger,
   ITerminalStore terminalStore,
+  IScriptRunService scriptRunService,
   IDesktopSessionProvider desktopSessionProvider,
   IIpcServerStore ipcServerStore,
   IDesktopClientFileVerifier desktopClientFileVerifier,
@@ -63,6 +65,7 @@ internal class AgentHubClient(
   private readonly IProcessManager _processManager = processManager;
   private readonly IRetryer _retryer = retryer;
   private readonly ISystemEnvironment _systemEnvironment = systemEnvironment;
+  private readonly IScriptRunService _scriptRunService = scriptRunService;
   private readonly ITerminalStore _terminalStore = terminalStore;
   private readonly IWakeOnLanService _wakeOnLan = wakeOnLan;
 
@@ -626,6 +629,27 @@ internal class AgentHubClient(
     {
       _logger.LogError(ex, "Error while requesting remote control permission.");
       return HubResult.Fail("An error occurred while requesting remote control permission.");
+    }
+  }
+
+  public Task<HubResult> RunScript(RunScriptRequestDto dto)
+  {
+    try
+    {
+      _logger.LogInformation(
+        "Script run requested. Script Result ID: {ScriptResultId}, Shell: {Shell}.",
+        dto.ScriptResultId,
+        dto.Shell);
+
+      return Task.FromResult(
+        _scriptRunService.TryStart(dto)
+          ? HubResult.Ok()
+          : HubResult.Fail("The agent is already running the maximum number of scripts."));
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error while starting script run.");
+      return Task.FromResult(HubResult.Fail("An error occurred while starting the script."));
     }
   }
 

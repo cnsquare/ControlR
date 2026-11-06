@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using ControlR.Web.ServiceDefaults;
+using ControlR.Agent.Common.Services.Scripting;
 using ControlR.Agent.Common.Services.Terminal;
 using ControlR.Libraries.NativeInterop.Windows;
 using ControlR.Libraries.Ipc;
@@ -118,6 +119,8 @@ internal static class HostApplicationBuilderExtensions
     services.AddSingleton<IDesktopClientRepairCoordinator, DesktopClientRepairCoordinator>();
     services.AddSingleton<ITerminalSessionFactory, TerminalSessionFactory>();
     services.AddSingleton<ITerminalStore, TerminalStore>();
+    services.AddSingleton<IScriptExecutor, ScriptExecutor>();
+    services.AddSingleton<IScriptRunService, ScriptRunService>();
     services.AddSingleton<IIpcServerStore, IpcServerStore>();
     services.AddSingleton<IIpcClientAuthenticator, IpcClientAuthenticator>();
     services.AddSingleton<IAgentHeartbeatTimer, AgentHeartbeatTimer>();

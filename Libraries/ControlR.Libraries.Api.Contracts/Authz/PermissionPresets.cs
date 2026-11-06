@@ -102,6 +102,7 @@ public static class PermissionPresets
         PermissionNames.DeviceFileSystemTransferUpload,
         PermissionNames.DeviceFileSystemTransferDownload,
         PermissionNames.DeviceTerminalUse,
+        PermissionNames.DeviceScriptRun,
         PermissionNames.DeviceVncRelayConnect,
         PermissionNames.DeviceLogonTokenCreate,
         PermissionNames.DeviceWakeSend,

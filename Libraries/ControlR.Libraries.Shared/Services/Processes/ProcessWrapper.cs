@@ -36,6 +36,7 @@ public interface IProcess : IDisposable
   bool Responding { get; }
   int SessionId { get; }
   StreamWriter StandardInput { get; }
+  StreamReader StandardError { get; }
   StreamReader StandardOutput { get; }
   ProcessStartInfo StartInfo { get; set; }
 
@@ -129,6 +130,7 @@ public class ProcessWrapper(Process process) : IProcess
   public bool Responding => _process.Responding;
   public int SessionId => _process.SessionId;
   public StreamWriter StandardInput => _process.StandardInput;
+  public StreamReader StandardError => _process.StandardError;
   public StreamReader StandardOutput => _process.StandardOutput;
   public ProcessStartInfo StartInfo { get => _process.StartInfo; set => _process.StartInfo = value; }
 

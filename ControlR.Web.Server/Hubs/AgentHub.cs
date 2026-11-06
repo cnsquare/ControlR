@@ -221,6 +221,57 @@ public class AgentHub(
     }
   }
 
+  public async Task<HubResult> ReportScriptResult(ScriptExecutionResultDto resultDto)
+  {
+    try
+    {
+      if (Device is not { } device)
+      {
+        _logger.LogWarning("Rejecting script result from a connection with no registered device.");
+        return HubResult.Fail("Device is not registered.");
+      }
+
+      // This context has no tenant filter. The device and tenant predicates are the
+      // only thing stopping one agent from writing another device's result.
+      var result = await _appDb.ScriptResults.FirstOrDefaultAsync(x =>
+        x.Id == resultDto.ScriptResultId &&
+        x.DeviceId == device.Id &&
+        x.TenantId == device.TenantId);
+
+      if (result is null)
+      {
+        _logger.LogWarning(
+          "Device {DeviceId} reported unknown script result {ScriptResultId}.",
+          device.Id,
+          resultDto.ScriptResultId);
+        return HubResult.Fail("Unknown script result.");
+      }
+
+      // The agent retries when an acknowledgement is lost, so a repeat is a success.
+      if (result.FinishedAt is not null)
+      {
+        return HubResult.Ok();
+      }
+
+      result.ExitCode = resultDto.ExitCode;
+      result.FailureReason = SanitizeReason(resultDto.FailureReason);
+      result.FinishedAt = resultDto.FinishedAt;
+      result.OutputTruncated = resultDto.OutputTruncated;
+      result.StandardError = SanitizeOutput(resultDto.StandardError);
+      result.StandardOutput = SanitizeOutput(resultDto.StandardOutput);
+      result.StartedAt = resultDto.StartedAt;
+      result.Status = GetScriptStatus(resultDto);
+
+      await _appDb.SaveChangesAsync();
+      return HubResult.Ok();
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error while recording script result {ScriptResultId}.", resultDto.ScriptResultId);
+      return HubResult.Fail("An error occurred while recording the script result.");
+    }
+  }
+
   public async Task SendTerminalOutputToViewer(string viewerConnectionId, TerminalOutputDto outputDto)
   {
     try
@@ -378,6 +429,32 @@ public class AgentHub(
       _logger.LogError(ex, "Error while updating signed device.");
       return HubResult.Fail<InternalDtos.DeviceResponseDto>("An error occurred while updating the device.");
     }
+  }
+
+  private static ScriptResultStatus GetScriptStatus(ScriptExecutionResultDto resultDto)
+  {
+    if (resultDto.TimedOut)
+    {
+      return ScriptResultStatus.TimedOut;
+    }
+
+    return resultDto.ExitCode == 0
+      ? ScriptResultStatus.Succeeded
+      : ScriptResultStatus.Failed;
+  }
+
+  private static string? SanitizeReason(string? reason)
+  {
+    return reason is { Length: > 512 } ? reason[..512] : reason;
+  }
+
+  // Postgres text columns reject NUL, so binary output would otherwise lose the whole result.
+  private static string SanitizeOutput(string output)
+  {
+    var sanitized = output.Replace("\0", string.Empty);
+    return sanitized.Length <= ScriptLimits.MaxOutputBytesPerStream
+      ? sanitized
+      : sanitized[..ScriptLimits.MaxOutputBytesPerStream];
   }
 
   private static async Task DrainChannelReader<T>(ChannelReader<T> reader)

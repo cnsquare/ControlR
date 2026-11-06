@@ -17,7 +17,7 @@ namespace ControlR.Web.Server.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.11")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -669,6 +669,103 @@ namespace ControlR.Web.Server.Data.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("PersonalAccessTokens");
+                });
+
+            modelBuilder.Entity("ControlR.Web.Server.Data.Entities.ScriptResult", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid>("DeviceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("ExitCode")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<DateTimeOffset?>("FinishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("OutputTruncated")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("ScriptRunId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("StandardError")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("StandardOutput")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeviceId");
+
+                    b.HasIndex("ScriptRunId");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("ScriptResults");
+                });
+
+            modelBuilder.Entity("ControlR.Web.Server.Data.Entities.ScriptRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(262144)
+                        .HasColumnType("character varying(262144)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("InitiatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("Shell")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("TimeoutSeconds")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("ScriptRuns");
                 });
 
             modelBuilder.Entity("ControlR.Web.Server.Data.Entities.ServerAlert", b =>
@@ -1361,6 +1458,44 @@ namespace ControlR.Web.Server.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ControlR.Web.Server.Data.Entities.ScriptResult", b =>
+                {
+                    b.HasOne("ControlR.Web.Server.Data.Entities.Device", "Device")
+                        .WithMany("ScriptResults")
+                        .HasForeignKey("DeviceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ControlR.Web.Server.Data.Entities.ScriptRun", "ScriptRun")
+                        .WithMany("Results")
+                        .HasForeignKey("ScriptRunId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ControlR.Web.Server.Data.Entities.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Device");
+
+                    b.Navigation("ScriptRun");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("ControlR.Web.Server.Data.Entities.ScriptRun", b =>
+                {
+                    b.HasOne("ControlR.Web.Server.Data.Entities.Tenant", "Tenant")
+                        .WithMany("ScriptRuns")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
+                });
+
             modelBuilder.Entity("ControlR.Web.Server.Data.Entities.ServiceAccount", b =>
                 {
                     b.HasOne("ControlR.Web.Server.Data.Entities.Tenant", "Tenant")
@@ -1583,11 +1718,18 @@ namespace ControlR.Web.Server.Data.Migrations
                     b.Navigation("DeviceGroupMembers");
 
                     b.Navigation("LogonTokens");
+
+                    b.Navigation("ScriptResults");
                 });
 
             modelBuilder.Entity("ControlR.Web.Server.Data.Entities.DeviceGroup", b =>
                 {
                     b.Navigation("Members");
+                });
+
+            modelBuilder.Entity("ControlR.Web.Server.Data.Entities.ScriptRun", b =>
+                {
+                    b.Navigation("Results");
                 });
 
             modelBuilder.Entity("ControlR.Web.Server.Data.Entities.ServiceAccount", b =>
@@ -1604,6 +1746,8 @@ namespace ControlR.Web.Server.Data.Migrations
                     b.Navigation("Devices");
 
                     b.Navigation("LogonTokens");
+
+                    b.Navigation("ScriptRuns");
 
                     b.Navigation("Tags");
 

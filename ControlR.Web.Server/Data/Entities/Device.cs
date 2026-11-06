@@ -53,6 +53,7 @@ public class Device : TenantEntityBase
 
   [StringLength(100)]
   public string PublicKey { get; set; } = string.Empty;
+  public List<ScriptResult>? ScriptResults { get; set; }
   public List<Tag>? Tags { get; set; }
   public double TotalMemory { get; set; }
   public double TotalStorage { get; set; }

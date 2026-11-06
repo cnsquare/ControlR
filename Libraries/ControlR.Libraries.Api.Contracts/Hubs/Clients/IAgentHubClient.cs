@@ -29,6 +29,7 @@ public interface IAgentHubClient
   Task RefreshDeviceInfo();
   Task<HubResult> RequestDesktopPreview(DesktopPreviewRequestDto dto);
   Task<HubResult> RequestRemoteControlPermission(int targetProcessId);
+  Task<HubResult> RunScript(RunScriptRequestDto dto);
   Task<HubResult> SendChatMessage(ChatMessageHubDto dto);
   Task<HubResult> StreamDirectoryContents(DirectoryContentsStreamRequestHubDto dto);
   Task<HubResult> StreamFileContents(StreamFileContentsRequestHubDto dto);

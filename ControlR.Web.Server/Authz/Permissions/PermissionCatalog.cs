@@ -132,6 +132,7 @@ public static class PermissionCatalog
     Add(PermissionNames.DeviceFileSystemTransferDownload, PermissionCategories.Devices, "Download Files from Device", "Download files from a remote device.", deviceResources);
 
     Add(PermissionNames.DeviceTerminalUse, PermissionCategories.Devices, "Use Remote Terminal", "Open a terminal session and execute commands on a remote device.", deviceResources);
+    Add(PermissionNames.DeviceScriptRun, PermissionCategories.Devices, "Run Scripts", "Run scripts on a remote device with the privileges of the agent, and view their output.", deviceResources);
     Add(PermissionNames.DeviceLogonTokenCreate, PermissionCategories.Devices, "Create Logon Token", "Create a single-use logon token for a device. A token created without explicit scopes can only view that device.", deviceResources);
     Add(PermissionNames.DeviceWakeSend, PermissionCategories.Devices, "Send Wake Command", "Send a wake-on-LAN command to a device.", deviceResources);
     Add(PermissionNames.DevicePowerManage, PermissionCategories.Devices, "Manage Device Power", "Shutdown or restart a remote device.", deviceResources);

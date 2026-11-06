@@ -7,6 +7,7 @@ using MudBlazor.Services;
 using ControlR.Web.Server.Components.Account;
 using ControlR.Web.Server.Constants;
 using ControlR.Libraries.WebSocketRelay.Common.Extensions;
+using ControlR.Web.Server.Services.Scripting;
 using ControlR.Web.Server.Services.Users;
 using ControlR.Web.Server.Services.Tenants;
 using ControlR.Web.Server.Services.LogonTokens;
@@ -282,6 +283,7 @@ public static class WebApplicationBuilderExtensions
     builder.Services.AddScoped<IPasswordHasher<string>, PasswordHasher<string>>();
     builder.Services.AddSingleton<IDeviceConnectionRegistry, DeviceConnectionRegistry>();
     builder.Services.AddScoped<IDeviceManager, DeviceManager>();
+    builder.Services.AddScoped<IScriptRunManager, ScriptRunManager>();
     builder.Services.AddScoped<IDeviceFileSystemService, DeviceFileSystemService>();
     builder.Services.AddScoped<IEffectiveUserPreferencesResolver, EffectiveUserPreferencesResolver>();
     builder.Services.AddScoped<IUserPreferencesManager, UserPreferencesManager>();

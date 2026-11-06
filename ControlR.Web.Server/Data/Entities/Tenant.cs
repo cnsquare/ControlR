@@ -12,6 +12,7 @@ public class Tenant : EntityBase
 
   [StringLength(100)]
   public string? Name { get; set; }
+  public List<ScriptRun>? ScriptRuns { get; set; }
   public List<Tag>? Tags { get; set; }
   public List<TenantInvite>? TenantInvites { get; set; }
   public List<TenantSetting>? TenantSettings { get; set; }

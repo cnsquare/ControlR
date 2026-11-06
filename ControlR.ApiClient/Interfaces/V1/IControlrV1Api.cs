@@ -18,6 +18,7 @@ public interface IControlrV1Api
   IPermissionAssignmentsApi PermissionAssignments { get; }
   IPersonalAccessTokensApi PersonalAccessTokens { get; }
   IPublicServerSettingsApi PublicServerSettings { get; }
+  IScriptRunsApi ScriptRuns { get; }
   IServerAlertApi ServerAlert { get; }
   IServerLogsApi ServerLogs { get; }
   IServerServiceAccountsApi ServerServiceAccounts { get; }

@@ -157,6 +157,12 @@ public class TestAgentHubClient : IAgentHubClient
     return Task.FromResult(HubResult.Ok());
   }
 
+  public Task<HubResult> RunScript(RunScriptRequestDto dto)
+  {
+    Console.WriteLine($"Script run requested: {dto.ScriptResultId}");
+    return Task.FromResult(HubResult.Ok());
+  }
+
   public Task<HubResult> SendChatMessage(ChatMessageHubDto dto)
   {
     Console.WriteLine($"Sending chat message from {dto.SenderName} ({dto.SenderEmail}): {dto.Message}");

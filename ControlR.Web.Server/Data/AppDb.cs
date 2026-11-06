@@ -39,6 +39,8 @@ public class AppDb : IdentityUserContext<AppUser, Guid>, IDataProtectionKeyConte
   public DbSet<LogonToken> LogonTokens { get; init; }
   public DbSet<PermissionAssignment> PermissionAssignments { get; init; }
   public DbSet<PersonalAccessToken> PersonalAccessTokens { get; init; }
+  public DbSet<ScriptResult> ScriptResults { get; init; }
+  public DbSet<ScriptRun> ScriptRuns { get; init; }
   public DbSet<ServerAlert> ServerAlerts { get; init; }
   public DbSet<ServiceAccountCredential> ServiceAccountCredentials { get; init; }
   public DbSet<ServiceAccount> ServiceAccounts { get; init; }
@@ -69,6 +71,7 @@ public class AppDb : IdentityUserContext<AppUser, Guid>, IDataProtectionKeyConte
 
     ConfigurePersonalAccessTokens(builder);
     ConfigureServerAlert(builder);
+    ConfigureScriptRuns(builder);
     ConfigureTenant(builder);
     ConfigureDevices(builder);
     ConfigureTags(builder);
@@ -478,6 +481,41 @@ public class AppDb : IdentityUserContext<AppUser, Guid>, IDataProtectionKeyConte
     {
       builder
         .Entity<Tag>()
+        .HasQueryFilter(x => x.TenantId == _tenantId);
+    }
+  }
+
+  private void ConfigureScriptRuns(ModelBuilder builder)
+  {
+    builder
+      .Entity<ScriptRun>()
+      .HasOne(x => x.Tenant)
+      .WithMany(x => x.ScriptRuns)
+      .HasForeignKey(x => x.TenantId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    builder
+      .Entity<ScriptResult>()
+      .HasOne(x => x.ScriptRun)
+      .WithMany(x => x.Results)
+      .HasForeignKey(x => x.ScriptRunId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    builder
+      .Entity<ScriptResult>()
+      .HasOne(x => x.Device)
+      .WithMany(x => x.ScriptResults)
+      .HasForeignKey(x => x.DeviceId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    if (_tenantId is not null)
+    {
+      builder
+        .Entity<ScriptRun>()
+        .HasQueryFilter(x => x.TenantId == _tenantId);
+
+      builder
+        .Entity<ScriptResult>()
         .HasQueryFilter(x => x.TenantId == _tenantId);
     }
   }
