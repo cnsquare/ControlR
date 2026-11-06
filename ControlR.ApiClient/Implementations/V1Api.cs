@@ -11,6 +11,7 @@ internal partial class V1Api(ControlrApi client) :
   IDeviceFileSystemApi,
   IDeviceGroupsApi,
   IDeviceNotesApi,
+  IRemoteSessionLogsApi,
   IDeviceTagsApi,
   IDevicesApi,
   IEffectivePermissionsApi,
@@ -50,6 +51,7 @@ internal partial class V1Api(ControlrApi client) :
   public IDeviceFileSystemApi DeviceFileSystem => this;
   public IDeviceGroupsApi DeviceGroups => this;
   public IDeviceNotesApi DeviceNotes => this;
+  public IRemoteSessionLogsApi RemoteSessionLogs => this;
   public IDevicesApi Devices => this;
   public IDeviceTagsApi DeviceTags => this;
   public IEffectivePermissionsApi EffectivePermissions => this;

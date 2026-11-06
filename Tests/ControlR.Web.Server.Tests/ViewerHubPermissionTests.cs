@@ -11,12 +11,14 @@ using ControlR.Web.Server.Hubs;
 using ControlR.Web.Server.Options;
 using ControlR.Web.Server.Services.Authorization;
 using ControlR.Web.Server.Services.DeviceManagement;
+using ControlR.Web.Server.Services.RemoteSessions;
 using ControlR.Web.Server.Services.Settings;
 using ControlR.Web.Server.Tests.Helpers;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -290,6 +292,97 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
       It.Is<RemoteControlSessionRequestDto>(forwarded =>
         forwarded.DeviceId == request.DeviceId &&
         forwarded.ViewerConnectionId == hub.Context.ConnectionId)), Times.Once);
+  }
+
+  [Fact]
+  public async Task RequestRemoteControlSession_AgentAccepts_LogsTheSessionBeforeTheAgentIsCalled()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    await SeedAssignment(testApp, user.Id, device.Id, tenant.Id, PermissionNames.DeviceRemoteControlConnect);
+    var request = SessionRequest(device.Id);
+
+    var (hub, agentClient) = CreateHub(testApp, user, tenant.Id);
+    var logCountAtAgentCall = -1;
+    agentClient
+      .Setup(client => client.CreateRemoteControlSession(It.IsAny<RemoteControlSessionRequestDto>()))
+      .Returns(async () =>
+      {
+        logCountAtAgentCall = (await GetSessionLogs(testApp)).Count;
+        return HubResult.Ok();
+      });
+
+    var result = await hub.RequestRemoteControlSession3(request);
+
+    Assert.True(result.IsSuccess);
+    Assert.Equal(1, logCountAtAgentCall);
+    var log = Assert.Single(await GetSessionLogs(testApp));
+    Assert.Equal(request.SessionId, log.SessionId);
+    Assert.Equal(device.Id, log.DeviceId);
+    Assert.Equal(tenant.Id, log.TenantId);
+    Assert.Equal(user.Id, log.UserId);
+    Assert.Null(log.EndedAt);
+  }
+
+  [Fact]
+  public async Task RequestRemoteControlSession_AgentRefuses_LogsTheFailure()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    await SeedAssignment(testApp, user.Id, device.Id, tenant.Id, PermissionNames.DeviceRemoteControlConnect);
+
+    var (hub, agentClient) = CreateHub(testApp, user, tenant.Id);
+    agentClient
+      .Setup(client => client.CreateRemoteControlSession(It.IsAny<RemoteControlSessionRequestDto>()))
+      .ReturnsAsync(HubResult.Fail("No desktop."));
+
+    var result = await hub.RequestRemoteControlSession3(SessionRequest(device.Id));
+
+    Assert.False(result.IsSuccess);
+    var log = Assert.Single(await GetSessionLogs(testApp));
+    Assert.Equal("No desktop.", log.FailureReason);
+    Assert.NotNull(log.EndedAt);
+  }
+
+  [Fact]
+  public async Task RequestRemoteControlSession_AgentUnreachable_LogsTheFailure()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    await SeedAssignment(testApp, user.Id, device.Id, tenant.Id, PermissionNames.DeviceRemoteControlConnect);
+
+    var (hub, agentClient) = CreateHub(testApp, user, tenant.Id);
+    agentClient
+      .Setup(client => client.CreateRemoteControlSession(It.IsAny<RemoteControlSessionRequestDto>()))
+      .ThrowsAsync(new IOException("Connection lost."));
+
+    var result = await hub.RequestRemoteControlSession3(SessionRequest(device.Id));
+
+    Assert.False(result.IsSuccess);
+    var log = Assert.Single(await GetSessionLogs(testApp));
+    Assert.NotNull(log.FailureReason);
+  }
+
+  [Fact]
+  public async Task RequestRemoteControlSession_Unauthorized_NothingIsLogged()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+
+    var (hub, _) = CreateHub(testApp, user, tenant.Id);
+
+    var result = await hub.RequestRemoteControlSession3(SessionRequest(device.Id));
+
+    Assert.False(result.IsSuccess);
+    Assert.Empty(await GetSessionLogs(testApp));
   }
 
   [Fact]
@@ -606,11 +699,22 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
       services.GetRequiredService<IHubStreamStore>(),
       services.GetRequiredService<IDesktopSessionAccessAuthorizer>(),
       services.GetRequiredService<IDeviceConnectionRegistry>(),
+      services.GetRequiredService<IRemoteSessionLogger>(),
       services.GetRequiredService<IOptionsMonitor<AppOptions>>(),
       services.GetRequiredService<ILogger<ViewerHub>>());
     hub.Context = new TestHubCallerContext(CreatePrincipal(user, tenantId));
     return (hub, agentClient);
   }
+
+  private static async Task<List<RemoteSessionLog>> GetSessionLogs(TestApp testApp)
+  {
+    using var scope = testApp.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDb>();
+    return await db.RemoteSessionLogs.IgnoreQueryFilters().AsNoTracking().ToListAsync();
+  }
+
+  private static RemoteControlSessionRequestDto SessionRequest(Guid deviceId) =>
+    new(Guid.NewGuid(), new Uri("wss://localhost/remote-control"), 1, 100, deviceId, false, false);
 
   private static ClaimsPrincipal CreatePrincipal(AppUser user, Guid tenantId) =>
     new(new ClaimsIdentity(

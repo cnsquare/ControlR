@@ -129,6 +129,8 @@ internal class WebSocketRelayMiddleware(
       return;
     }
 
+    var wasConnected = false;
+
     try
     {
       using var cts = new CancellationTokenSource(waitForPartnerTimeout, timeProvider);
@@ -150,6 +152,7 @@ internal class WebSocketRelayMiddleware(
 
       var websocket = await context.WebSockets.AcceptWebSocketAsync();
       await signaler.SetWebsocket(websocket, peerId, appLifetime.ApplicationStopping);
+      wasConnected = true;
       await StreamToPartner(signaler, peerId);
     }
     catch (OperationCanceledException ex)
@@ -158,6 +161,27 @@ internal class WebSocketRelayMiddleware(
       context.Response.StatusCode = StatusCodes.Status408RequestTimeout;
       await context.Response.WriteAsync("Timed out while waiting for partner.");
       return;
+    }
+    finally
+    {
+      await NotifyPeerDisconnected(sessionId, wasConnected);
+    }
+  }
+
+  private async Task NotifyPeerDisconnected(Guid sessionId, bool wasConnected)
+  {
+    if (serviceProvider.GetService<IRelaySessionObserver>() is not { } observer)
+    {
+      return;
+    }
+
+    try
+    {
+      await observer.OnPeerDisconnected(sessionId, wasConnected);
+    }
+    catch (Exception ex)
+    {
+      logger.LogError(ex, "Relay session observer failed.  Session ID: {SessionId}", sessionId);
     }
   }
 

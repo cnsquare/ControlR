@@ -677,6 +677,66 @@ namespace ControlR.Web.Server.Data.Migrations
                     b.ToTable("PersonalAccessTokens");
                 });
 
+            modelBuilder.Entity("ControlR.Web.Server.Data.Entities.RemoteSessionLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid>("DeviceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DeviceName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset?>("EndedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<bool>("WasInterrupted")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessionId");
+
+                    b.HasIndex("TenantId", "StartedAt");
+
+                    b.ToTable("RemoteSessionLogs");
+                });
+
             modelBuilder.Entity("ControlR.Web.Server.Data.Entities.SavedScript", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1667,6 +1727,17 @@ namespace ControlR.Web.Server.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ControlR.Web.Server.Data.Entities.RemoteSessionLog", b =>
+                {
+                    b.HasOne("ControlR.Web.Server.Data.Entities.Tenant", "Tenant")
+                        .WithMany("RemoteSessionLogs")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
+                });
+
             modelBuilder.Entity("ControlR.Web.Server.Data.Entities.SavedScript", b =>
                 {
                     b.HasOne("ControlR.Web.Server.Data.Entities.Tenant", "Tenant")
@@ -1988,6 +2059,8 @@ namespace ControlR.Web.Server.Data.Migrations
                     b.Navigation("Devices");
 
                     b.Navigation("LogonTokens");
+
+                    b.Navigation("RemoteSessionLogs");
 
                     b.Navigation("SavedScripts");
 

@@ -40,6 +40,7 @@ public class AppDb : IdentityUserContext<AppUser, Guid>, IDataProtectionKeyConte
   public DbSet<PermissionAssignment> PermissionAssignments { get; init; }
   public DbSet<PersonalAccessToken> PersonalAccessTokens { get; init; }
   public DbSet<SavedScript> SavedScripts { get; init; }
+  public DbSet<RemoteSessionLog> RemoteSessionLogs { get; init; }
   public DbSet<ScriptAlert> ScriptAlerts { get; init; }
   public DbSet<ScriptResult> ScriptResults { get; init; }
   public DbSet<ScriptRun> ScriptRuns { get; init; }
@@ -525,8 +526,27 @@ public class AppDb : IdentityUserContext<AppUser, Guid>, IDataProtectionKeyConte
       .Entity<ScriptAlert>()
       .HasIndex(x => new { x.TenantId, x.ScheduleId, x.DeviceId });
 
+    builder
+      .Entity<RemoteSessionLog>()
+      .HasOne(x => x.Tenant)
+      .WithMany(x => x.RemoteSessionLogs)
+      .HasForeignKey(x => x.TenantId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    builder
+      .Entity<RemoteSessionLog>()
+      .HasIndex(x => new { x.TenantId, x.StartedAt });
+
+    builder
+      .Entity<RemoteSessionLog>()
+      .HasIndex(x => x.SessionId);
+
     if (_tenantId is not null)
     {
+      builder
+        .Entity<RemoteSessionLog>()
+        .HasQueryFilter(x => x.TenantId == _tenantId);
+
       builder
         .Entity<SavedScript>()
         .HasQueryFilter(x => x.TenantId == _tenantId);

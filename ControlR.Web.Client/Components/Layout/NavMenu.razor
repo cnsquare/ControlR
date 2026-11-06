@@ -94,6 +94,12 @@
           </MudNavLink>
         </AuthorizeView>
       }
+      <AuthorizeView Policy="@(PolicyNames.RequireAuthorizationLogsRead)">
+        <MudNavLink Href="@(ClientRoutes.SessionHistory)" Match="NavLinkMatch.Prefix"
+                    Icon="@Icons.Material.Filled.ManageHistory">
+          Session History
+        </MudNavLink>
+      </AuthorizeView>
       <AuthorizeView Policy="@(PolicyNames.RequireTagsWrite)">
         <MudNavLink Href="@(ClientRoutes.Tags)" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.NewLabel">
           Device Tags

@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Security.Claims;
 using ControlR.Libraries.Api.Contracts.Dtos.HubDtos;
 using ControlR.Web.Server.Authz.Permissions;
+using ControlR.Web.Server.Services.RemoteSessions;
 using Microsoft.AspNetCore.SignalR;
 
 namespace ControlR.Web.Server.Hubs;
@@ -229,15 +230,37 @@ public partial class ViewerHub
         ViewerName = displayName
       };
 
-      var result = await _agentHub.Clients
-        .Client(device.ConnectionId)
-        .CreateRemoteControlSession(sessionRequestDto);
+      // Written before the agent hears about it, so a failed write stops the session
+      // instead of letting one run with no record.
+      await _remoteSessionLogger.LogStarted(
+        new RemoteSessionStart(
+          sessionRequestDto.SessionId,
+          device.TenantId,
+          device.Id,
+          device.Name,
+          userId,
+          displayName,
+          remoteIp),
+        Context.ConnectionAborted);
+
+      HubResult result;
+      try
+      {
+        result = await _agentHub.Clients
+          .Client(device.ConnectionId)
+          .CreateRemoteControlSession(sessionRequestDto);
+      }
+      catch (Exception)
+      {
+        await _remoteSessionLogger.LogFailed(sessionRequestDto.SessionId, "The agent could not be reached.");
+        throw;
+      }
 
       if (!result.IsSuccess)
       {
-        return HubResult.Fail(
-          result.Reason ?? "The agent failed to start the remote control session.",
-          result.FailureCode);
+        var reason = result.Reason ?? "The agent failed to start the remote control session.";
+        await _remoteSessionLogger.LogFailed(sessionRequestDto.SessionId, reason);
+        return HubResult.Fail(reason, result.FailureCode);
       }
 
       return HubResult.Ok();

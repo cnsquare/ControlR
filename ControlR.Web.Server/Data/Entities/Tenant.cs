@@ -13,6 +13,7 @@ public class Tenant : EntityBase
   [StringLength(100)]
   public string? Name { get; set; }
   public List<SavedScript>? SavedScripts { get; set; }
+  public List<RemoteSessionLog>? RemoteSessionLogs { get; set; }
   public List<ScriptAlert>? ScriptAlerts { get; set; }
   public List<ScriptRun>? ScriptRuns { get; set; }
   public List<ScriptSchedule>? ScriptSchedules { get; set; }

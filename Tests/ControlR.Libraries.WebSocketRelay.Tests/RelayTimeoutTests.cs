@@ -32,6 +32,22 @@ public class RelayTimeoutTests
   }
 
   [Fact]
+  public async Task WaitForPartner_AfterTimeout_TellsTheObserverThePeerNeverConnected()
+  {
+    var observer = new RecordingObserver();
+    using var app = await StartRelayAsync(observer: observer);
+    var sessionId = Guid.NewGuid();
+
+    await RefusedHandshakeStatusAsync(
+      app.GetTestServer(),
+      RelayUri(sessionId, RelayRole.Requester, 1),
+      waitForPartner: TimeSpan.FromSeconds(1));
+
+    var reported = await observer.Reported.Task.WaitAsync(_handshakeBudget, TestContext.Current.CancellationToken);
+    Assert.Equal((sessionId, false), reported);
+  }
+
+  [Fact]
   public async Task WaitForPartner_AfterTimeout_EvictsTheSession()
   {
     using var app = await StartRelayAsync();
@@ -277,13 +293,31 @@ public class RelayTimeoutTests
     return int.Parse(match.Groups[1].Value);
   }
 
-  private async Task<WebApplication> StartRelayAsync(Action<WebSocketRelayOptions>? configureOptions = null)
+  private sealed class RecordingObserver : IRelaySessionObserver
+  {
+    public TaskCompletionSource<(Guid SessionId, bool WasConnected)> Reported { get; } =
+      new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    public Task OnPeerDisconnected(Guid sessionId, bool wasConnected)
+    {
+      Reported.TrySetResult((sessionId, wasConnected));
+      return Task.CompletedTask;
+    }
+  }
+
+  private async Task<WebApplication> StartRelayAsync(
+    Action<WebSocketRelayOptions>? configureOptions = null,
+    IRelaySessionObserver? observer = null)
   {
     var builder = WebApplication.CreateSlimBuilder();
     builder.WebHost.UseTestServer();
     builder.Services.AddAuthorization();
     builder.Services.AddWebSocketRelay(configureOptions ?? (_ => { }));
     builder.Services.ReplaceSingleton<TimeProvider, FakeTimeProvider>(_timeProvider);
+    if (observer is not null)
+    {
+      builder.Services.AddSingleton(observer);
+    }
 
     var app = builder.Build();
     app.MapWebSocketRelay();

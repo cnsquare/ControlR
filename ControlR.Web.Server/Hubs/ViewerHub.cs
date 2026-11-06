@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Security.Claims;
 using ControlR.Web.Server.Services.Authorization.Capabilities;
 using ControlR.Web.Server.Services.DeviceManagement;
+using ControlR.Web.Server.Services.RemoteSessions;
 
 namespace ControlR.Web.Server.Hubs;
 
@@ -28,6 +29,7 @@ public partial class ViewerHub(
   IHubStreamStore hubStreamStore,
   IDesktopSessionAccessAuthorizer desktopSessionAccessAuthorizer,
   IDeviceConnectionRegistry deviceConnectionRegistry,
+  IRemoteSessionLogger remoteSessionLogger,
   IOptionsMonitor<AppOptions> appOptions,
   ILogger<ViewerHub> logger)
   : HubWithItems<IViewerHubClient>, IViewerHub
@@ -44,6 +46,7 @@ public partial class ViewerHub(
   private readonly IHubStreamStore _hubStreamStore = hubStreamStore;
   private readonly ILogger<ViewerHub> _logger = logger;
   private readonly IPermissionEvaluator _permissionEvaluator = permissionEvaluator;
+  private readonly IRemoteSessionLogger _remoteSessionLogger = remoteSessionLogger;
   private readonly IResourceDescriptorFactory _resourceFactory = resourceFactory;
   private readonly TimeProvider _timeProvider = timeProvider;
   private readonly UserManager<AppUser> _userManager = userManager;

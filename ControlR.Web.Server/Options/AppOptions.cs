@@ -49,6 +49,13 @@ public class AppOptions
   public int AuthorizationChangeLogRetentionDays { get; init; } = 365;
 
   /// <summary>
+  /// The number of days to retain the remote control session history.
+  /// Entries older than this are pruned by a background service.
+  /// Set to 0 or less to disable pruning and retain entries indefinitely.
+  /// </summary>
+  public int RemoteSessionLogRetentionDays { get; init; } = 365;
+
+  /// <summary>
   /// The number of days to retain script runs and their output.
   /// Runs older than this are pruned by a background service.
   /// Set to 0 or less to disable pruning and retain runs indefinitely.

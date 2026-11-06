@@ -7,6 +7,7 @@ public interface IControlrV1Api
   IDeploymentOptionsApi DeploymentOptions { get; }
   IDesktopPreviewApi DesktopPreview { get; }
   IDeviceNotesApi DeviceNotes { get; }
+  IRemoteSessionLogsApi RemoteSessionLogs { get; }
   IDeviceFileSystemApi DeviceFileSystem { get; }
   IDeviceGroupsApi DeviceGroups { get; }
   IDevicesApi Devices { get; }
