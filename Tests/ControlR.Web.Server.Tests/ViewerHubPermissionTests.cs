@@ -123,6 +123,30 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   }
 
   [Fact]
+  public async Task GetDeviceAccessPermissions2_ProjectsScriptPermission_IndependentlyOfTerminal()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    await SeedAssignment(testApp, user.Id, device.Id, tenant.Id, PermissionNames.DeviceRead);
+    await SeedAssignment(testApp, user.Id, device.Id, tenant.Id, PermissionNames.DeviceTerminalUse);
+
+    var (hub, _) = CreateHub(testApp, user, tenant.Id);
+
+    var withoutScripts = await hub.GetDeviceAccessPermissions2(new(device.Id));
+    Assert.True(withoutScripts.IsSuccess);
+    Assert.True(withoutScripts.Value.CanUseTerminal);
+    Assert.False(withoutScripts.Value.CanRunScripts);
+
+    await SeedAssignment(testApp, user.Id, device.Id, tenant.Id, PermissionNames.DeviceScriptRun);
+
+    var withScripts = await hub.GetDeviceAccessPermissions2(new(device.Id));
+    Assert.True(withScripts.IsSuccess);
+    Assert.True(withScripts.Value.CanRunScripts);
+  }
+
+  [Fact]
   public async Task RequestRemoteControlSession_AllowedDevice_ForwardsDtoDeviceIdentity()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);

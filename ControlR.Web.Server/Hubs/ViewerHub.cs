@@ -168,6 +168,7 @@ public partial class ViewerHub(
         PermissionNames.DeviceOverviewRead,
         PermissionNames.DeviceRemoteControlConnect,
         PermissionNames.DeviceTerminalUse,
+        PermissionNames.DeviceScriptRun,
         PermissionNames.DeviceChatSend,
         PermissionNames.DeviceFileSystemRead,
         PermissionNames.DeviceLogsRead,
@@ -203,7 +204,8 @@ public partial class ViewerHub(
         decisions[PermissionNames.DeviceClipboardRead].Allowed,
         decisions[PermissionNames.DeviceClipboardWrite].Allowed,
         decisions[PermissionNames.DeviceCtrlAltDelSend].Allowed,
-        decisions[PermissionNames.DeviceRemoteControlPrivacyScreen].Allowed);
+        decisions[PermissionNames.DeviceRemoteControlPrivacyScreen].Allowed,
+        decisions[PermissionNames.DeviceScriptRun].Allowed);
 
       return HubResult.Ok(permissions);
     }

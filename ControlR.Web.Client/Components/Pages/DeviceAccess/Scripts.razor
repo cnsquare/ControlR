@@ -1,0 +1,68 @@
+@layout DeviceAccessLayout
+@attribute [Route(ClientRoutes.DeviceAccessScripts)]
+@attribute [Authorize]
+@using ControlR.Web.Client.Components.Layout.DeviceAccess
+
+<div class="pa-4">
+  <MudText Typo="Typo.h5" GutterBottom>Run Script</MudText>
+
+  <MudAlert Severity="Severity.Warning" Dense Class="mb-4">
+    Scripts run on this device with the agent's privileges, which is normally SYSTEM or root.
+  </MudAlert>
+
+  <div class="d-flex flex-wrap gap-4 mb-4">
+    <MudSelect T="ScriptShell" Label="Shell" @bind-Value="_shell" Disabled="_isRunning" Variant="Variant.Outlined" Class="script-option">
+      @foreach (var shell in AvailableShells)
+      {
+        <MudSelectItem T="ScriptShell" Value="@shell">@ScriptShellOptions.GetDisplayName(shell)</MudSelectItem>
+      }
+    </MudSelect>
+    <MudNumericField T="int" Label="Timeout (seconds)" @bind-Value="_timeoutSeconds" Disabled="_isRunning"
+                     Min="ScriptLimits.MinTimeoutSeconds" Max="ScriptLimits.MaxTimeoutSeconds"
+                     Variant="Variant.Outlined" Class="script-option" />
+  </div>
+
+  <MudTextField T="string" Label="Script" @bind-Value="_content" Immediate Disabled="_isRunning"
+                Lines="12" Variant="Variant.Outlined" MaxLength="ScriptLimits.MaxContentLength"
+                Class="script-editor mb-4" spellcheck="false" />
+
+  <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow"
+             Disabled="@(!CanRun)" OnClick="RunScript">
+    @(_isRunning ? "Running" : "Run")
+  </MudButton>
+
+  @if (_result is { } result)
+  {
+    <MudDivider Class="my-4" />
+
+    <div class="d-flex align-center gap-2 mb-2">
+      <MudChip T="string" Color="@ScriptShellOptions.GetStatusColor(result.Status)" Size="Size.Small">@result.Status</MudChip>
+      @if (result.ExitCode is { } exitCode)
+      {
+        <MudText Typo="Typo.body2">Exit code @exitCode</MudText>
+      }
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(result.FailureReason))
+    {
+      <MudAlert Severity="Severity.Error" Dense Class="mb-2">@result.FailureReason</MudAlert>
+    }
+
+    @if (result.OutputTruncated)
+    {
+      <MudAlert Severity="Severity.Info" Dense Class="mb-2">The output was too long and has been cut off.</MudAlert>
+    }
+
+    @if (!string.IsNullOrEmpty(result.StandardOutput))
+    {
+      <MudText Typo="Typo.subtitle2">Output</MudText>
+      <pre class="script-output">@result.StandardOutput</pre>
+    }
+
+    @if (!string.IsNullOrEmpty(result.StandardError))
+    {
+      <MudText Typo="Typo.subtitle2">Errors</MudText>
+      <pre class="script-output script-output-error">@result.StandardError</pre>
+    }
+  }
+</div>

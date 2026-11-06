@@ -113,6 +113,43 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   }
 
   [Fact]
+  public async Task ExpireStaleResults_FailsOnlyResultsPastTimeoutAndGrace()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    var now = DateTimeOffset.UtcNow;
+    var grace = ScriptResultExpiryBackgroundService.GracePeriod;
+
+    var staleRunId = await SeedRun(testApp, tenant.Id, device.Id);
+    var withinGraceRunId = await SeedRun(testApp, tenant.Id, device.Id);
+    var longTimeoutRunId = await SeedRun(testApp, tenant.Id, device.Id);
+    await SetRunAge(testApp, staleRunId, now - grace - TimeSpan.FromSeconds(31), timeoutSeconds: 30);
+    await SetRunAge(testApp, withinGraceRunId, now - grace + TimeSpan.FromMinutes(1), timeoutSeconds: 30);
+    await SetRunAge(testApp, longTimeoutRunId, now - grace - TimeSpan.FromMinutes(2), timeoutSeconds: 3600);
+
+    var service = testApp.Services.GetRequiredService<ScriptResultExpiryBackgroundService>();
+    await service.ExpireStaleResults(Ct);
+
+    var stale = await ReadResult(testApp, await GetResultId(testApp, staleRunId));
+    Assert.Equal(ScriptResultStatus.Failed, stale.Status);
+    Assert.Equal(ScriptResultExpiryBackgroundService.ExpiredReason, stale.FailureReason);
+    Assert.Null(stale.FinishedAt);
+
+    var withinGrace = await ReadResult(testApp, await GetResultId(testApp, withinGraceRunId));
+    Assert.Equal(ScriptResultStatus.Pending, withinGrace.Status);
+
+    var longTimeout = await ReadResult(testApp, await GetResultId(testApp, longTimeoutRunId));
+    Assert.Equal(ScriptResultStatus.Pending, longTimeout.Status);
+
+    using var scope = testApp.Services.CreateScope();
+    var report = await CreateHub(scope, device).ReportScriptResult(Report(stale.Id, 0, "late"));
+
+    Assert.True(report.IsSuccess);
+    Assert.Equal(ScriptResultStatus.Succeeded, (await ReadResult(testApp, stale.Id)).Status);
+  }
+
+  [Fact]
   public async Task GetScriptRun_HidesResultsForDevicesWithoutPermission()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
@@ -439,6 +476,16 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
     db.ScriptRuns.Add(run);
     await db.SaveChangesAsync(Ct);
     return run.Id;
+  }
+
+  private static async Task SetRunAge(TestApp testApp, Guid runId, DateTimeOffset createdAt, int timeoutSeconds)
+  {
+    using var scope = testApp.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDb>();
+    var run = await db.ScriptRuns.IgnoreQueryFilters().SingleAsync(x => x.Id == runId, Ct);
+    run.CreatedAt = createdAt;
+    run.TimeoutSeconds = timeoutSeconds;
+    await db.SaveChangesAsync(Ct);
   }
 
   private sealed class TestHubCallerContext : HubCallerContext

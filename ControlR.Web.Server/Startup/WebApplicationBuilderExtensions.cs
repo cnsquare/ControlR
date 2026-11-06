@@ -264,6 +264,8 @@ public static class WebApplicationBuilderExtensions
     builder.Services.AddHostedService(sp => sp.GetRequiredService<AgentInstallerKeyUsageCleanupBackgroundService>());
     builder.Services.AddSingleton<ExternalUserCleanupBackgroundService>();
     builder.Services.AddHostedService(sp => sp.GetRequiredService<ExternalUserCleanupBackgroundService>());
+    builder.Services.AddSingleton<ScriptResultExpiryBackgroundService>();
+    builder.Services.AddHostedService(sp => sp.GetRequiredService<ScriptResultExpiryBackgroundService>());
     builder.Services.AddSingleton<LogonTokenCleanupBackgroundService>();
     builder.Services.AddHostedService(sp => sp.GetRequiredService<LogonTokenCleanupBackgroundService>());
     builder.Services.AddSingleton<AuthorizationChangeLogCleanupBackgroundService>();
