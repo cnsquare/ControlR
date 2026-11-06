@@ -113,6 +113,45 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   }
 
   [Fact]
+  public async Task CleanExpiredRuns_DeletesOnlyRunsPastRetention()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    var now = DateTimeOffset.UtcNow;
+
+    var expired = await SeedRun(testApp, tenant.Id, device.Id);
+    var retained = await SeedRun(testApp, tenant.Id, device.Id);
+    await SetRunAge(testApp, expired, now.AddDays(-91), timeoutSeconds: 30);
+    await SetRunAge(testApp, retained, now.AddDays(-89), timeoutSeconds: 30);
+
+    var service = testApp.Services.GetRequiredService<ScriptRunCleanupBackgroundService>();
+    await service.CleanExpiredRuns(Ct);
+
+    using var scope = testApp.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDb>();
+    var remaining = await db.ScriptRuns.IgnoreQueryFilters().Select(x => x.Id).ToListAsync(Ct);
+    Assert.Equal(retained, Assert.Single(remaining));
+  }
+
+  [Fact]
+  public async Task CleanExpiredRuns_RetentionDisabled_KeepsEverything()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(
+      _testOutput,
+      extraConfiguration: new Dictionary<string, string?> { ["AppOptions:ScriptRunRetentionDays"] = "0" });
+    var tenant = await testApp.Services.CreateTestTenant();
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    var runId = await SeedRun(testApp, tenant.Id, device.Id);
+    await SetRunAge(testApp, runId, DateTimeOffset.UtcNow.AddYears(-5), timeoutSeconds: 30);
+
+    var service = testApp.Services.GetRequiredService<ScriptRunCleanupBackgroundService>();
+    var removed = await service.CleanExpiredRuns(Ct);
+
+    Assert.Equal(0, removed);
+  }
+
+  [Fact]
   public async Task ExpireStaleResults_FailsOnlyResultsPastTimeoutAndGrace()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
