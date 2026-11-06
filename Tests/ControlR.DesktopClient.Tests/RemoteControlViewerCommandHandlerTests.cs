@@ -4,6 +4,7 @@ using ControlR.DesktopClient.Common.ServiceInterfaces;
 using ControlR.DesktopClient.Common.ServiceInterfaces.Toaster;
 using ControlR.DesktopClient.Common.Services;
 using ControlR.DesktopClient.Common.State;
+using ControlR.Libraries.Api.Contracts.Authz;
 using ControlR.Libraries.Api.Contracts.Dtos.RemoteControlDtos;
 using ControlR.Libraries.Shared.Primitives;
 using ControlR.Libraries.Shared.Services;
@@ -46,6 +47,83 @@ public class RemoteControlViewerCommandHandlerTests
     Assert.True(result.IsSuccess);
   }
 
+  [Theory]
+  [InlineData(RemoteControlDtoType.ClipboardText)]
+  [InlineData(RemoteControlDtoType.KeyEvent)]
+  [InlineData(RemoteControlDtoType.MouseClick)]
+  [InlineData(RemoteControlDtoType.MovePointer)]
+  [InlineData(RemoteControlDtoType.RequestClipboardText)]
+  [InlineData(RemoteControlDtoType.ToggleBlockInput)]
+  [InlineData(RemoteControlDtoType.TogglePrivacyScreen)]
+  [InlineData(RemoteControlDtoType.TypeText)]
+  [InlineData(RemoteControlDtoType.WheelScroll)]
+  public async Task Handle_ViewOnlySession_RefusesEveryCommandThatActsOnTheDevice(RemoteControlDtoType dtoType)
+  {
+    var sut = CreateSut(Mock.Of<IClipboardManager>(), PermissionNames.DeviceRemoteControlConnect);
+    var wrapper = RemoteControlDtoWrapper.Create(new ToggleAudioDto(true), dtoType);
+
+    var result = await sut.Handle(wrapper);
+
+    Assert.False(result.IsSuccess);
+    Assert.Contains("permission", result.Reason);
+  }
+
+  [Fact]
+  public async Task Handle_ClipboardWriteWithoutPermission_NeverTouchesTheClipboard()
+  {
+    var clipboardManager = new Mock<IClipboardManager>();
+    var sut = CreateSut(
+      clipboardManager.Object,
+      PermissionNames.DeviceRemoteControlConnect,
+      PermissionNames.DeviceRemoteControlInteract);
+
+    var result = await sut.Handle(CreateClipboardWrapper("secret"));
+
+    Assert.False(result.IsSuccess);
+    clipboardManager.Verify(x => x.SetText(It.IsAny<string>()), Times.Never);
+  }
+
+  [Fact]
+  public async Task Handle_KeyEventWithoutInteract_NeverReachesInputSimulator()
+  {
+    var inputSimulator = new Mock<IInputSimulator>(MockBehavior.Strict);
+    var sut = CreateSut(
+      Mock.Of<IClipboardManager>(),
+      new FakeAudioStreamer(),
+      Mock.Of<IToaster>(),
+      allowAudio: false,
+      inputSimulator.Object,
+      [PermissionNames.DeviceRemoteControlConnect]);
+    var wrapper = RemoteControlDtoWrapper.Create(
+      new ToggleAudioDto(true),
+      RemoteControlDtoType.KeyEvent);
+
+    var result = await sut.Handle(wrapper);
+
+    Assert.False(result.IsSuccess);
+    inputSimulator.VerifyNoOtherCalls();
+  }
+
+  [Fact]
+  public async Task Handle_SessionGrantedNothing_RefusesEvenClosingCommands()
+  {
+    var sut = CreateSut(Mock.Of<IClipboardManager>(), []);
+
+    var result = await sut.Handle(RemoteControlDtoWrapper.Create(
+      new ToggleAudioDto(true),
+      RemoteControlDtoType.RequestKeyFrame));
+
+    Assert.False(result.IsSuccess);
+  }
+
+  [Fact]
+  public void GetRequiredPermission_LetsViewOnlyViewersChangeWhatTheySee()
+  {
+    Assert.Equal(
+      PermissionNames.DeviceRemoteControlConnect,
+      RemoteControlCommandPermissions.GetRequiredPermission(RemoteControlDtoType.ChangeDisplays));
+  }
+
   [Fact]
   public async Task Handle_ToggleAudio_AllowedSession_StartsAudioAndTellsTheUser()
   {
@@ -84,26 +162,61 @@ public class RemoteControlViewerCommandHandlerTests
   private static RemoteControlDtoWrapper CreateClipboardWrapper(string text) =>
     RemoteControlDtoWrapper.Create(new ClipboardTextDto(text, Guid.NewGuid()), RemoteControlDtoType.ClipboardText);
 
+  private static readonly string[] _allPermissions =
+  [
+    PermissionNames.DeviceClipboardRead,
+    PermissionNames.DeviceClipboardWrite,
+    PermissionNames.DeviceRemoteControlAudio,
+    PermissionNames.DeviceRemoteControlBlockInput,
+    PermissionNames.DeviceRemoteControlConnect,
+    PermissionNames.DeviceRemoteControlInteract,
+    PermissionNames.DeviceRemoteControlPrivacyScreen,
+  ];
+
   private static RemoteControlViewerCommandHandler CreateSut(IClipboardManager clipboardManager) =>
-    CreateSut(clipboardManager, new FakeAudioStreamer(), Mock.Of<IToaster>(), allowAudio: false);
+    CreateSut(clipboardManager, _allPermissions);
+
+  private static RemoteControlViewerCommandHandler CreateSut(
+    IClipboardManager clipboardManager,
+    params string[] allowedPermissions) =>
+    CreateSut(
+      clipboardManager,
+      new FakeAudioStreamer(),
+      Mock.Of<IToaster>(),
+      allowAudio: false,
+      Mock.Of<IInputSimulator>(),
+      allowedPermissions);
 
   private static RemoteControlViewerCommandHandler CreateSut(
     IClipboardManager clipboardManager,
     IAudioStreamer audioStreamer,
     IToaster toaster,
     bool allowAudio) =>
+    CreateSut(clipboardManager, audioStreamer, toaster, allowAudio, Mock.Of<IInputSimulator>(), _allPermissions);
+
+  private static RemoteControlViewerCommandHandler CreateSut(
+    IClipboardManager clipboardManager,
+    IAudioStreamer audioStreamer,
+    IToaster toaster,
+    bool allowAudio,
+    IInputSimulator inputSimulator,
+    string[] allowedPermissions) =>
     new(
       Mock.Of<IHostApplicationLifetime>(),
       audioStreamer,
       clipboardManager,
       new Mock<IDesktopCapturerFactory>().Object,
       Mock.Of<IDisplayManager>(),
-      Mock.Of<IInputSimulator>(),
+      inputSimulator,
       Mock.Of<IMessenger>(),
       Mock.Of<IRemoteControlSessionState>(),
       Mock.Of<ISystemEnvironment>(),
       toaster,
-      Options.Create(new RemoteControlSessionOptions { AllowAudio = allowAudio }),
+      Options.Create(new RemoteControlSessionOptions
+      {
+        AllowAudio = allowAudio,
+        AllowedPermissions = allowedPermissions.ToHashSet(StringComparer.Ordinal),
+      }),
       NullLogger<RemoteControlViewerCommandHandler>.Instance);
 
   private sealed class FakeAudioStreamer : IAudioStreamer

@@ -19,6 +19,11 @@ public record RemoteControlSessionRequestDto(
   /// viewer supplies is overwritten, so this is what the desktop client can trust.
   /// </summary>
   public bool AllowAudio { get; init; }
+  /// <summary>
+  /// The permissions the desktop client enforces on every viewer command. Set by the server,
+  /// and any value a viewer supplies is overwritten.
+  /// </summary>
+  public string[] AllowedPermissions { get; init; } = [];
   public string? ViewerConnectionId { get; init; }
   public string? ViewerName { get; init; }
 }

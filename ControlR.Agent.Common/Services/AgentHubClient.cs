@@ -195,7 +195,8 @@ internal class AgentHubClient(
         dto.RequireConsent,
         dto.ViewerConnectionId,
         dto.ViewerName,
-        dto.AllowAudio);
+        dto.AllowAudio,
+        dto.AllowedPermissions);
 
       var result = await ipcServer.Server.Client.ReceiveRemoteControlRequest(ipcDto);
       _logger.LogInformation(

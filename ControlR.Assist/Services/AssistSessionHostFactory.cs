@@ -1,3 +1,4 @@
+using ControlR.Libraries.Api.Contracts.Authz;
 using ControlR.DesktopClient.Common;
 using ControlR.DesktopClient.Common.ServiceInterfaces;
 using ControlR.DesktopClient.Common.ServiceInterfaces.Toaster;
@@ -64,6 +65,17 @@ public sealed class AssistSessionHostFactory(
         options.SessionId = request.SessionId;
         options.RequireConsent = false;
         options.NotifyUser = false;
+
+        // The customer consented to this session and the technician holds the Flash Assist
+        // permission. Block input, privacy screen and audio are deliberately left out.
+        options.AllowedPermissions = new HashSet<string>(StringComparer.Ordinal)
+        {
+          PermissionNames.DeviceClipboardRead,
+          PermissionNames.DeviceClipboardWrite,
+          PermissionNames.DeviceRemoteControlConnect,
+          PermissionNames.DeviceRemoteControlInteract,
+        };
+
         options.ViewerName = request.ViewerDisplayName;
         options.ViewerConnectionId = null;
         options.WebSocketUri = BuildResponderRelayUri(request);

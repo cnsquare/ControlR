@@ -11,4 +11,5 @@ public record RemoteControlRequestIpcDto(
   bool RequireConsent,
   string? ViewerConnectionId,
   string? ViewerName,
-  bool AllowAudio = false);
+  bool AllowAudio = false,
+  string[]? AllowedPermissions = null);

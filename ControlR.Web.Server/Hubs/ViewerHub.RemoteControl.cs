@@ -217,6 +217,7 @@ public partial class ViewerHub
         // one point where audio is decided. It replaces whatever the viewer sent.
         AllowAudio = !_appOptions.CurrentValue.DisableRemoteAudio &&
           allowedPermissions.Contains(PermissionNames.DeviceRemoteControlAudio),
+        AllowedPermissions = [.. allowedPermissions],
         NotifyUserOnSessionStart = notifyUser,
         ViewerConnectionId = Context.ConnectionId,
         ViewerName = displayName

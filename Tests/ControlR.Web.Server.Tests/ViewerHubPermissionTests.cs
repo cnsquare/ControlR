@@ -189,6 +189,41 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   }
 
   [Fact]
+  public async Task RequestRemoteControlSession_ForgedPermissions_AreReplacedWithRealOnes()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    await SeedAssignment(testApp, user.Id, device.Id, tenant.Id, PermissionNames.DeviceRemoteControlConnect);
+
+    var (hub, agentClient) = CreateHub(testApp, user, tenant.Id);
+    RemoteControlSessionRequestDto? forwarded = null;
+    agentClient
+      .Setup(client => client.CreateRemoteControlSession(It.IsAny<RemoteControlSessionRequestDto>()))
+      .Callback<RemoteControlSessionRequestDto>(dto => forwarded = dto)
+      .ReturnsAsync(HubResult.Ok());
+
+    var request = new RemoteControlSessionRequestDto(
+      Guid.NewGuid(),
+      new Uri("wss://localhost/remote-control"),
+      1,
+      100,
+      device.Id,
+      false,
+      false)
+    {
+      AllowedPermissions = [PermissionNames.DeviceRemoteControlInteract, PermissionNames.DeviceClipboardRead],
+    };
+
+    var result = await hub.RequestRemoteControlSession2(request);
+
+    Assert.True(result.IsSuccess);
+    Assert.NotNull(forwarded);
+    Assert.Equal(PermissionNames.DeviceRemoteControlConnect, Assert.Single(forwarded.AllowedPermissions));
+  }
+
+  [Fact]
   public async Task RequestRemoteControlSession_ForgedAllowAudio_IsOverwrittenWithoutPermission()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);

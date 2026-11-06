@@ -7,6 +7,12 @@ public class RemoteControlSessionOptions
   private Uri? _webSocketUri;
 
   public bool AllowAudio { get; set; }
+
+  /// <summary>
+  /// Empty by default, so a session that was never granted anything can do nothing.
+  /// </summary>
+  public IReadOnlySet<string> AllowedPermissions { get; set; } = new HashSet<string>();
+
   public CaptureEncoderType EncoderType { get; set; } = CaptureEncoderType.Image;
   public bool NotifyUser { get; set; }
   public bool RequireConsent { get; set; }

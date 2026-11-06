@@ -34,6 +34,7 @@ public class MacRemoteControlHostBuilderFactory(
       options =>
       {
         options.SessionId = requestDto.SessionId;
+        options.AllowedPermissions = (requestDto.AllowedPermissions ?? []).ToHashSet(StringComparer.Ordinal);
         options.NotifyUser = requestDto.NotifyUserOnSessionStart;
         options.RequireConsent = requestDto.RequireConsent;
         options.ViewerName = requestDto.ViewerName;

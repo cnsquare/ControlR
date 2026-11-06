@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Bitbound.SimpleMessenger;
 using ControlR.DesktopClient.Common.Messages;
 using ControlR.DesktopClient.Common.Models;
@@ -5,6 +6,7 @@ using ControlR.DesktopClient.Common.Options;
 using ControlR.DesktopClient.Common.ServiceInterfaces;
 using ControlR.DesktopClient.Common.ServiceInterfaces.Toaster;
 using ControlR.DesktopClient.Common.State;
+using ControlR.Libraries.Api.Contracts.Authz;
 using ControlR.Libraries.Api.Contracts.Dtos.RemoteControlDtos;
 using ControlR.Libraries.Shared.Constants;
 using ControlR.Libraries.Shared.Extensions;
@@ -53,6 +55,8 @@ internal sealed class RemoteControlViewerCommandHandler(
   private readonly ISystemEnvironment _systemEnvironment = systemEnvironment;
   private readonly IToaster _toaster = toaster;
 
+  private readonly ConcurrentDictionary<RemoteControlDtoType, byte> _loggedRefusals = new();
+
   private bool _isInputBlocked;
 
   public async Task<Result> Handle(RemoteControlDtoWrapper wrapper)
@@ -60,6 +64,23 @@ internal sealed class RemoteControlViewerCommandHandler(
     try
     {
       using var logScope = _logger.BeginMemberScope();
+
+      // Commands arrive straight from the viewer over the relay, so this is the only place
+      // that can refuse them. A hidden button in the viewer protects nothing.
+      var requiredPermission = RemoteControlCommandPermissions.GetRequiredPermission(wrapper.DtoType);
+      if (!_startupOptions.AllowedPermissions.Contains(requiredPermission))
+      {
+        // Refused input can arrive at pointer rate, so each type is logged once.
+        if (_loggedRefusals.TryAdd(wrapper.DtoType, 0))
+        {
+          _logger.LogWarning(
+            "Refused {DtoType}. The session was not granted {Permission}.",
+            wrapper.DtoType,
+            requiredPermission);
+        }
+
+        return Result.Fail($"This session does not have the {requiredPermission} permission.");
+      }
 
       switch (wrapper.DtoType)
       {

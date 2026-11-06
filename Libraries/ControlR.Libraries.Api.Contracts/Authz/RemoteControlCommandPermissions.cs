@@ -3,9 +3,9 @@ using ControlR.Libraries.Api.Contracts.Dtos.RemoteControlDtos;
 namespace ControlR.Libraries.Api.Contracts.Authz;
 
 /// <summary>
-/// Map from a viewer command to the device permission it requires. No product code reads this
-/// yet. The UI checks the same permissions per control (#423), and the planned enforcement (#424)
-/// will read this map so the two cannot drift from the grant model.
+/// Map from a viewer command to the device permission it requires. The desktop client enforces
+/// this against the permissions the server granted the session, because commands reach it over
+/// the relay without passing through the server. The UI checks the same permissions per control.
 /// </summary>
 public static class RemoteControlCommandPermissions
 {
@@ -16,7 +16,8 @@ public static class RemoteControlCommandPermissions
     RemoteControlDtoType.ToggleBlockInput => PermissionNames.DeviceRemoteControlBlockInput,
     RemoteControlDtoType.TogglePrivacyScreen => PermissionNames.DeviceRemoteControlPrivacyScreen,
     RemoteControlDtoType.ToggleAudio => PermissionNames.DeviceRemoteControlAudio,
-    RemoteControlDtoType.RequestKeyFrame
+    RemoteControlDtoType.ChangeDisplays
+      or RemoteControlDtoType.RequestKeyFrame
       or RemoteControlDtoType.UpdateCaptureSettings
       or RemoteControlDtoType.CloseRemoteControlSession => PermissionNames.DeviceRemoteControlConnect,
     _ => PermissionNames.DeviceRemoteControlInteract
