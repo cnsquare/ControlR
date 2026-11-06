@@ -496,6 +496,152 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
     Assert.Equal(ScriptLimits.MaxOutputBytesPerStream, stored.StandardOutput.Length);
   }
 
+  [Fact]
+  public async Task Postgres_CreateScriptRun_ReadsBackDatabaseGeneratedCreatedAt()
+  {
+    await using var testApp = await CreatePostgresApp();
+    var tenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    await Grant(testApp, user, device.Id, PermissionNames.DeviceScriptRun);
+
+    using var scope = testApp.Services.CreateScope();
+    var controller = await scope.CreateControllerWithUser<ScriptRunsController>(user);
+
+    var response = await controller.CreateScriptRun(Request(device.Id), tenant.Id, Ct);
+
+    var run = Assert.IsType<V1Dtos.ScriptRunDto>(Assert.IsType<OkObjectResult>(response.Result).Value);
+    Assert.NotEqual(default, run.CreatedAt);
+    Assert.Equal(device.Id, Assert.Single(run.Results).DeviceId);
+
+    var read = await controller.GetScriptRun(run.Id, tenant.Id, Ct);
+    Assert.IsType<OkObjectResult>(read.Result);
+  }
+
+  [Fact]
+  public async Task Postgres_DeletingDevice_CascadesToItsResults()
+  {
+    await using var testApp = await CreatePostgresApp();
+    var tenant = await testApp.Services.CreateTestTenant();
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    var runId = await SeedRun(testApp, tenant.Id, device.Id);
+
+    using var scope = testApp.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDb>();
+    await db.Devices.IgnoreQueryFilters().Where(x => x.Id == device.Id).ExecuteDeleteAsync(Ct);
+
+    Assert.False(await db.ScriptResults.IgnoreQueryFilters().AnyAsync(x => x.ScriptRunId == runId, Ct));
+    Assert.True(await db.ScriptRuns.IgnoreQueryFilters().AnyAsync(x => x.Id == runId, Ct));
+  }
+
+  [Fact]
+  public async Task Postgres_ExpireStaleResults_TranslatesAndPersists()
+  {
+    await using var testApp = await CreatePostgresApp();
+    var tenant = await testApp.Services.CreateTestTenant();
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    var now = testApp.Services.GetRequiredService<TimeProvider>().GetUtcNow();
+    var grace = ScriptResultExpiryBackgroundService.GracePeriod;
+
+    var stale = await SeedRun(testApp, tenant.Id, device.Id);
+    var fresh = await SeedRun(testApp, tenant.Id, device.Id);
+    await SetRunAge(testApp, stale, now - grace - TimeSpan.FromMinutes(2), timeoutSeconds: 30);
+    await SetRunAge(testApp, fresh, now, timeoutSeconds: 30);
+
+    var service = testApp.Services.GetRequiredService<ScriptResultExpiryBackgroundService>();
+    var expired = await service.ExpireStaleResults(Ct);
+
+    Assert.Equal(1, expired);
+    Assert.Equal(ScriptResultStatus.Failed, (await ReadResult(testApp, await GetResultId(testApp, stale))).Status);
+    Assert.Equal(ScriptResultStatus.Pending, (await ReadResult(testApp, await GetResultId(testApp, fresh))).Status);
+  }
+
+  [Fact]
+  public async Task Postgres_GetScriptRunHistory_TranslatesPreviewAndOrdering()
+  {
+    await using var testApp = await CreatePostgresApp();
+    var tenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    await Grant(testApp, user, device.Id, PermissionNames.DeviceScriptRun);
+    var now = testApp.Services.GetRequiredService<TimeProvider>().GetUtcNow();
+
+    var older = await SeedRun(testApp, tenant.Id, device.Id);
+    var newer = await SeedRun(testApp, tenant.Id, device.Id);
+    await SetRunAge(testApp, older, now.AddHours(-2), timeoutSeconds: 30);
+    await SetRunAge(testApp, newer, now.AddHours(-1), timeoutSeconds: 30);
+
+    using (var seedScope = testApp.Services.CreateScope())
+    {
+      var db = seedScope.ServiceProvider.GetRequiredService<AppDb>();
+      var run = await db.ScriptRuns.IgnoreQueryFilters().SingleAsync(x => x.Id == newer, Ct);
+      run.Content = new string('x', ScriptLimits.ContentPreviewLength * 3);
+      await db.SaveChangesAsync(Ct);
+    }
+
+    using var scope = testApp.Services.CreateScope();
+    var controller = await scope.CreateControllerWithUser<ScriptRunsController>(user);
+
+    var response = await controller.GetScriptRunHistory(device.Id, tenant.Id, cancellationToken: Ct);
+
+    var items = Assert.IsType<V1Dtos.ScriptRunHistoryItemDto[]>(Assert.IsType<OkObjectResult>(response.Result).Value);
+    Assert.Equal([newer, older], items.Select(x => x.ScriptRunId));
+    Assert.Equal(ScriptLimits.ContentPreviewLength, items[0].ContentPreview.Length);
+    Assert.Equal("echo hi", items[1].ContentPreview);
+  }
+
+  [Fact]
+  public async Task Postgres_Model_HasNoPendingMigrationChanges()
+  {
+    await using var testApp = await CreatePostgresApp();
+
+    using var scope = testApp.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDb>();
+
+    Assert.False(db.Database.HasPendingModelChanges());
+    Assert.Contains(await db.Database.GetAppliedMigrationsAsync(Ct), x => x.EndsWith("_AddScriptRuns"));
+  }
+
+  [Fact]
+  public async Task Postgres_ReportScriptResult_StoresBinaryOutput()
+  {
+    await using var testApp = await CreatePostgresApp();
+    var tenant = await testApp.Services.CreateTestTenant();
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    var runId = await SeedRun(testApp, tenant.Id, device.Id);
+    var resultId = await GetResultId(testApp, runId);
+
+    using var scope = testApp.Services.CreateScope();
+    var report = await CreateHub(scope, device).ReportScriptResult(Report(resultId, 0, "bin\0ary"));
+
+    Assert.True(report.IsSuccess);
+    Assert.Equal("binary", (await ReadResult(testApp, resultId)).StandardOutput);
+  }
+
+  [Fact]
+  public async Task Postgres_RetentionDelete_CascadesToResults()
+  {
+    await using var testApp = await CreatePostgresApp();
+    var tenant = await testApp.Services.CreateTestTenant();
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    var now = testApp.Services.GetRequiredService<TimeProvider>().GetUtcNow();
+
+    var expired = await SeedRun(testApp, tenant.Id, device.Id);
+    var retained = await SeedRun(testApp, tenant.Id, device.Id);
+    await SetRunAge(testApp, expired, now.AddDays(-91), timeoutSeconds: 30);
+    await SetRunAge(testApp, retained, now.AddDays(-1), timeoutSeconds: 30);
+
+    var service = testApp.Services.GetRequiredService<ScriptRunCleanupBackgroundService>();
+    var removed = await service.CleanExpiredRuns(Ct);
+
+    Assert.Equal(1, removed);
+
+    using var scope = testApp.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDb>();
+    Assert.False(await db.ScriptResults.IgnoreQueryFilters().AnyAsync(x => x.ScriptRunId == expired, Ct));
+    Assert.True(await db.ScriptResults.IgnoreQueryFilters().AnyAsync(x => x.ScriptRunId == retained, Ct));
+  }
+
   private const int StatusCodes404 = 404;
 
   private static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -531,6 +677,14 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
 
     hub.Context = context;
     return hub;
+  }
+
+  private async Task<TestApp> CreatePostgresApp()
+  {
+    return await TestAppBuilder.CreateTestApp(
+      _testOutput,
+      testDatabaseName: $"{Guid.NewGuid()}",
+      useInMemoryDatabase: false);
   }
 
   private static async Task<Guid> GetResultId(TestApp testApp, Guid runId)
