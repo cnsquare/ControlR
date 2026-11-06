@@ -25,6 +25,7 @@ public sealed class ViewerCommandGate(
 {
   private static readonly HashSet<RemoteControlDtoType> _neverAllowedDtoTypes =
   [
+    RemoteControlDtoType.ToggleAudio,
     RemoteControlDtoType.ToggleBlockInput,
     RemoteControlDtoType.TogglePrivacyScreen
   ];

@@ -15,4 +15,5 @@ public sealed record DeviceAccessPermissionsDto(
   bool CanWriteClipboard,
   bool CanSendCtrlAltDel,
   bool CanTogglePrivacyScreen,
-  bool CanRunScripts = false);
+  bool CanRunScripts = false,
+  bool CanListenToAudio = false);

@@ -6,6 +6,7 @@ public class RemoteControlSessionOptions
 {
   private Uri? _webSocketUri;
 
+  public bool AllowAudio { get; set; }
   public CaptureEncoderType EncoderType { get; set; } = CaptureEncoderType.Image;
   public bool NotifyUser { get; set; }
   public bool RequireConsent { get; set; }

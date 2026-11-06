@@ -196,6 +196,59 @@ export async function applyPinchZoom(contentDiv, canvasRef, canvasCssWidth, canv
  * @param {Number} imageFormat
  * @param {MemoryView} encodedRegion
  */
+let audioContext = null;
+let nextAudioTime = 0;
+
+// How far ahead audio is scheduled, which absorbs uneven delivery.
+const audioLeadSeconds = 0.15;
+// Past this the viewer has fallen behind, so audio is dropped to catch up.
+const maxAudioLagSeconds = 1;
+
+export async function startAudio() {
+  audioContext ??= new AudioContext();
+  await audioContext.resume();
+  nextAudioTime = 0;
+}
+
+export async function stopAudio() {
+  const context = audioContext;
+  audioContext = null;
+  await context?.close();
+}
+
+export function playAudio(pcm, sampleRate, channels) {
+  if (!audioContext) {
+    return;
+  }
+
+  const now = audioContext.currentTime;
+  if (nextAudioTime > now + maxAudioLagSeconds) {
+    return;
+  }
+
+  const frames = pcm.length / 2 / channels;
+  const view = new DataView(pcm.buffer, pcm.byteOffset, pcm.length);
+  const buffer = audioContext.createBuffer(channels, frames, sampleRate);
+
+  for (let channel = 0; channel < channels; channel++) {
+    const data = buffer.getChannelData(channel);
+    for (let frame = 0; frame < frames; frame++) {
+      data[frame] = view.getInt16((frame * channels + channel) * 2, true) / 32768;
+    }
+  }
+
+  const source = audioContext.createBufferSource();
+  source.buffer = buffer;
+  source.connect(audioContext.destination);
+
+  if (nextAudioTime < now) {
+    nextAudioTime = now + audioLeadSeconds;
+  }
+
+  source.start(nextAudioTime);
+  nextAudioTime += buffer.duration;
+}
+
 export async function drawFrame(canvasId, x, y, width, height, imageFormat, encodedRegion) {
   try {
     const state = getState(canvasId);

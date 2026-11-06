@@ -19,6 +19,7 @@ public interface IRemoteControlState : IStateBase
   bool IsBlockUserInputEnabled { get; set; }
   bool IsMaxBandwidthEnabled { get; set; }
   bool IsMetricsEnabled { get; set; }
+  bool IsAudioEnabled { get; set; }
   bool IsPrivacyScreenEnabled { get; set; }
   bool IsScrollModeToggled { get; set; }
   bool IsViewOnlyEnabled { get; set; }
@@ -126,6 +127,11 @@ public class RemoteControlState(ILogger<ObservableState> logger) : ObservableSta
     set => Set(value);
   }
   public bool IsMetricsEnabled
+  {
+    get => Get<bool>();
+    set => Set(value);
+  }
+  public bool IsAudioEnabled
   {
     get => Get<bool>();
     set => Set(value);

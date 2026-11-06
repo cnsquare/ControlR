@@ -92,6 +92,7 @@ public static class PermissionPresets
         PermissionNames.DeviceRemoteControlBlockInput,
         PermissionNames.DeviceRemoteControlElevatedDesktop,
         PermissionNames.DeviceRemoteControlPrivacyScreen,
+        PermissionNames.DeviceRemoteControlAudio,
         PermissionNames.DeviceCtrlAltDelSend,
         PermissionNames.DeviceClipboardRead,
         PermissionNames.DeviceClipboardWrite,

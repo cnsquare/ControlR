@@ -28,6 +28,7 @@ public class PublicServerSettingsController(
     return new PublicServerSettingsDto(
       settings.IsPublicRegistrationEnabled,
       settings.DisableDesktopPreview,
-      settings.PublicBaseUrl);
+      settings.PublicBaseUrl,
+      settings.DisableRemoteAudio);
   }
 }

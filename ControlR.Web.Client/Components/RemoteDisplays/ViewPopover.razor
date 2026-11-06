@@ -89,6 +89,21 @@
   </div>
 
   @if (DeviceState.TryGetCurrentDevice()?.Platform == SystemPlatform.Windows &&
+       DeviceAccessPermissionsState.Permissions?.CanListenToAudio == true)
+  {
+    <div>
+      <MudText Typo="Typo.caption" Class="mb-2">Audio</MudText>
+      <div>
+        <MudTooltip Text="Hear the sound this device is playing. Its user is told when this starts.">
+          <MudSwitch @key="_audioVersion" Value="RemoteControlState.IsAudioEnabled"
+            ValueChanged="@((bool v) => HandleAudioToggled(v))" Color="Color.Secondary" Label="Remote Audio"
+            ThumbIcon="@(Icons.Material.Filled.VolumeUp)" />
+        </MudTooltip>
+      </div>
+    </div>
+  }
+
+  @if (DeviceState.TryGetCurrentDevice()?.Platform == SystemPlatform.Windows &&
        DeviceAccessPermissionsState.Permissions?.CanTogglePrivacyScreen == true)
   {
     <div>
@@ -120,6 +135,7 @@
 @code {
   // MudSwitch keeps its own value when the bound value is unchanged, so a refused toggle
   // would leave the switch rendered on. Bumping the key rebuilds it from the bound value.
+  private int _audioVersion;
   private int _privacyScreenVersion;
 
   protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -136,6 +152,13 @@
 
   private Task HandleDtoReceived(RemoteControlDtoWrapper wrapper)
   {
+    if (wrapper.DtoType == RemoteControlDtoType.AudioState)
+    {
+      // A refused toggle reports the state it already had, which MudSwitch would ignore.
+      _audioVersion++;
+      return InvokeAsync(StateHasChanged);
+    }
+
     if (wrapper.DtoType != RemoteControlDtoType.PrivacyScreenResult)
     {
       return Task.CompletedTask;
@@ -218,6 +241,33 @@
     {
       Logger.LogError(ex, "Error while changing cursor capture setting.");
       Snackbar.Add("An error occurred while changing cursor capture", Severity.Error);
+    }
+  }
+
+  private async Task HandleAudioToggled(bool value)
+  {
+    try
+    {
+      if (RemoteControlStream.State != System.Net.WebSockets.WebSocketState.Open)
+      {
+        Snackbar.Add("No active remote session", Severity.Warning);
+        _audioVersion++;
+        return;
+      }
+
+      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+      var result = await RemoteControlStream.SendToggleAudio(value, cts.Token);
+      if (!result.IsSuccess)
+      {
+        Snackbar.Add($"Failed to change remote audio: {result.Reason}", Severity.Error);
+        _audioVersion++;
+      }
+    }
+    catch (Exception ex)
+    {
+      Logger.LogError(ex, "Error while toggling remote audio.");
+      Snackbar.Add("An error occurred while changing remote audio", Severity.Error);
+      _audioVersion++;
     }
   }
 

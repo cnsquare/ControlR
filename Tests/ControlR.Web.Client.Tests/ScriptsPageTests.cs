@@ -249,7 +249,8 @@ public class ScriptsPageTests
       CanWriteClipboard: false,
       CanSendCtrlAltDel: false,
       CanTogglePrivacyScreen: false,
-      CanRunScripts: canRunScripts);
+      CanRunScripts: canRunScripts,
+      CanListenToAudio: false);
   }
 
   private static IRenderedComponent<Scripts> RenderPage(

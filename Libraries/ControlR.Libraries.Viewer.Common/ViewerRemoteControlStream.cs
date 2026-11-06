@@ -39,6 +39,7 @@ public interface IViewerRemoteControlStream : IManagedRelayStream
     CancellationToken cancellationToken);
   Task SendPointerMove(double normalizedX, double normalizedY, CancellationToken cancellationToken);
   Task<HubResult> SendToggleBlockInput(bool isEnabled, CancellationToken cancellationToken);
+  Task<HubResult> SendToggleAudio(bool isEnabled, CancellationToken cancellationToken);
   Task<HubResult> SendTogglePrivacyScreen(bool isEnabled, CancellationToken cancellationToken);
   Task SendTypeText(string text, CancellationToken cancellationToken);
   Task SendWheelScroll(double normalizedX, double normalizedY, double scrollY, double scrollX,
@@ -234,6 +235,17 @@ public class ViewerRemoteControlStream : ManagedRelayStream, IViewerRemoteContro
       {
         var dto = new ToggleBlockInputDto(isEnabled);
         var wrapper = RemoteControlDtoWrapper.Create(dto, RemoteControlDtoType.ToggleBlockInput);
+        return await InvokeDto(wrapper, cancellationToken);
+      });
+  }
+
+  public async Task<HubResult> SendToggleAudio(bool isEnabled, CancellationToken cancellationToken)
+  {
+    return await TryInvoke(
+      async () =>
+      {
+        var dto = new ToggleAudioDto(isEnabled);
+        var wrapper = RemoteControlDtoWrapper.Create(dto, RemoteControlDtoType.ToggleAudio);
         return await InvokeDto(wrapper, cancellationToken);
       });
   }

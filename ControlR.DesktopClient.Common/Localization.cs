@@ -97,6 +97,7 @@ public static class Localization
   public static string RemoteControlRequestMessage => GetString();
   public static string RemoteControlRequestTitle => GetString();
   public static string RemoteControlSessionEndToastMessage => GetString();
+  public static string RemoteAudioStartToastMessage => GetString();
   public static string RemoteControlSessionStartToastMessage => GetString();
   public static string RemoteControlSessionToastTitle => GetString();
   public static string Restart => GetString();

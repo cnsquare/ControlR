@@ -34,6 +34,7 @@ public class WindowsRemoteControlHostBuilderFactory(
       options =>
       {
         options.SessionId = requestDto.SessionId;
+        options.AllowAudio = requestDto.AllowAudio;
         options.NotifyUser = requestDto.NotifyUserOnSessionStart;
         options.RequireConsent = requestDto.RequireConsent;
         options.ViewerName = requestDto.ViewerName;

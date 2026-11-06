@@ -9,6 +9,7 @@
     <ProjectReference Include="..\Libraries\ControlR.Libraries.Serilog\ControlR.Libraries.Serilog.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="NAudio.Wasapi" />
     <PackageReference Include="System.Drawing.Common" />
     <PackageReference Update="Bitbound.Analyzers.MemberOrder">
       <PrivateAssets>all</PrivateAssets>

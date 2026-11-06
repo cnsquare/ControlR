@@ -25,6 +25,7 @@ public static class DeviceResourcePolicies
   public const string OverviewRead = "DeviceOverviewRead";
   public const string PowerManage = "DevicePowerManage";
   public const string Read = "DeviceRead";
+  public const string RemoteControlAudio = "DeviceRemoteControlAudio";
   public const string RemoteControlBlockInput = "DeviceRemoteControlBlockInput";
   public const string RemoteControlConnect = "DeviceRemoteControlConnect";
   public const string RemoteControlInteract = "DeviceRemoteControlInteract";
@@ -42,6 +43,7 @@ public static class DeviceResourcePolicies
       [RemoteControlConnect] = PermissionNames.DeviceRemoteControlConnect,
       [RemoteControlInteract] = PermissionNames.DeviceRemoteControlInteract,
       [RemoteControlBlockInput] = PermissionNames.DeviceRemoteControlBlockInput,
+      [RemoteControlAudio] = PermissionNames.DeviceRemoteControlAudio,
       [ClipboardRead] = PermissionNames.DeviceClipboardRead,
       [ClipboardWrite] = PermissionNames.DeviceClipboardWrite,
       [Delete] = PermissionNames.DeviceDelete,

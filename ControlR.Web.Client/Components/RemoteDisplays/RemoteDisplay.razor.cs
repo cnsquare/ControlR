@@ -213,6 +213,7 @@ public partial class RemoteDisplay : JsInteropableComponent
     if (disposing)
     {
       Disposer.DisposeAll(_componentRef);
+      await TryStopAudio();
     }
     await base.DisposeAsync(disposing);
   }
@@ -436,6 +437,18 @@ public partial class RemoteDisplay : JsInteropableComponent
     }
   }
 
+  private async Task TryStopAudio()
+  {
+    try
+    {
+      await JsModule.InvokeVoidAsync("stopAudio");
+    }
+    catch (Exception ex)
+    {
+      Logger.LogDebug(ex, "Audio was not stopped because the page is already closing.");
+    }
+  }
+
   private async Task HandleRemoteControlDtoReceived(RemoteControlDtoWrapper wrapper)
   {
     try
@@ -507,6 +520,28 @@ public partial class RemoteDisplay : JsInteropableComponent
         case RemoteControlDtoType.BlockInputResult:
           {
             // Handled in InputPopover.
+            break;
+          }
+        case RemoteControlDtoType.AudioChunk:
+          {
+            if (RemoteControlState.IsAudioEnabled)
+            {
+              var dto = wrapper.GetPayload<AudioChunkDto>();
+              await JsModule.InvokeVoidAsync("playAudio", dto.Pcm, dto.SampleRate, dto.Channels);
+            }
+            break;
+          }
+        case RemoteControlDtoType.AudioState:
+          {
+            var dto = wrapper.GetPayload<AudioStateDto>();
+            RemoteControlState.IsAudioEnabled = dto.IsEnabled;
+            await JsModule.InvokeVoidAsync(dto.IsEnabled ? "startAudio" : "stopAudio");
+            await RemoteControlState.NotifyStateChanged();
+
+            if (!dto.IsSuccess)
+            {
+              Snackbar.Add(dto.Reason ?? "Failed to change remote audio", Severity.Error);
+            }
             break;
           }
         case RemoteControlDtoType.PrivacyScreenResult:

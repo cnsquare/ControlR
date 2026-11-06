@@ -3,6 +3,7 @@ using ControlR.DesktopClient.Common.Messages;
 using ControlR.DesktopClient.Common.Models;
 using ControlR.DesktopClient.Common.Options;
 using ControlR.DesktopClient.Common.ServiceInterfaces;
+using ControlR.DesktopClient.Common.ServiceInterfaces.Toaster;
 using ControlR.DesktopClient.Common.State;
 using ControlR.Libraries.Api.Contracts.Dtos.RemoteControlDtos;
 using ControlR.Libraries.Shared.Constants;
@@ -27,6 +28,7 @@ public interface IRemoteControlViewerCommandHandler
 
 internal sealed class RemoteControlViewerCommandHandler(
   IHostApplicationLifetime appLifetime,
+  IAudioStreamer audioStreamer,
   IClipboardManager clipboardManager,
   IDesktopCapturerFactory desktopCapturerFactory,
   IDisplayManager displayManager,
@@ -34,10 +36,12 @@ internal sealed class RemoteControlViewerCommandHandler(
   IMessenger messenger,
   IRemoteControlSessionState sessionState,
   ISystemEnvironment systemEnvironment,
+  IToaster toaster,
   IOptions<RemoteControlSessionOptions> startupOptions,
   ILogger<RemoteControlViewerCommandHandler> logger) : IRemoteControlViewerCommandHandler
 {
   private readonly IHostApplicationLifetime _appLifetime = appLifetime;
+  private readonly IAudioStreamer _audioStreamer = audioStreamer;
   private readonly IClipboardManager _clipboardManager = clipboardManager;
   private readonly IDesktopCapturer _desktopCapturer = desktopCapturerFactory.GetOrCreate();
   private readonly IDisplayManager _displayManager = displayManager;
@@ -47,6 +51,7 @@ internal sealed class RemoteControlViewerCommandHandler(
   private readonly IRemoteControlSessionState _sessionState = sessionState;
   private readonly RemoteControlSessionOptions _startupOptions = startupOptions.Value;
   private readonly ISystemEnvironment _systemEnvironment = systemEnvironment;
+  private readonly IToaster _toaster = toaster;
 
   private bool _isInputBlocked;
 
@@ -186,6 +191,12 @@ internal sealed class RemoteControlViewerCommandHandler(
             await SendDtoToViewer(RemoteControlDtoWrapper.Create(resultDto, RemoteControlDtoType.BlockInputResult));
             break;
           }
+        case RemoteControlDtoType.ToggleAudio:
+          {
+            var payload = wrapper.GetPayload<ToggleAudioDto>();
+            await HandleToggleAudio(payload.IsEnabled);
+            break;
+          }
         case RemoteControlDtoType.TogglePrivacyScreen:
           {
             if (!_systemEnvironment.IsWindows())
@@ -244,6 +255,37 @@ internal sealed class RemoteControlViewerCommandHandler(
     var clipboardText = await _clipboardManager.GetText();
     var dto = new ClipboardTextDto(clipboardText, _startupOptions.SessionId);
     await SendDtoToViewer(RemoteControlDtoWrapper.Create(dto, RemoteControlDtoType.ClipboardText));
+  }
+
+  private async Task HandleToggleAudio(bool isEnabled)
+  {
+    // The viewer can send this no matter what its UI shows. AllowAudio came from the server.
+    if (isEnabled && !_startupOptions.AllowAudio)
+    {
+      _logger.LogWarning("Refused an audio request that this session is not allowed to make.");
+      var refused = new AudioStateDto(false, false, "Audio is not allowed for this session.");
+      await SendDtoToViewer(RemoteControlDtoWrapper.Create(refused, RemoteControlDtoType.AudioState));
+      return;
+    }
+
+    var wasEnabled = _audioStreamer.IsEnabled;
+    var result = _audioStreamer.SetEnabled(isEnabled);
+    var state = new AudioStateDto(result.IsSuccess, _audioStreamer.IsEnabled, result.Reason);
+    await SendDtoToViewer(RemoteControlDtoWrapper.Create(state, RemoteControlDtoType.AudioState));
+
+    // Shown whatever the notification preference says. Being listened to is not something
+    // the person at the device should be able to miss.
+    if (!wasEnabled && _audioStreamer.IsEnabled)
+    {
+      var viewerName = _startupOptions.ViewerName is { Length: > 0 } name
+        ? name
+        : Localization.ADeviceAdministrator;
+
+      await _toaster.ShowToast(
+        Localization.RemoteControlSessionToastTitle,
+        string.Format(Localization.RemoteAudioStartToastMessage, viewerName),
+        ToastIcon.Info);
+    }
   }
 
   private Task SendDtoToViewer(RemoteControlDtoWrapper wrapper)

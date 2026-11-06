@@ -15,6 +15,7 @@ public static class RemoteControlCommandPermissions
     RemoteControlDtoType.RequestClipboardText => PermissionNames.DeviceClipboardRead,
     RemoteControlDtoType.ToggleBlockInput => PermissionNames.DeviceRemoteControlBlockInput,
     RemoteControlDtoType.TogglePrivacyScreen => PermissionNames.DeviceRemoteControlPrivacyScreen,
+    RemoteControlDtoType.ToggleAudio => PermissionNames.DeviceRemoteControlAudio,
     RemoteControlDtoType.RequestKeyFrame
       or RemoteControlDtoType.UpdateCaptureSettings
       or RemoteControlDtoType.CloseRemoteControlSession => PermissionNames.DeviceRemoteControlConnect,

@@ -27,7 +27,8 @@ internal class PublicServerSettingsProviderServer(
       return new PublicServerSettings(
         IsPublicRegistrationEnabled: registrationEnabled,
         DisableDesktopPreview: appOpts.DisableDesktopPreview,
-        PublicBaseUrl: _publicUrlProvider.TryGetBaseUrl());
+        PublicBaseUrl: _publicUrlProvider.TryGetBaseUrl(),
+        DisableRemoteAudio: appOpts.DisableRemoteAudio);
     }
     catch (Exception ex)
     {
@@ -35,7 +36,8 @@ internal class PublicServerSettingsProviderServer(
       return new PublicServerSettings(
         IsPublicRegistrationEnabled: false,
         DisableDesktopPreview: _appOptions.CurrentValue.DisableDesktopPreview,
-        PublicBaseUrl: _publicUrlProvider.TryGetBaseUrl());
+        PublicBaseUrl: _publicUrlProvider.TryGetBaseUrl(),
+        DisableRemoteAudio: _appOptions.CurrentValue.DisableRemoteAudio);
     }
   }
 }

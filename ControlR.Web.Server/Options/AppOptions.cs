@@ -75,6 +75,11 @@ public class AppOptions
   public bool DisableDesktopPreview { get; init; }
 
   /// <summary>
+  /// Turns off remote audio for every session on this server, whatever a user's permissions allow.
+  /// </summary>
+  public bool DisableRemoteAudio { get; init; }
+
+  /// <summary>
   /// Disables all email sending from the application.
   /// When enabled, no emails will be sent for account confirmation, password reset, etc.
   /// </summary>

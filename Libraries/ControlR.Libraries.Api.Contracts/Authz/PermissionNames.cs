@@ -23,6 +23,7 @@ public static class PermissionNames
   public const string DeviceOverviewRead = "device.overview.read";
   public const string DevicePowerManage = "device.power.manage";
   public const string DeviceRead = "device.read";
+  public const string DeviceRemoteControlAudio = "device.remote-control.audio";
   public const string DeviceRemoteControlBlockInput = "device.remote-control.block-input";
   public const string DeviceRemoteControlConnect = "device.remote-control.connect";
   public const string DeviceRemoteControlElevatedDesktop = "device.remote-control.elevated-desktop";

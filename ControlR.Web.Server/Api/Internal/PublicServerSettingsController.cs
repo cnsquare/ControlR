@@ -19,6 +19,7 @@ public class PublicServerSettingsController(
     return new InternalDtos.PublicServerSettings(
       settings.IsPublicRegistrationEnabled,
       settings.DisableDesktopPreview,
-      settings.PublicBaseUrl);
+      settings.PublicBaseUrl,
+      settings.DisableRemoteAudio);
   }
 }

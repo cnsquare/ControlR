@@ -18,7 +18,8 @@ public class ViewerCommandGateTests
     var neverAllowed = new[]
     {
       RemoteControlDtoType.ToggleBlockInput,
-      RemoteControlDtoType.TogglePrivacyScreen
+      RemoteControlDtoType.TogglePrivacyScreen,
+      RemoteControlDtoType.ToggleAudio
     };
 
     var droppedWhileViewOnly = new[]
@@ -33,7 +34,8 @@ public class ViewerCommandGateTests
       RemoteControlDtoType.RequestClipboardText,
       RemoteControlDtoType.ClipboardText,
       RemoteControlDtoType.ToggleBlockInput,
-      RemoteControlDtoType.TogglePrivacyScreen
+      RemoteControlDtoType.TogglePrivacyScreen,
+      RemoteControlDtoType.ToggleAudio
     };
 
     var alwaysPassed = new[]
@@ -54,6 +56,8 @@ public class ViewerCommandGateTests
       RemoteControlDtoType.CursorChanged,
       RemoteControlDtoType.DisplayData,
       RemoteControlDtoType.PrivacyScreenResult,
+      RemoteControlDtoType.AudioState,
+      RemoteControlDtoType.AudioChunk,
       RemoteControlDtoType.RemoteControlSessionError,
       RemoteControlDtoType.ScreenRegion,
       RemoteControlDtoType.ScreenRegions,
@@ -84,6 +88,7 @@ public class ViewerCommandGateTests
   [Theory]
   [InlineData(RemoteControlDtoType.ToggleBlockInput)]
   [InlineData(RemoteControlDtoType.TogglePrivacyScreen)]
+  [InlineData(RemoteControlDtoType.ToggleAudio)]
   public async Task Handle_NeverAllowedTypes_AreDroppedEvenWhenNotViewOnly(RemoteControlDtoType dtoType)
   {
     var inner = new RecordingHandler();

@@ -401,6 +401,7 @@ public partial class RemoteControl : ViewportAwareComponent
 
       RemoteControlState.IsBlockUserInputEnabled = false;
       RemoteControlState.IsPrivacyScreenEnabled = false;
+      RemoteControlState.IsAudioEnabled = false;
       await InitializeCaptureSettings();
 
       _systemSessions = null;

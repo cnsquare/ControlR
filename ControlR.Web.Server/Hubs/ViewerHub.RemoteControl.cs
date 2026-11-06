@@ -13,6 +13,7 @@ public partial class ViewerHub
   [
     PermissionNames.DeviceClipboardRead,
     PermissionNames.DeviceClipboardWrite,
+    PermissionNames.DeviceRemoteControlAudio,
     PermissionNames.DeviceRemoteControlBlockInput,
     PermissionNames.DeviceRemoteControlConnect,
     PermissionNames.DeviceRemoteControlInteract,
@@ -212,6 +213,10 @@ public partial class ViewerHub
 
       sessionRequestDto = sessionRequestDto with
       {
+        // Viewer commands reach the desktop client over the relay unchecked, so this is the
+        // one point where audio is decided. It replaces whatever the viewer sent.
+        AllowAudio = !_appOptions.CurrentValue.DisableRemoteAudio &&
+          allowedPermissions.Contains(PermissionNames.DeviceRemoteControlAudio),
         NotifyUserOnSessionStart = notifyUser,
         ViewerConnectionId = Context.ConnectionId,
         ViewerName = displayName

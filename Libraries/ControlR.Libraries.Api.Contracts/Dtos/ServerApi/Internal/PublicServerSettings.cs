@@ -12,4 +12,5 @@ namespace ControlR.Libraries.Api.Contracts.Dtos.ServerApi.Internal;
 public record PublicServerSettings(
   bool IsPublicRegistrationEnabled,
   bool DisableDesktopPreview,
-  string? PublicBaseUrl = null);
+  string? PublicBaseUrl = null,
+  bool DisableRemoteAudio = false);

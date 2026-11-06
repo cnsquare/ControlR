@@ -147,6 +147,86 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   }
 
   [Fact]
+  public async Task GetDeviceAccessPermissions2_ServerDisablesAudio_HidesItDespitePermission()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput, DisableAudio);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    await SeedAssignment(testApp, user.Id, device.Id, tenant.Id, PermissionNames.DeviceRead);
+    await SeedAssignment(testApp, user.Id, device.Id, tenant.Id, PermissionNames.DeviceRemoteControlAudio);
+
+    var (hub, _) = CreateHub(testApp, user, tenant.Id);
+
+    var result = await hub.GetDeviceAccessPermissions2(new(device.Id));
+
+    Assert.True(result.IsSuccess);
+    Assert.False(result.Value.CanListenToAudio);
+  }
+
+  [Fact]
+  public async Task GetDeviceAccessPermissions2_ProjectsAudioPermission_IndependentlyOfConnect()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    await SeedAssignment(testApp, user.Id, device.Id, tenant.Id, PermissionNames.DeviceRead);
+    await SeedAssignment(testApp, user.Id, device.Id, tenant.Id, PermissionNames.DeviceRemoteControlConnect);
+
+    var (hub, _) = CreateHub(testApp, user, tenant.Id);
+
+    var without = await hub.GetDeviceAccessPermissions2(new(device.Id));
+    Assert.True(without.IsSuccess);
+    Assert.True(without.Value.CanUseRemoteControl);
+    Assert.False(without.Value.CanListenToAudio);
+
+    await SeedAssignment(testApp, user.Id, device.Id, tenant.Id, PermissionNames.DeviceRemoteControlAudio);
+
+    var with = await hub.GetDeviceAccessPermissions2(new(device.Id));
+    Assert.True(with.IsSuccess);
+    Assert.True(with.Value.CanListenToAudio);
+  }
+
+  [Fact]
+  public async Task RequestRemoteControlSession_ForgedAllowAudio_IsOverwrittenWithoutPermission()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    await SeedAssignment(testApp, user.Id, device.Id, tenant.Id, PermissionNames.DeviceRemoteControlConnect);
+
+    Assert.False(await RequestSessionAndGetAllowAudio(testApp, user, tenant.Id, device.Id));
+  }
+
+  [Fact]
+  public async Task RequestRemoteControlSession_ServerDisablesAudio_OverridesPermission()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput, DisableAudio);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    await SeedAssignment(testApp, user.Id, device.Id, tenant.Id, PermissionNames.DeviceRemoteControlConnect);
+    await SeedAssignment(testApp, user.Id, device.Id, tenant.Id, PermissionNames.DeviceRemoteControlAudio);
+
+    Assert.False(await RequestSessionAndGetAllowAudio(testApp, user, tenant.Id, device.Id));
+  }
+
+  [Fact]
+  public async Task RequestRemoteControlSession_WithAudioPermission_AllowsAudio()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    await SeedAssignment(testApp, user.Id, device.Id, tenant.Id, PermissionNames.DeviceRemoteControlConnect);
+    await SeedAssignment(testApp, user.Id, device.Id, tenant.Id, PermissionNames.DeviceRemoteControlAudio);
+
+    Assert.True(await RequestSessionAndGetAllowAudio(testApp, user, tenant.Id, device.Id));
+  }
+
+  [Fact]
   public async Task RequestRemoteControlSession_AllowedDevice_ForwardsDtoDeviceIdentity()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
@@ -419,6 +499,42 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
     channel.Writer.TryWrite(System.Text.Encoding.UTF8.GetBytes(content));
     channel.Writer.TryComplete();
     return channel.Reader;
+  }
+
+  private static Dictionary<string, string?> DisableAudio =>
+    new() { ["AppOptions:DisableRemoteAudio"] = "true" };
+
+  private static async Task<bool> RequestSessionAndGetAllowAudio(
+    TestApp testApp,
+    AppUser user,
+    Guid tenantId,
+    Guid deviceId)
+  {
+    var (hub, agentClient) = CreateHub(testApp, user, tenantId);
+    RemoteControlSessionRequestDto? forwarded = null;
+    agentClient
+      .Setup(client => client.CreateRemoteControlSession(It.IsAny<RemoteControlSessionRequestDto>()))
+      .Callback<RemoteControlSessionRequestDto>(dto => forwarded = dto)
+      .ReturnsAsync(HubResult.Ok());
+
+    // Every request claims audio, as a modified viewer would.
+    var request = new RemoteControlSessionRequestDto(
+      Guid.NewGuid(),
+      new Uri("wss://localhost/remote-control"),
+      1,
+      100,
+      deviceId,
+      false,
+      false)
+    {
+      AllowAudio = true,
+    };
+
+    var result = await hub.RequestRemoteControlSession2(request);
+
+    Assert.True(result.IsSuccess);
+    Assert.NotNull(forwarded);
+    return forwarded.AllowAudio;
   }
 
   private static (ViewerHub Hub, Mock<IAgentHubClient> AgentClient) CreateHub(

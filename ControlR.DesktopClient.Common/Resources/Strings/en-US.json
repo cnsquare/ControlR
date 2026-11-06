@@ -24,6 +24,7 @@
   "OpenSettings": "Open Settings",
   "LearnMore": "Learn More",
   "RemoteControlSessionEndToastMessage": "{0} has disconnected.  Screen sharing has ended.",
+  "RemoteAudioStartToastMessage": "{0} can now hear the sound playing on this computer.",
   "RemoteControlSessionToastTitle": "Remote Control Session",
   "RemoteControlSessionStartToastMessage": "{0} has connected and is now sharing your screen.",
   "NewChatMessageToastTitle": "New Chat Message",

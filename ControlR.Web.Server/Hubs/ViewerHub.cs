@@ -176,6 +176,7 @@ public partial class ViewerHub(
         PermissionNames.DeviceRemoteControlInteract,
         PermissionNames.DeviceRemoteControlBlockInput,
         PermissionNames.DeviceRemoteControlPrivacyScreen,
+        PermissionNames.DeviceRemoteControlAudio,
         PermissionNames.DeviceClipboardRead,
         PermissionNames.DeviceClipboardWrite,
         PermissionNames.DeviceCtrlAltDelSend
@@ -205,7 +206,8 @@ public partial class ViewerHub(
         decisions[PermissionNames.DeviceClipboardWrite].Allowed,
         decisions[PermissionNames.DeviceCtrlAltDelSend].Allowed,
         decisions[PermissionNames.DeviceRemoteControlPrivacyScreen].Allowed,
-        decisions[PermissionNames.DeviceScriptRun].Allowed);
+        decisions[PermissionNames.DeviceScriptRun].Allowed,
+        decisions[PermissionNames.DeviceRemoteControlAudio].Allowed && !_appOptions.CurrentValue.DisableRemoteAudio);
 
       return HubResult.Ok(permissions);
     }

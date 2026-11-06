@@ -17972,6 +17972,10 @@
               "null",
               "string"
             ]
+          },
+          "disableRemoteAudio": {
+            "type": "boolean",
+            "default": false
           }
         },
         "description": "Server-side settings exposed to any caller, including unauthenticated clients, so a client\ncan adapt to server configuration before authenticating. Never put sensitive or per-tenant\ndata here."

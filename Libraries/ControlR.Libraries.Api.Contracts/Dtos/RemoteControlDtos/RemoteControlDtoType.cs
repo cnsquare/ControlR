@@ -35,5 +35,8 @@ public enum RemoteControlDtoType
   SessionDisconnectRequested = 48,
   RemoteControlSessionError = 49,
   ScreenRegions = 50,
-  UpdateCaptureSettings = 51
+  UpdateCaptureSettings = 51,
+  ToggleAudio = 52,
+  AudioState = 53,
+  AudioChunk = 54
 }

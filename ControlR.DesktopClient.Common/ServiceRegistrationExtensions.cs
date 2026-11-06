@@ -1,4 +1,5 @@
 using Bitbound.SimpleMessenger;
+using ControlR.DesktopClient.Common.ServiceInterfaces;
 using ControlR.DesktopClient.Common.Options;
 using ControlR.DesktopClient.Common.Services;
 using ControlR.DesktopClient.Common.Services.Encoders;
@@ -31,6 +32,9 @@ public static class ServiceRegistrationExtensions
       .AddSingleton(dependencies.Toaster)
       .AddSingleton(dependencies.UserInteraction);
 
+    // A platform with real capture registers its own. Everything else reports that audio is unavailable.
+    builder.Services.TryAddSingleton<IAudioCapturer, UnsupportedAudioCapturer>();
+
     if (dependencies.Dispatcher is not null)
     {
       builder.Services.AddSingleton(dependencies.Dispatcher);
@@ -60,6 +64,7 @@ public static class ServiceRegistrationExtensions
       .AddSingleton<ISystemEnvironment, SystemEnvironment>()
       .AddSingleton<IDesktopRemoteControlStream, DesktopRemoteControlStream>()
       .AddSingleton<IRemoteControlViewerCommandHandler, RemoteControlViewerCommandHandler>()
+      .AddSingleton<IAudioStreamer, AudioStreamer>()
       .AddSingleton<IDesktopCapturerFactory, DesktopCapturerFactory>()
       .AddSingleton<IFrameEncoder, SkiaSharpEncoder>()
       .AddSingleton<IDesktopPreviewProvider, DesktopPreviewProvider>();
