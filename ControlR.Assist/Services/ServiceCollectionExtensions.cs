@@ -52,6 +52,7 @@ public static class ServiceCollectionExtensions
     services.AddSingleton<IAssistSettingsService, AssistSettingsService>();
     services.AddSingleton<IThemeProvider, ThemeProvider>();
     services.AddSingleton<IAssistSessionHostFactory, AssistSessionHostFactory>();
+    services.AddSingleton<IUnattendedAccessInstaller, UnattendedAccessInstaller>();
 
     // The session host cannot build its platform services without these, and they live in the app
     // container for every app that starts one.

@@ -13,6 +13,7 @@ public sealed partial class HomeViewModel : ViewModelBase, IDisposable
   private const int NewCodeCooldownSeconds = 15;
 
   private readonly AssistSessionCoordinator _controller;
+  private readonly IUnattendedAccessInstaller _unattendedAccessInstaller;
   private readonly ILogger<HomeViewModel> _logger;
   private readonly INavigationService _navigationService;
   private readonly IAssistSettingsService _settingsService;
@@ -28,9 +29,11 @@ public sealed partial class HomeViewModel : ViewModelBase, IDisposable
     AssistSessionCoordinator controller,
     IAssistSettingsService settingsService,
     INavigationService navigationService,
+    IUnattendedAccessInstaller unattendedAccessInstaller,
     ILogger<HomeViewModel> logger)
   {
     _controller = controller;
+    _unattendedAccessInstaller = unattendedAccessInstaller;
     _navigationService = navigationService;
     _logger = logger;
     _settingsService = settingsService;
@@ -57,6 +60,8 @@ public sealed partial class HomeViewModel : ViewModelBase, IDisposable
   [ObservableProperty]
   [NotifyPropertyChangedFor(nameof(NewCodeText))]
   public partial int CooldownSeconds { get; set; }
+  public bool CanSetUpUnattendedAccess =>
+    IsSessionActive && OperatingSystem.IsWindows() && !IsSettingUpUnattendedAccess;
   public bool IsBusy => State == AssistSessionState.Connecting;
   public bool IsConnectedToServer => State != AssistSessionState.Disconnected;
   public bool IsConsentPending => State == AssistSessionState.PendingConsent;
@@ -65,6 +70,14 @@ public sealed partial class HomeViewModel : ViewModelBase, IDisposable
   [NotifyPropertyChangedFor(nameof(NewCodeText))]
   public partial bool IsNewCodeEnabled { get; set; } = true;
   public bool IsSessionActive => State == AssistSessionState.Active;
+
+  [ObservableProperty]
+  [NotifyPropertyChangedFor(nameof(CanSetUpUnattendedAccess))]
+  public partial bool IsSettingUpUnattendedAccess { get; set; }
+
+  [ObservableProperty]
+  public partial string? UnattendedAccessStatus { get; set; }
+
 
   [ObservableProperty]
   public partial bool IsViewOnly { get; set; }
@@ -131,6 +144,44 @@ public sealed partial class HomeViewModel : ViewModelBase, IDisposable
     code is { Length: 9 } formatted
       ? $"{formatted[..3]} {formatted[3..6]} {formatted[6..]}"
       : code;
+
+  [RelayCommand]
+  private async Task SetUpUnattendedAccessAsync()
+  {
+    if (RequestConfirmationAsync is null ||
+        !await RequestConfirmationAsync(Localization.UnattendedAccessConfirmMessage))
+    {
+      return;
+    }
+
+    if (!AssistSessionCoordinator.TryNormalizeServerUri(ServerUrl, out var serverUri) || serverUri is null)
+    {
+      UnattendedAccessStatus = Localization.UnattendedAccessInstallFailed;
+      return;
+    }
+
+    IsSettingUpUnattendedAccess = true;
+    UnattendedAccessStatus = Localization.UnattendedAccessInstalling;
+
+    try
+    {
+      var grant = await _controller.RequestUnattendedAccessAsync();
+      if (!grant.IsSuccess || grant.Value is null)
+      {
+        UnattendedAccessStatus = grant.Reason ?? Localization.UnattendedAccessInstallFailed;
+        return;
+      }
+
+      var result = await _unattendedAccessInstaller.Install(serverUri, grant.Value, CancellationToken.None);
+      UnattendedAccessStatus = result.IsSuccess
+        ? Localization.UnattendedAccessInstalled
+        : result.Reason;
+    }
+    finally
+    {
+      IsSettingUpUnattendedAccess = false;
+    }
+  }
 
   [RelayCommand]
   private Task AcceptConsentAsync() => _controller.RespondToConsentAsync(approved: true);
@@ -284,6 +335,7 @@ public sealed partial class HomeViewModel : ViewModelBase, IDisposable
     var stateChanged = State != _controller.State;
 
     State = _controller.State;
+    OnPropertyChanged(nameof(CanSetUpUnattendedAccess));
     Code = FormatCode(_controller.Code);
     StatusMessage = _controller.StatusMessage;
     ConsentViewerName = _controller.PendingConsentViewerName;

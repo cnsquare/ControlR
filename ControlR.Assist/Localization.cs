@@ -45,6 +45,14 @@ public static class Localization
   public static string ConfirmButtonText => GetString();
   public static string ConfirmDisconnectMessage => GetString();
   public static string ConfirmEndSessionMessage => GetString();
+  public static string UnattendedAccessButtonText => GetString();
+  public static string UnattendedAccessConfirmMessage => GetString();
+  public static string UnattendedAccessDeclined => GetString();
+  public static string UnattendedAccessInstalled => GetString();
+  public static string UnattendedAccessInstallFailed => GetString();
+  public static string UnattendedAccessInstalling => GetString();
+  public static string UnattendedAccessNeedsSession => GetString();
+  public static string UnattendedAccessWindowsOnly => GetString();
   public static string ConfirmExitMessage => GetString();
   public static string ConnectButtonText => GetString();
   public static string ConnectionTimedOut => GetString();

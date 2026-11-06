@@ -317,6 +317,9 @@ public class AssistSessionCoordinatorTests
     public Task<HubResult<JoinAssistSessionResponseDto>> JoinAssistSession(JoinAssistSessionRequestDto request) =>
       Task.FromResult(HubResult.Fail<JoinAssistSessionResponseDto>("The assist app never joins a session."));
 
+    public Task<HubResult<UnattendedAccessGrantDto>> RequestUnattendedAccess(RequestUnattendedAccessRequestDto request) =>
+      Task.FromResult(HubResult.Fail<UnattendedAccessGrantDto>("Not used by these tests."));
+
     public Task<HubResult> RespondToAssistConsent(RespondToAssistConsentRequestDto request)
     {
       ConsentResponseCallCount++;

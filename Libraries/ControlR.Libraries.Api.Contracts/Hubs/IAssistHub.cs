@@ -14,5 +14,6 @@ public interface IAssistHub
   Task<HubResult<CreateAssistSessionResponseDto>> CreateAssistSession();
   Task<HubResult> EndAssistSession(EndAssistSessionRequestDto request);
   Task<HubResult<JoinAssistSessionResponseDto>> JoinAssistSession(JoinAssistSessionRequestDto request);
+  Task<HubResult<UnattendedAccessGrantDto>> RequestUnattendedAccess(RequestUnattendedAccessRequestDto request);
   Task<HubResult> RespondToAssistConsent(RespondToAssistConsentRequestDto request);
 }

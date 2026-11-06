@@ -7,12 +7,14 @@ using ControlR.Web.Server.Authn;
 using ControlR.Web.Server.Data;
 using ControlR.Web.Server.Data.Entities;
 using ControlR.Web.Server.Hubs;
+using ControlR.Web.Server.Services.AgentInstaller;
 using ControlR.Web.Server.Services.Assist;
 using ControlR.Web.Server.Services.Authorization;
 using ControlR.Web.Server.Tests.Helpers;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -61,6 +63,106 @@ public class AssistHubTests(ITestOutputHelper testOutput)
     clients.Assist.Verify(
       c => c.AssistConsentCancelled(It.IsAny<AssistConsentCancelledDto>()),
       Times.Never);
+  }
+
+  [Fact]
+  public async Task RequestUnattendedAccess_FromTheViewerConnection_IsRefused()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var technician = await testApp.Services.CreateTestUser(tenant.Id);
+    await GrantAsync(testApp, technician, tenant.Id, PermissionNames.AgentInstall);
+    var session = await CreateActiveSessionAsync(testApp, technician);
+    var (hub, _) = await CreateHubAsync(testApp, technician, tenant.Id, connectionId: "viewer-conn-1");
+
+    var result = await hub.RequestUnattendedAccess(new(session.SessionId));
+
+    Assert.False(result.IsSuccess);
+    await AssertNoInstallerKeysAsync(testApp);
+  }
+
+  [Fact]
+  public async Task RequestUnattendedAccess_RepeatedInOneConnection_IssuesOneKey()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var technician = await testApp.Services.CreateTestUser(tenant.Id);
+    await GrantAsync(testApp, technician, tenant.Id, PermissionNames.AgentInstall);
+    var session = await CreateActiveSessionAsync(testApp, technician);
+    var (hub, _) = await CreateHubAsync(testApp, user: null, connectionId: "assist-conn-1");
+
+    var first = await hub.RequestUnattendedAccess(new(session.SessionId));
+    var second = await hub.RequestUnattendedAccess(new(session.SessionId));
+
+    Assert.True(first.IsSuccess);
+    Assert.False(second.IsSuccess);
+
+    using var scope = testApp.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDb>();
+    Assert.Single(await db.AgentInstallerKeys.IgnoreQueryFilters().ToListAsync(TestContext.Current.CancellationToken));
+  }
+
+  [Fact]
+  public async Task RequestUnattendedAccess_SessionNotYetActive_IsRefused()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var technician = await testApp.Services.CreateTestUser(tenant.Id);
+    await GrantAsync(testApp, technician, tenant.Id, PermissionNames.AgentInstall);
+    var cache = GetCache(testApp);
+    var session = await cache.CreateAsync("assist-conn-1", TestContext.Current.CancellationToken);
+    _ = await cache.TryBeginConsentAsync(
+      session.SessionId, "viewer-conn-1", technician.Id, "Jane", null, TestContext.Current.CancellationToken);
+    var (hub, _) = await CreateHubAsync(testApp, user: null, connectionId: "assist-conn-1");
+
+    var result = await hub.RequestUnattendedAccess(new(session.SessionId));
+
+    Assert.False(result.IsSuccess);
+    await AssertNoInstallerKeysAsync(testApp);
+  }
+
+  [Fact]
+  public async Task RequestUnattendedAccess_TechnicianCannotInstallAgents_IsRefused()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    await testApp.Services.CreateTestUser(tenant.Id, email: $"first-{Guid.NewGuid():N}@t.local");
+    var technician = await testApp.Services.CreateTestUser(tenant.Id, email: $"tech-{Guid.NewGuid():N}@t.local");
+    var session = await CreateActiveSessionAsync(testApp, technician);
+    var (hub, _) = await CreateHubAsync(testApp, user: null, connectionId: "assist-conn-1");
+
+    var result = await hub.RequestUnattendedAccess(new(session.SessionId));
+
+    Assert.False(result.IsSuccess);
+    await AssertNoInstallerKeysAsync(testApp);
+  }
+
+  [Fact]
+  public async Task RequestUnattendedAccess_TechnicianCanInstallAgents_IssuesSingleUseShortLivedKey()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var technician = await testApp.Services.CreateTestUser(tenant.Id);
+    await GrantAsync(testApp, technician, tenant.Id, PermissionNames.AgentInstall);
+    var session = await CreateActiveSessionAsync(testApp, technician);
+    var (hub, _) = await CreateHubAsync(testApp, user: null, connectionId: "assist-conn-1");
+
+    var result = await hub.RequestUnattendedAccess(new(session.SessionId));
+
+    Assert.True(result.IsSuccess);
+    Assert.Equal(tenant.Id, result.Value.TenantId);
+
+    using var scope = testApp.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDb>();
+    var key = await db.AgentInstallerKeys.IgnoreQueryFilters()
+      .SingleAsync(x => x.Id == result.Value.KeyId, TestContext.Current.CancellationToken);
+    var now = testApp.Services.GetRequiredService<TimeProvider>().GetUtcNow();
+
+    Assert.Equal(1u, key.AllowedUses);
+    Assert.Equal(InstallerKeyType.UsageBased, key.KeyType);
+    Assert.Equal(technician.Id, key.CreatorId);
+    Assert.NotNull(key.Expiration);
+    Assert.True(key.Expiration <= now.AddMinutes(16));
   }
 
   [Fact]
@@ -461,6 +563,8 @@ public class AssistHubTests(ITestOutputHelper testOutput)
         ?? testApp.Services.GetRequiredService<PartitionedRateLimiter<HubCallerContext>>(),
       scope.ServiceProvider.GetRequiredService<IPermissionEvaluator>(),
       scope.ServiceProvider.GetRequiredService<IResourceDescriptorFactory>(),
+      scope.ServiceProvider.GetRequiredService<IAgentInstallerKeyManager>(),
+      testApp.Services.GetRequiredService<TimeProvider>(),
       testApp.Services.GetRequiredService<ILogger<AssistHub>>());
 
     var principal = user is null ? CreateAnonymousPrincipal() : CreatePrincipal(user, tenantId ?? Guid.NewGuid());
@@ -507,6 +611,39 @@ public class AssistHubTests(ITestOutputHelper testOutput)
     var session = await cache.TryGetAsync(sessionId, TestContext.Current.CancellationToken);
     Assert.NotNull(session);
     return session;
+  }
+
+  private static async Task AssertNoInstallerKeysAsync(TestApp testApp)
+  {
+    using var scope = testApp.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDb>();
+    Assert.False(await db.AgentInstallerKeys.IgnoreQueryFilters().AnyAsync(TestContext.Current.CancellationToken));
+  }
+
+  private static async Task<AssistSession> CreateActiveSessionAsync(TestApp testApp, AppUser technician)
+  {
+    var cache = GetCache(testApp);
+    var session = await cache.CreateAsync("assist-conn-1", TestContext.Current.CancellationToken);
+    _ = await cache.TryBeginConsentAsync(
+      session.SessionId, "viewer-conn-1", technician.Id, "Jane", null, TestContext.Current.CancellationToken);
+    var pending = await GetSessionAsync(cache, session.SessionId);
+    _ = await cache.TryActivateAsync(session.SessionId, pending.ConsentNonce!.Value, TestContext.Current.CancellationToken);
+    return await GetSessionAsync(cache, session.SessionId);
+  }
+
+  private static async Task GrantAsync(TestApp testApp, AppUser user, Guid tenantId, string permissionName)
+  {
+    using var scope = testApp.Services.CreateScope();
+    await using var db = scope.ServiceProvider.GetRequiredService<AppDb>();
+    db.PermissionAssignments.Add(PermissionAssignment.CreateGrant(
+      PermissionPrincipalKind.User,
+      user.Id,
+      permissionName,
+      PermissionScopeKind.Tenant,
+      tenantId,
+      tenantId,
+      createdBy: null));
+    await db.SaveChangesAsync(TestContext.Current.CancellationToken);
   }
 
   private static async Task GrantAssistConnectAsync(TestApp testApp, AppUser user, Guid tenantId)

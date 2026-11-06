@@ -1,6 +1,7 @@
 using ControlR.Libraries.Api.Contracts.Dtos.HubDtos;
 using ControlR.Libraries.Api.Contracts.Hubs.Clients;
 using ControlR.Web.Server.Authz.Permissions;
+using ControlR.Web.Server.Services.AgentInstaller;
 using ControlR.Web.Server.Services.Assist;
 using ControlR.Web.Server.Services.Authorization;
 using System.Threading.RateLimiting;
@@ -22,17 +23,29 @@ public class AssistHub(
   PartitionedRateLimiter<HubCallerContext> sessionCreateLimiter,
   IPermissionEvaluator permissionEvaluator,
   IResourceDescriptorFactory resourceFactory,
+  IAgentInstallerKeyManager installerKeyManager,
+  TimeProvider timeProvider,
   ILogger<AssistHub> logger)
   : HubWithItems<IAssistHubClient>, IAssistHub
 {
   private const int MaxInvalidJoinAttempts = 10;
 
+  private static readonly TimeSpan _unattendedKeyLifetime = TimeSpan.FromMinutes(15);
+
+  private readonly IAgentInstallerKeyManager _installerKeyManager = installerKeyManager;
   private readonly ILogger<AssistHub> _logger = logger;
   private readonly IPermissionEvaluator _permissionEvaluator = permissionEvaluator;
   private readonly IResourceDescriptorFactory _resourceFactory = resourceFactory;
+  private readonly TimeProvider _timeProvider = timeProvider;
   private readonly IAssistSessionCache _sessionCache = sessionCache;
   private readonly PartitionedRateLimiter<HubCallerContext> _sessionCreateLimiter = sessionCreateLimiter;
   private readonly UserManager<AppUser> _userManager = userManager;
+
+  private bool HasRequestedUnattendedAccess
+  {
+    get => GetItem(false);
+    set => SetItem(value);
+  }
 
   public async Task<HubResult> CancelAssistConsent(CancelAssistConsentRequestDto request)
   {
@@ -291,6 +304,83 @@ public class AssistHub(
     }
 
     await base.OnDisconnectedAsync(exception);
+  }
+
+  /// <summary>
+  /// Called by the person at the device. The assist side is anonymous, so it can only enrol on
+  /// the authority of the technician it is in an active session with, and only once.
+  /// </summary>
+  public async Task<HubResult<UnattendedAccessGrantDto>> RequestUnattendedAccess(RequestUnattendedAccessRequestDto request)
+  {
+    try
+    {
+      var session = await _sessionCache.TryGetAsync(request.SessionId, Context.ConnectionAborted);
+      if (session is not { Status: AssistSessionStatus.Active } ||
+          session.AssistConnectionId != Context.ConnectionId ||
+          !Guid.TryParse(session.ViewerUserId, out var technicianId))
+      {
+        return HubResult.Fail<UnattendedAccessGrantDto>("Unauthorized.");
+      }
+
+      if (HasRequestedUnattendedAccess)
+      {
+        return HubResult.Fail<UnattendedAccessGrantDto>("Permanent access was already requested in this session.");
+      }
+
+      var technician = await _userManager.Users
+        .AsNoTracking()
+        .FirstOrDefaultAsync(x => x.Id == technicianId, Context.ConnectionAborted);
+
+      if (technician is null)
+      {
+        return HubResult.Fail<UnattendedAccessGrantDto>("Unauthorized.");
+      }
+
+      var principal = new PrincipalDescriptor(
+        PrincipalType.User,
+        technician.Id,
+        technician.TenantId,
+        technician.UserName ?? technician.Id.ToString());
+
+      var decision = await _permissionEvaluator.Evaluate(
+        principal,
+        PermissionNames.AgentInstall,
+        _resourceFactory.CreateTenant(technician.TenantId),
+        Context.ConnectionAborted);
+
+      if (!decision.Allowed)
+      {
+        _logger.LogWarning(
+          "Unattended access refused in assist session {SessionId}. User {UserId} cannot install agents.",
+          session.SessionId,
+          technician.Id);
+        return HubResult.Fail<UnattendedAccessGrantDto>(
+          "The technician is not allowed to set up permanent access.");
+      }
+
+      HasRequestedUnattendedAccess = true;
+
+      var key = await _installerKeyManager.CreateKey(
+        technician.TenantId,
+        technician.Id,
+        InstallerKeyCreatorKind.User,
+        InstallerKeyType.UsageBased,
+        allowedUses: 1,
+        expiration: _timeProvider.GetUtcNow() + _unattendedKeyLifetime,
+        friendlyName: $"Flash Assist session {session.SessionId}");
+
+      _logger.LogInformation(
+        "Issued a single-use installer key in assist session {SessionId} on the authority of user {UserId}.",
+        session.SessionId,
+        technician.Id);
+
+      return HubResult.Ok(new UnattendedAccessGrantDto(technician.TenantId, key.Id, key.KeySecret));
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error while issuing unattended access for session {SessionId}.", request.SessionId);
+      return HubResult.Fail<UnattendedAccessGrantDto>("An error occurred while setting up permanent access.");
+    }
   }
 
   public async Task<HubResult> RespondToAssistConsent(RespondToAssistConsentRequestDto request)

@@ -118,6 +118,18 @@ public sealed class AssistSessionCoordinator : IAsyncDisposable
 
   public Task DisconnectAsync() => EnqueueAsync(DisconnectCoreAsync);
 
+  public async Task<HubResult<UnattendedAccessGrantDto>> RequestUnattendedAccessAsync()
+  {
+    if (State != AssistSessionState.Active || _activeSessionId is not Guid sessionId)
+    {
+      return HubResult.Fail<UnattendedAccessGrantDto>(Localization.UnattendedAccessNeedsSession);
+    }
+
+    return await InvokeHubAsync(
+      ct => _hubConnection.Server.RequestUnattendedAccess(new(sessionId)),
+      () => HubResult.Fail<UnattendedAccessGrantDto>(Localization.StatusUnreachable));
+  }
+
   public async ValueTask DisposeAsync()
   {
     _workQueue.Writer.TryComplete();

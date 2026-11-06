@@ -59,8 +59,10 @@ public class AgentInstallerKeyManager(
     var plaintextKey = RandomGenerator.CreateAccessToken();
     var hashedKey = _passwordHasher.HashPassword(string.Empty, plaintextKey);
 
+    // A usage-based key never outlives a day, but a caller may ask for less.
+    var maxUsageBasedExpiration = _timeProvider.GetUtcNow() + TimeSpan.FromHours(24);
     var effectiveExpiration = keyType == InstallerKeyType.UsageBased
-      ? _timeProvider.GetUtcNow() + TimeSpan.FromHours(24)
+      ? expiration is { } requested && requested < maxUsageBasedExpiration ? requested : maxUsageBasedExpiration
       : expiration;
 
     var installerKey = new AgentInstallerKey

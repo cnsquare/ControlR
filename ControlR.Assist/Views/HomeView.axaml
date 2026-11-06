@@ -259,6 +259,13 @@
                                   Variant="Filled"
                                   Command="{Binding EndSessionCommand}" />
           </Grid>
+          <controls:ThemeButton Content="{x:Static local:Localization.UnattendedAccessButtonText}"
+                                MinHeight="36"
+                                Variant="Outlined"
+                                IsVisible="{Binding CanSetUpUnattendedAccess}"
+                                Command="{Binding SetUpUnattendedAccessCommand}" />
+          <TextBlock Text="{Binding UnattendedAccessStatus}"
+                     TextWrapping="Wrap" />
         </StackPanel>
       </StackPanel>
 
