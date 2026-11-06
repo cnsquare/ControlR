@@ -12,6 +12,11 @@ public class ScriptResult : TenantEntityBase
 
   public required Guid DeviceId { get; set; }
 
+  /// <summary>
+  /// When the script was handed to the agent, which for a queued result can be days after the run.
+  /// </summary>
+  public DateTimeOffset? DispatchedAt { get; set; }
+
   public int? ExitCode { get; set; }
 
   [StringLength(512)]
@@ -22,6 +27,8 @@ public class ScriptResult : TenantEntityBase
   /// late report from an agent that did run the script can still be recorded.
   /// </summary>
   public DateTimeOffset? FinishedAt { get; set; }
+
+  public bool IsAlertProcessed { get; set; }
 
   public bool OutputTruncated { get; set; }
 

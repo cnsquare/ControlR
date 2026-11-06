@@ -8,6 +8,27 @@ namespace ControlR.ApiClient;
 
 internal partial class V1Api
 {
+  async Task<ApiResult> IScriptAlertsApi.DismissScriptAlert(Guid alertId, Guid tenantId, CancellationToken cancellationToken)
+  {
+    return await _client.ExecuteApiCall(async () =>
+    {
+      using var response = await _client.HttpClient.PostAsync(
+        $"{HttpConstants.V1.ScriptAlertsEndpoint}/{alertId}/dismiss?tenantId={tenantId}", null, cancellationToken);
+      await response.EnsureSuccessStatusCodeWithDetails();
+    });
+  }
+
+  async Task<ApiResult<ScriptAlertDto[]>> IScriptAlertsApi.GetScriptAlerts(Guid tenantId, CancellationToken cancellationToken)
+  {
+    return await _client.ExecuteApiCall(async () =>
+    {
+      using var response = await _client.HttpClient.GetAsync(
+        $"{HttpConstants.V1.ScriptAlertsEndpoint}?tenantId={tenantId}", cancellationToken);
+      await response.EnsureSuccessStatusCodeWithDetails();
+      return await response.Content.ReadFromJsonAsync<ScriptAlertDto[]>(cancellationToken);
+    });
+  }
+
   async Task<ApiResult<SavedScriptDto>> ISavedScriptsApi.CreateSavedScript(
     Guid tenantId,
     SaveSavedScriptRequestDto request,

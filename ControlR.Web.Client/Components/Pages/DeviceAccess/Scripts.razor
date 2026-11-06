@@ -37,6 +37,9 @@
                 Lines="12" Variant="Variant.Outlined" MaxLength="ScriptLimits.MaxContentLength"
                 Class="script-editor mb-4" spellcheck="false" />
 
+  <MudCheckBox T="bool" @bind-Value="_runOnNextConnect" Disabled="_isRunning" Class="mb-2"
+               Label="If this device is offline, run this when it next connects" />
+
   <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlayArrow"
              Disabled="@(!CanRun)" OnClick="RunScript">
     @(_isRunning ? "Running" : "Run")
@@ -53,6 +56,13 @@
         <MudText Typo="Typo.body2">Exit code @exitCode</MudText>
       }
     </div>
+
+    @if (result.Status == ScriptResultStatus.Queued)
+    {
+      <MudAlert Severity="Severity.Info" Dense Class="mb-2">
+        This will run when the device next connects, if that is within 7 days. You can cancel it in History.
+      </MudAlert>
+    }
 
     @if (!string.IsNullOrWhiteSpace(result.FailureReason))
     {
@@ -109,6 +119,10 @@
             <td class="script-preview">@item.ContentPreview</td>
             <td>
               <MudButton Size="Size.Small" Disabled="_isRunning" OnClick="@(() => ShowRun(item.ScriptRunId))">View</MudButton>
+              @if (item.Status == ScriptResultStatus.Queued)
+              {
+                <MudButton Size="Size.Small" Color="Color.Error" OnClick="@(() => CancelQueued(item.ScriptRunId))">Cancel</MudButton>
+              }
             </td>
           </tr>
         }

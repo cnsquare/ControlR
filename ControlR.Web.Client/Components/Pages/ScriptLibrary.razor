@@ -12,6 +12,26 @@
   saved script does not change existing schedules.
 </MudAlert>
 
+@if (_alerts.Length > 0)
+{
+  <MudText Typo="Typo.h6" GutterBottom>Alerts</MudText>
+  @foreach (var alert in _alerts)
+  {
+    <MudAlert @key="alert.Id" Severity="Severity.Error" Dense Class="mb-2"
+              ShowCloseIcon="_canWrite" CloseIconClicked="@(() => DismissAlert(alert))">
+      <strong>@alert.ScheduleName</strong>
+      @if (!string.IsNullOrWhiteSpace(alert.DeviceName))
+      {
+        <text> on @alert.DeviceName</text>
+      }
+      : @alert.Message
+      <MudText Typo="Typo.caption" Class="d-block">
+        @alert.Occurrences time(s), last at @alert.LastOccurredAt.ToLocalTime().ToString("g")
+      </MudText>
+    </MudAlert>
+  }
+}
+
 <MudText Typo="Typo.h6" GutterBottom>Saved Scripts</MudText>
 
 @if (_scripts.Length == 0)
@@ -161,7 +181,11 @@ else
       </MudSelect>
       <MudTextField T="string" Label="First run (blank for now)" @bind-Value="_scheduleStart"
                     InputType="InputType.DateTimeLocal" Variant="Variant.Outlined" />
+      <MudTextField T="string" Label="Email failures to (optional)" @bind-Value="_scheduleAlertEmail"
+                    InputType="InputType.Email" Variant="Variant.Outlined" />
     </div>
+    <MudCheckBox T="bool" @bind-Value="_scheduleRunOnNextConnect" Class="mb-2"
+                 Label="If a device is offline, run this when it next connects" />
     <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!CanCreateSchedule)" OnClick="CreateSchedule">
       Create Schedule
     </MudButton>

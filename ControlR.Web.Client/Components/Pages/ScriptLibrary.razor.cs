@@ -9,12 +9,15 @@ public partial class ScriptLibrary
 {
   private const int MaxDevicesListed = 500;
 
+  private ScriptAlertDto[] _alerts = [];
   private bool _canWrite;
   private DeviceResponseDto[] _devices = [];
   private Guid? _editingScriptId;
+  private string? _scheduleAlertEmail;
   private IReadOnlyCollection<Guid> _scheduleDeviceIds = [];
   private ScriptScheduleInterval _scheduleInterval = ScriptScheduleInterval.Daily;
   private string _scheduleName = string.Empty;
+  private bool _scheduleRunOnNextConnect;
   private Guid? _scheduleScriptId;
   private ScriptScheduleDto[] _schedules = [];
   private string? _scheduleStart;
@@ -71,7 +74,9 @@ public partial class ScriptLibrary
       scriptId,
       [.. _scheduleDeviceIds],
       _scheduleInterval,
-      startAt);
+      startAt,
+      _scheduleRunOnNextConnect,
+      string.IsNullOrWhiteSpace(_scheduleAlertEmail) ? null : _scheduleAlertEmail.Trim());
 
     var result = await ControlrApi.V1.ScriptSchedules.CreateScriptSchedule(_tenantId, request);
     if (!result.IsSuccess)
@@ -80,11 +85,24 @@ public partial class ScriptLibrary
       return;
     }
 
+    _scheduleAlertEmail = null;
     _scheduleName = string.Empty;
+    _scheduleRunOnNextConnect = false;
     _scheduleScriptId = null;
     _scheduleDeviceIds = [];
     _scheduleStart = null;
     Snackbar.Add("Schedule created", Severity.Success);
+    await Refresh();
+  }
+
+  private async Task DismissAlert(ScriptAlertDto alert)
+  {
+    var result = await ControlrApi.V1.ScriptAlerts.DismissScriptAlert(alert.Id, _tenantId);
+    if (!result.IsSuccess)
+    {
+      Snackbar.Add($"Failed to dismiss the alert: {result.Reason}", Severity.Error);
+    }
+
     await Refresh();
   }
 
@@ -143,6 +161,12 @@ public partial class ScriptLibrary
 
   private async Task Refresh()
   {
+    var alerts = await ControlrApi.V1.ScriptAlerts.GetScriptAlerts(_tenantId);
+    if (alerts.IsSuccess)
+    {
+      _alerts = alerts.Value;
+    }
+
     var scripts = await ControlrApi.V1.SavedScripts.GetSavedScripts(_tenantId);
     if (scripts.IsSuccess)
     {

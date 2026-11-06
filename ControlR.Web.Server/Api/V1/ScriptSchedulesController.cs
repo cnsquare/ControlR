@@ -75,6 +75,7 @@ public class ScriptSchedulesController(
     var schedule = new ScriptSchedule
     {
       Id = Guid.NewGuid(),
+      AlertEmail = request.AlertEmail,
       Content = script.Content,
       CreatedBy = User.Identity?.Name ?? "Unknown",
       CreatedByUserId = actor.PrincipalId,
@@ -82,6 +83,7 @@ public class ScriptSchedulesController(
       Interval = request.Interval,
       Name = request.Name,
       NextRun = request.StartAt ?? _timeProvider.GetUtcNow(),
+      RunOnNextConnect = request.RunOnNextConnect,
       ScriptName = script.Name,
       Shell = script.Shell,
       TenantId = resolvedTenantId,
@@ -216,7 +218,9 @@ public class ScriptSchedulesController(
       schedule.LastRun,
       schedule.LastRunId,
       schedule.LastError,
-      schedule.CreatedBy);
+      schedule.CreatedBy,
+      schedule.RunOnNextConnect,
+      schedule.AlertEmail);
   }
 
   private async Task<ActionResult?> CheckDeviceAccess(

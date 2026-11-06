@@ -8804,6 +8804,224 @@
         ]
       }
     },
+    "/api/v1/script-alerts/{alertId}/dismiss": {
+      "post": {
+        "tags": [
+          "ScriptAlerts"
+        ],
+        "summary": "Dismisses an alert. The next failure of the same kind raises a new one.",
+        "parameters": [
+          {
+            "name": "alertId",
+            "in": "path",
+            "description": "Dismisses an alert. The next failure of the same kind raises a new one.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "query",
+            "description": "Dismisses an alert. The next failure of the same kind raises a new one.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "api-version",
+            "in": "query",
+            "description": "The requested API version",
+            "schema": {
+              "enum": [
+                "1.0"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ServiceAccountCredential": [ ]
+          },
+          {
+            "Cookie": [ ]
+          },
+          {
+            "PersonalAccessToken": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/script-alerts": {
+      "get": {
+        "tags": [
+          "ScriptAlerts"
+        ],
+        "summary": "Lists alerts that have not been dismissed, most recent first.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "query",
+            "description": "Lists alerts that have not been dismissed, most recent first.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "api-version",
+            "in": "query",
+            "description": "The requested API version",
+            "schema": {
+              "enum": [
+                "1.0"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScriptAlertDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScriptAlertDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScriptAlertDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ServiceAccountCredential": [ ]
+          },
+          {
+            "Cookie": [ ]
+          },
+          {
+            "PersonalAccessToken": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/script-runs": {
       "post": {
         "tags": [
@@ -9012,6 +9230,112 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ServiceAccountCredential": [ ]
+          },
+          {
+            "Cookie": [ ]
+          },
+          {
+            "PersonalAccessToken": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/script-runs/{scriptRunId}/cancel": {
+      "post": {
+        "tags": [
+          "ScriptRuns"
+        ],
+        "summary": "Cancels the parts of a run still waiting for a device, on devices the caller may run scripts on.",
+        "parameters": [
+          {
+            "name": "scriptRunId",
+            "in": "path",
+            "description": "Cancels the parts of a run still waiting for a device, on devices the caller may run scripts on.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "query",
+            "description": "Cancels the parts of a run still waiting for a device, on devices the caller may run scripts on.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "api-version",
+            "in": "query",
+            "description": "The requested API version",
+            "schema": {
+              "enum": [
+                "1.0"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
           },
           "401": {
             "description": "Unauthorized",
@@ -17028,6 +17352,10 @@
             "type": "integer",
             "format": "int32",
             "default": 300
+          },
+          "runOnNextConnect": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
@@ -17067,6 +17395,18 @@
               "string"
             ],
             "format": "date-time"
+          },
+          "runOnNextConnect": {
+            "type": "boolean",
+            "default": false
+          },
+          "alertEmail": {
+            "maxLength": 256,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -19138,6 +19478,65 @@
           }
         }
       },
+      "ScriptAlertDto": {
+        "required": [
+          "id",
+          "scheduleId",
+          "scheduleName",
+          "deviceId",
+          "deviceName",
+          "message",
+          "occurrences",
+          "lastOccurredAt",
+          "scriptRunId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "scheduleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "scheduleName": {
+            "type": "string"
+          },
+          "deviceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "deviceName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "occurrences": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastOccurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "scriptRunId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
       "ScriptResultDto": {
         "required": [
           "id",
@@ -19303,7 +19702,9 @@
           "lastRun",
           "lastRunId",
           "lastError",
-          "createdBy"
+          "createdBy",
+          "runOnNextConnect",
+          "alertEmail"
         ],
         "type": "object",
         "properties": {
@@ -19359,6 +19760,15 @@
           },
           "createdBy": {
             "type": "string"
+          },
+          "runOnNextConnect": {
+            "type": "boolean"
+          },
+          "alertEmail": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -20447,6 +20857,9 @@
     },
     {
       "name": "SavedScripts"
+    },
+    {
+      "name": "ScriptAlerts"
     },
     {
       "name": "ScriptRuns"

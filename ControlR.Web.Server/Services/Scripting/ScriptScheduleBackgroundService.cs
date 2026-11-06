@@ -60,6 +60,13 @@ public class ScriptScheduleBackgroundService(
       try
       {
         await RunSchedule(scope.ServiceProvider, db, schedule, now, cancellationToken);
+
+        if (schedule.LastError is { } error)
+        {
+          await scope.ServiceProvider
+            .GetRequiredService<IScriptAlertManager>()
+            .RaiseForSchedule(schedule, error, cancellationToken);
+        }
       }
       catch (Exception ex) when (ex is not OperationCanceledException)
       {
@@ -73,6 +80,10 @@ public class ScriptScheduleBackgroundService(
   protected override async Task HandleElapsed(CancellationToken stoppingToken)
   {
     await RunDueSchedules(stoppingToken);
+
+    await using var scope = _scopeFactory.CreateAsyncScope();
+    await scope.ServiceProvider.GetRequiredService<IScriptRunManager>().DispatchQueued(stoppingToken);
+    await scope.ServiceProvider.GetRequiredService<IScriptAlertManager>().RaiseForFailedResults(stoppingToken);
   }
 
   private async Task RunSchedule(
@@ -114,22 +125,49 @@ public class ScriptScheduleBackgroundService(
       return;
     }
 
-    var run = await services.GetRequiredService<IScriptRunManager>().Start(
-      schedule.TenantId,
-      $"Schedule \"{schedule.Name}\" ({schedule.CreatedBy})",
-      permitted,
-      schedule.Shell,
-      schedule.Content,
-      schedule.TimeoutSeconds,
-      cancellationToken);
+    // A device away for a week must not come back to one queued copy per missed run.
+    var devicesToRun = schedule.RunOnNextConnect
+      ? await RemoveDevicesAlreadyWaiting(db, schedule, permitted, cancellationToken)
+      : permitted;
 
-    schedule.LastRunId = run.Id;
+    if (devicesToRun.Count > 0)
+    {
+      var run = await services.GetRequiredService<IScriptRunManager>().Start(
+        new ScriptRunRequest(
+          schedule.TenantId,
+          $"Schedule \"{schedule.Name}\" ({schedule.CreatedBy})",
+          creator.Id,
+          devicesToRun,
+          schedule.Shell,
+          schedule.Content,
+          schedule.TimeoutSeconds,
+          schedule.RunOnNextConnect,
+          schedule.Id),
+        cancellationToken);
+
+      schedule.LastRunId = run.Id;
+    }
+
     if (skipped > 0)
     {
       schedule.LastError = $"Skipped {skipped} device(s) its creator can no longer reach.";
     }
 
     await db.SaveChangesAsync(cancellationToken);
+  }
+
+  private static async Task<List<Device>> RemoveDevicesAlreadyWaiting(
+    AppDb db,
+    ScriptSchedule schedule,
+    List<Device> devices,
+    CancellationToken cancellationToken)
+  {
+    var waiting = await db.ScriptResults
+      .Where(x => x.Status == ScriptResultStatus.Queued && x.ScriptRun!.ScriptScheduleId == schedule.Id)
+      .Select(x => x.DeviceId)
+      .ToListAsync(cancellationToken);
+
+    return [.. devices.Where(x => !waiting.Contains(x.Id))];
   }
 
   private static async Task<List<Device>> GetPermittedDevices(

@@ -7,6 +7,15 @@ namespace ControlR.ApiClient.Interfaces.V1;
 public interface IScriptRunsApi
 {
   /// <summary>
+  /// Cancels the parts of a run still waiting for a device to connect.
+  /// </summary>
+  [ApiRoute($"{HttpConstants.V1.ScriptRunsEndpoint}/{{scriptRunId}}/cancel?tenantId={{tenantId}}", "POST")]
+  Task<ApiResult> CancelQueuedScriptRun(
+    Guid scriptRunId,
+    Guid tenantId,
+    CancellationToken cancellationToken = default);
+
+  /// <summary>
   /// Starts a script on every named device. The caller must hold the run permission on all of
   /// them, or nothing runs.
   /// </summary>

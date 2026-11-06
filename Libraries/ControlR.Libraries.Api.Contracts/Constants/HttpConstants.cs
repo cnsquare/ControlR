@@ -42,6 +42,7 @@ public static class HttpConstants
     public const string DeploymentOptionsEndpoint = "/api/v1/deployment-options";
     public const string DesktopPreviewEndpoint = "/api/v1/desktop-preview";
     public const string SavedScriptsEndpoint = "/api/v1/saved-scripts";
+    public const string ScriptAlertsEndpoint = "/api/v1/script-alerts";
     public const string ScriptRunsEndpoint = "/api/v1/script-runs";
     public const string ScriptSchedulesEndpoint = "/api/v1/script-schedules";
     public const string DeviceFileSystemEndpoint = "/api/v1/device-file-system";

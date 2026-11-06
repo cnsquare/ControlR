@@ -33,7 +33,11 @@ public record CreateScriptScheduleRequestDto(
   [property: MaxLength(DtoLimits.DeviceIdsMaxCount)]
   Guid[] DeviceIds,
   ScriptScheduleInterval Interval,
-  DateTimeOffset? StartAt = null);
+  DateTimeOffset? StartAt = null,
+  bool RunOnNextConnect = false,
+  [property: EmailAddress]
+  [property: StringLength(256)]
+  string? AlertEmail = null);
 
 public record SetScriptScheduleEnabledRequestDto(bool IsEnabled);
 
@@ -49,4 +53,17 @@ public record ScriptScheduleDto(
   DateTimeOffset? LastRun,
   Guid? LastRunId,
   string? LastError,
-  string CreatedBy);
+  string CreatedBy,
+  bool RunOnNextConnect,
+  string? AlertEmail);
+
+public record ScriptAlertDto(
+  Guid Id,
+  Guid ScheduleId,
+  string ScheduleName,
+  Guid? DeviceId,
+  string? DeviceName,
+  string Message,
+  int Occurrences,
+  DateTimeOffset LastOccurredAt,
+  Guid? ScriptRunId);

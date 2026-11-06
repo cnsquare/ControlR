@@ -40,6 +40,7 @@ public class AppDb : IdentityUserContext<AppUser, Guid>, IDataProtectionKeyConte
   public DbSet<PermissionAssignment> PermissionAssignments { get; init; }
   public DbSet<PersonalAccessToken> PersonalAccessTokens { get; init; }
   public DbSet<SavedScript> SavedScripts { get; init; }
+  public DbSet<ScriptAlert> ScriptAlerts { get; init; }
   public DbSet<ScriptResult> ScriptResults { get; init; }
   public DbSet<ScriptRun> ScriptRuns { get; init; }
   public DbSet<ScriptSchedule> ScriptSchedules { get; init; }
@@ -513,6 +514,17 @@ public class AppDb : IdentityUserContext<AppUser, Guid>, IDataProtectionKeyConte
       .Entity<ScriptSchedule>()
       .HasIndex(x => new { x.IsEnabled, x.NextRun });
 
+    builder
+      .Entity<ScriptAlert>()
+      .HasOne(x => x.Tenant)
+      .WithMany(x => x.ScriptAlerts)
+      .HasForeignKey(x => x.TenantId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    builder
+      .Entity<ScriptAlert>()
+      .HasIndex(x => new { x.TenantId, x.ScheduleId, x.DeviceId });
+
     if (_tenantId is not null)
     {
       builder
@@ -521,6 +533,10 @@ public class AppDb : IdentityUserContext<AppUser, Guid>, IDataProtectionKeyConte
 
       builder
         .Entity<ScriptSchedule>()
+        .HasQueryFilter(x => x.TenantId == _tenantId);
+
+      builder
+        .Entity<ScriptAlert>()
         .HasQueryFilter(x => x.TenantId == _tenantId);
     }
   }
@@ -547,6 +563,10 @@ public class AppDb : IdentityUserContext<AppUser, Guid>, IDataProtectionKeyConte
       .WithMany(x => x.ScriptResults)
       .HasForeignKey(x => x.DeviceId)
       .OnDelete(DeleteBehavior.Cascade);
+
+    builder
+      .Entity<ScriptResult>()
+      .HasIndex(x => x.Status);
 
     if (_tenantId is not null)
     {

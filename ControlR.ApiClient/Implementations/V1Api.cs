@@ -21,6 +21,7 @@ internal partial class V1Api(ControlrApi client) :
   IPersonalAccessTokensApi,
   IPublicServerSettingsApi,
   ISavedScriptsApi,
+  IScriptAlertsApi,
   IScriptRunsApi,
   IScriptSchedulesApi,
   IServerAlertApi,
@@ -58,6 +59,7 @@ internal partial class V1Api(ControlrApi client) :
   public IPersonalAccessTokensApi PersonalAccessTokens => this;
   public IPublicServerSettingsApi PublicServerSettings => this;
   public ISavedScriptsApi SavedScripts => this;
+  public IScriptAlertsApi ScriptAlerts => this;
   public IScriptRunsApi ScriptRuns => this;
   public IScriptSchedulesApi ScriptSchedules => this;
   public IServerAlertApi ServerAlert => this;

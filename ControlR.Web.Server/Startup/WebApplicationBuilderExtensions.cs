@@ -290,6 +290,7 @@ public static class WebApplicationBuilderExtensions
     builder.Services.AddSingleton<IDeviceConnectionRegistry, DeviceConnectionRegistry>();
     builder.Services.AddScoped<IDeviceManager, DeviceManager>();
     builder.Services.AddScoped<IScriptRunManager, ScriptRunManager>();
+    builder.Services.AddScoped<IScriptAlertManager, ScriptAlertManager>();
     builder.Services.AddScoped<IDeviceFileSystemService, DeviceFileSystemService>();
     builder.Services.AddScoped<IEffectiveUserPreferencesResolver, EffectiveUserPreferencesResolver>();
     builder.Services.AddScoped<IUserPreferencesManager, UserPreferencesManager>();

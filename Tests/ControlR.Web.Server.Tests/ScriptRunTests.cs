@@ -11,6 +11,7 @@ using ControlR.Web.Server.Hubs;
 using ControlR.Web.Server.Options;
 using ControlR.Web.Server.Services;
 using ControlR.Web.Server.Services.DeviceManagement;
+using ControlR.Web.Server.Services.Authorization;
 using ControlR.Web.Server.Services.Scripting;
 using ControlR.Web.Server.Tests.Helpers;
 using Microsoft.AspNetCore.Http.Features;
@@ -345,9 +346,14 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
       var manager = new ScriptRunManager(
         scope.ServiceProvider.GetRequiredService<AppDb>(),
         hubContext.Object,
+        scope.ServiceProvider.GetRequiredService<IPermissionEvaluator>(),
+        scope.ServiceProvider.GetRequiredService<IResourceDescriptorFactory>(),
+        scope.ServiceProvider.GetRequiredService<TimeProvider>(),
         NullLogger<ScriptRunManager>.Instance);
 
-      var run = await manager.Start(tenant.Id, "tester", [device], ScriptShell.Bash, "echo hi", 30, Ct);
+      var run = await manager.Start(
+        new ScriptRunRequest(tenant.Id, "tester", null, [device], ScriptShell.Bash, "echo hi", 30),
+        Ct);
 
       var result = Assert.Single(run.Results!);
       Assert.Equal(ScriptResultStatus.Failed, result.Status);

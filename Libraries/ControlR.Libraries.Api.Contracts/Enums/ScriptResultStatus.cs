@@ -6,4 +6,5 @@ public enum ScriptResultStatus
   Succeeded = 1,
   Failed = 2,
   TimedOut = 3,
+  Queued = 4,
 }

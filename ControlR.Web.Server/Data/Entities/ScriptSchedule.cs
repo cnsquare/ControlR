@@ -10,6 +10,9 @@ namespace ControlR.Web.Server.Data.Entities;
 /// </summary>
 public class ScriptSchedule : TenantEntityBase
 {
+  [StringLength(256)]
+  public string? AlertEmail { get; set; }
+
   [StringLength(ScriptLimits.MaxContentLength)]
   public required string Content { get; set; }
 
@@ -38,6 +41,8 @@ public class ScriptSchedule : TenantEntityBase
 
   [StringLength(ScriptLimits.MaxNameLength)]
   public required string ScriptName { get; set; }
+
+  public bool RunOnNextConnect { get; set; }
 
   public required ScriptShell Shell { get; set; }
 

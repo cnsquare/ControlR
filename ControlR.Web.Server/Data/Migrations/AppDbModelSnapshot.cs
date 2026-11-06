@@ -716,6 +716,64 @@ namespace ControlR.Web.Server.Data.Migrations
                     b.ToTable("SavedScripts");
                 });
 
+            modelBuilder.Entity("ControlR.Web.Server.Data.Entities.ScriptAlert", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid?>("DeviceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DeviceName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset?>("DismissedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DismissedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset>("LastOccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<int>("Occurrences")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ScheduleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ScheduleName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid?>("ScriptRunId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "ScheduleId", "DeviceId");
+
+                    b.ToTable("ScriptAlerts");
+                });
+
             modelBuilder.Entity("ControlR.Web.Server.Data.Entities.ScriptResult", b =>
                 {
                     b.Property<Guid>("Id")
@@ -731,6 +789,9 @@ namespace ControlR.Web.Server.Data.Migrations
                     b.Property<Guid>("DeviceId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTimeOffset?>("DispatchedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int?>("ExitCode")
                         .HasColumnType("integer");
 
@@ -740,6 +801,9 @@ namespace ControlR.Web.Server.Data.Migrations
 
                     b.Property<DateTimeOffset?>("FinishedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsAlertProcessed")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("OutputTruncated")
                         .HasColumnType("boolean");
@@ -770,6 +834,8 @@ namespace ControlR.Web.Server.Data.Migrations
 
                     b.HasIndex("ScriptRunId");
 
+                    b.HasIndex("Status");
+
                     b.HasIndex("TenantId");
 
                     b.ToTable("ScriptResults");
@@ -797,6 +863,12 @@ namespace ControlR.Web.Server.Data.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<Guid?>("InitiatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ScriptScheduleId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("Shell")
                         .HasColumnType("integer");
 
@@ -819,6 +891,10 @@ namespace ControlR.Web.Server.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("AlertEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.Property<string>("Content")
                         .IsRequired()
@@ -865,6 +941,9 @@ namespace ControlR.Web.Server.Data.Migrations
 
                     b.Property<DateTimeOffset>("NextRun")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("RunOnNextConnect")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("ScriptName")
                         .IsRequired()
@@ -1590,6 +1669,17 @@ namespace ControlR.Web.Server.Data.Migrations
                     b.Navigation("Tenant");
                 });
 
+            modelBuilder.Entity("ControlR.Web.Server.Data.Entities.ScriptAlert", b =>
+                {
+                    b.HasOne("ControlR.Web.Server.Data.Entities.Tenant", "Tenant")
+                        .WithMany("ScriptAlerts")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
+                });
+
             modelBuilder.Entity("ControlR.Web.Server.Data.Entities.ScriptResult", b =>
                 {
                     b.HasOne("ControlR.Web.Server.Data.Entities.Device", "Device")
@@ -1891,6 +1981,8 @@ namespace ControlR.Web.Server.Data.Migrations
                     b.Navigation("LogonTokens");
 
                     b.Navigation("SavedScripts");
+
+                    b.Navigation("ScriptAlerts");
 
                     b.Navigation("ScriptRuns");
 

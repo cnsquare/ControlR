@@ -16,6 +16,7 @@ public partial class Scripts : IDisposable
   private ScriptRunHistoryItemDto[] _history = [];
   private bool _isRunning;
   private ScriptResultDto? _result;
+  private bool _runOnNextConnect;
   private SavedScriptDto[] _savedScripts = [];
   private Guid? _selectedScriptId;
   private ScriptShell _shell;
@@ -125,6 +126,22 @@ public partial class Scripts : IDisposable
     }
   }
 
+  private async Task CancelQueued(Guid scriptRunId)
+  {
+    var result = await ControlrApi.V1.ScriptRuns.CancelQueuedScriptRun(
+      scriptRunId,
+      DeviceState.CurrentDevice.TenantId,
+      _disposeCts.Token);
+
+    if (!result.IsSuccess)
+    {
+      Snackbar.Add($"Failed to cancel the script: {result.Reason}", Severity.Error);
+    }
+
+    _result = null;
+    await LoadHistory();
+  }
+
   private async Task PollUntilSettled(Guid scriptRunId, Guid tenantId, CancellationToken cancellationToken)
   {
     var deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(_timeoutSeconds) + _pollGrace;
@@ -165,7 +182,7 @@ public partial class Scripts : IDisposable
     try
     {
       var tenantId = DeviceState.CurrentDevice.TenantId;
-      var request = new CreateScriptRunRequestDto([DeviceId], _shell, _content, _timeoutSeconds);
+      var request = new CreateScriptRunRequestDto([DeviceId], _shell, _content, _timeoutSeconds, _runOnNextConnect);
 
       var createResult = await ControlrApi.V1.ScriptRuns.CreateScriptRun(tenantId, request, _disposeCts.Token);
       if (!createResult.IsSuccess)

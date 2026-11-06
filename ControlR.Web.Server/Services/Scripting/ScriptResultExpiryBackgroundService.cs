@@ -34,11 +34,12 @@ public class ScriptResultExpiryBackgroundService(
 
     var pending = await db.ScriptResults
       .Where(x => x.Status == ScriptResultStatus.Pending && x.ScriptRun!.CreatedAt < cutoff)
-      .Select(x => new { Result = x, x.ScriptRun!.CreatedAt, x.ScriptRun.TimeoutSeconds })
+      .Select(x => new { Result = x, x.ScriptRun!.CreatedAt, x.DispatchedAt, x.ScriptRun.TimeoutSeconds })
       .ToListAsync(cancellationToken);
 
     var stale = pending
-      .Where(x => x.CreatedAt.AddSeconds(x.TimeoutSeconds) < cutoff)
+      // A queued result can reach the agent long after its run was created.
+      .Where(x => (x.DispatchedAt ?? x.CreatedAt).AddSeconds(x.TimeoutSeconds) < cutoff)
       .Select(x => x.Result)
       .ToList();
 

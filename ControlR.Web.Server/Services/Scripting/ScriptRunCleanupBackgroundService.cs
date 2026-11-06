@@ -32,6 +32,10 @@ public class ScriptRunCleanupBackgroundService(
       .Where(x => x.CreatedAt < cutoff)
       .ExecuteDeleteCompatAsync(db, cancellationToken);
 
+    await db.ScriptAlerts
+      .Where(x => x.DismissedAt < cutoff)
+      .ExecuteDeleteCompatAsync(db, cancellationToken);
+
     if (removedCount > 0)
     {
       _logger.LogInformation("Removed {RemovedCount} script runs older than {Cutoff}.", removedCount, cutoff);

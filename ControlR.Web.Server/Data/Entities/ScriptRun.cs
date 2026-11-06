@@ -15,7 +15,14 @@ public class ScriptRun : TenantEntityBase
   [StringLength(256)]
   public required string InitiatedBy { get; set; }
 
+  /// <summary>
+  /// Whose access a queued result is checked against when its device finally connects.
+  /// </summary>
+  public Guid? InitiatedByUserId { get; set; }
+
   public List<ScriptResult>? Results { get; set; }
+
+  public Guid? ScriptScheduleId { get; set; }
 
   public required ScriptShell Shell { get; set; }
 

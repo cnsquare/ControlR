@@ -13,7 +13,8 @@ public record CreateScriptRunRequestDto(
   [property: StringLength(ScriptLimits.MaxContentLength, MinimumLength = 1)]
   string Content,
   [property: Range(ScriptLimits.MinTimeoutSeconds, ScriptLimits.MaxTimeoutSeconds)]
-  int TimeoutSeconds = ScriptLimits.DefaultTimeoutSeconds);
+  int TimeoutSeconds = ScriptLimits.DefaultTimeoutSeconds,
+  bool RunOnNextConnect = false);
 
 public record ScriptRunHistoryItemDto(
   Guid ScriptRunId,

@@ -8,6 +8,19 @@ namespace ControlR.ApiClient;
 
 internal partial class V1Api
 {
+  async Task<ApiResult> IScriptRunsApi.CancelQueuedScriptRun(
+    Guid scriptRunId,
+    Guid tenantId,
+    CancellationToken cancellationToken)
+  {
+    return await _client.ExecuteApiCall(async () =>
+    {
+      using var response = await _client.HttpClient.PostAsync(
+        $"{HttpConstants.V1.ScriptRunsEndpoint}/{scriptRunId}/cancel?tenantId={tenantId}", null, cancellationToken);
+      await response.EnsureSuccessStatusCodeWithDetails();
+    });
+  }
+
   async Task<ApiResult<ScriptRunDto>> IScriptRunsApi.CreateScriptRun(
     Guid tenantId,
     CreateScriptRunRequestDto request,

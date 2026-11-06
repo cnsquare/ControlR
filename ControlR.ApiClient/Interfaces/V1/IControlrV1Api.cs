@@ -19,6 +19,7 @@ public interface IControlrV1Api
   IPersonalAccessTokensApi PersonalAccessTokens { get; }
   IPublicServerSettingsApi PublicServerSettings { get; }
   ISavedScriptsApi SavedScripts { get; }
+  IScriptAlertsApi ScriptAlerts { get; }
   IScriptRunsApi ScriptRuns { get; }
   IScriptSchedulesApi ScriptSchedules { get; }
   IServerAlertApi ServerAlert { get; }

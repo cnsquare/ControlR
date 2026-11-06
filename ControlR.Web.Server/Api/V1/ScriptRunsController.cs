@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using ControlR.Web.Server.Authz.Permissions;
 using ControlR.Web.Server.Constants;
 using ControlR.Web.Server.Services.Scripting;
 using Microsoft.AspNetCore.Mvc;
@@ -78,6 +79,17 @@ public class ScriptRunsController(
       }
     }
 
+    var actor = User.ToPrincipalDescriptor();
+
+    // A queued result is checked against a person's access when its device connects.
+    if (request.RunOnNextConnect && actor?.PrincipalType != PrincipalType.User)
+    {
+      return Problem(
+        detail: "Only a user can queue a script for when a device connects.",
+        statusCode: StatusCodes.Status400BadRequest,
+        title: V1ProblemTitles.InvalidRequest);
+    }
+
     var initiatedBy = User.Identity?.Name ?? "Unknown";
 
     _logger.LogInformation(
@@ -87,15 +99,66 @@ public class ScriptRunsController(
       devices.Count);
 
     var run = await _scriptRunManager.Start(
-      resolvedTenantId,
-      initiatedBy,
-      devices,
-      request.Shell,
-      request.Content,
-      request.TimeoutSeconds,
+      new ScriptRunRequest(
+        resolvedTenantId,
+        initiatedBy,
+        actor?.PrincipalType == PrincipalType.User ? actor.PrincipalId : null,
+        devices,
+        request.Shell,
+        request.Content,
+        request.TimeoutSeconds,
+        request.RunOnNextConnect),
       cancellationToken);
 
     return Ok(ToDto(run, run.Results ?? []));
+  }
+
+  /// <summary>
+  /// Cancels the parts of a run still waiting for a device, on devices the caller may run scripts on.
+  /// </summary>
+  [HttpPost("{scriptRunId:guid}/cancel")]
+  [ProducesResponseType(StatusCodes.Status204NoContent)]
+  [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
+  [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden, "application/problem+json")]
+  [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+  public async Task<IActionResult> CancelQueuedScriptRun(
+    [FromRoute] Guid scriptRunId,
+    [FromQuery] Guid tenantId,
+    CancellationToken cancellationToken)
+  {
+    if (!User.TryResolveTenantId(tenantId, out var resolvedTenantId))
+    {
+      return Forbid();
+    }
+
+    var queued = await _appDb.ScriptResults
+      .Include(x => x.Device)
+      .Where(x =>
+        x.ScriptRunId == scriptRunId &&
+        x.TenantId == resolvedTenantId &&
+        x.Status == ScriptResultStatus.Queued)
+      .ToListAsync(cancellationToken);
+
+    var cancelled = 0;
+    foreach (var result in queued)
+    {
+      var authResult = await _authorizationService.AuthorizeAsync(User, result.Device!, DeviceResourcePolicies.ScriptRun);
+      if (authResult.Succeeded)
+      {
+        result.FailureReason = $"Cancelled by {User.Identity?.Name ?? "a user"} before it ran.";
+        result.IsAlertProcessed = true;
+        result.Status = ScriptResultStatus.Failed;
+        cancelled++;
+      }
+    }
+
+    if (cancelled == 0)
+    {
+      return Problem(statusCode: StatusCodes.Status404NotFound, title: V1ProblemTitles.NotFound);
+    }
+
+    await _appDb.SaveChangesAsync(cancellationToken);
+    return NoContent();
   }
 
   /// <summary>
