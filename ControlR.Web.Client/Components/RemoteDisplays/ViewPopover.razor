@@ -103,6 +103,20 @@
     </div>
   }
 
+  @if (DeviceAccessPermissionsState.Permissions?.CanRecordSession == true)
+  {
+    <div>
+      <MudText Typo="Typo.caption" Class="mb-2">Recording</MudText>
+      <div>
+        <MudTooltip Text="Save this session as a video on this computer. The person at the device is told.">
+          <MudSwitch T="bool" Value="RemoteControlState.IsRecording"
+            ValueChanged="@((bool v) => HandleRecordingToggled(v))" Color="Color.Error" Label="Record Session"
+            ThumbIcon="@(Icons.Material.Filled.FiberManualRecord)" />
+        </MudTooltip>
+      </div>
+    </div>
+  }
+
   @if (DeviceState.TryGetCurrentDevice()?.Platform == SystemPlatform.Windows &&
        DeviceAccessPermissionsState.Permissions?.CanTogglePrivacyScreen == true)
   {
@@ -241,6 +255,35 @@
     {
       Logger.LogError(ex, "Error while changing cursor capture setting.");
       Snackbar.Add("An error occurred while changing cursor capture", Severity.Error);
+    }
+  }
+
+  private async Task HandleRecordingToggled(bool value)
+  {
+    try
+    {
+      if (RemoteControlStream.State != System.Net.WebSockets.WebSocketState.Open)
+      {
+        Snackbar.Add("No active remote session", Severity.Warning);
+        return;
+      }
+
+      // The person at the device hears about it first, so recording never starts unannounced.
+      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+      var result = await RemoteControlStream.SendRecordingNotice(value, cts.Token);
+      if (!result.IsSuccess)
+      {
+        Snackbar.Add($"Failed to change recording: {result.Reason}", Severity.Error);
+        return;
+      }
+
+      RemoteControlState.IsRecording = value;
+      await RemoteControlState.NotifyStateChanged();
+    }
+    catch (Exception ex)
+    {
+      Logger.LogError(ex, "Error while toggling recording.");
+      Snackbar.Add("An error occurred while changing recording", Severity.Error);
     }
   }
 

@@ -12,7 +12,14 @@ public record SaveSavedScriptRequestDto(
   [property: StringLength(ScriptLimits.MaxContentLength, MinimumLength = 1)]
   string Content,
   [property: Range(ScriptLimits.MinTimeoutSeconds, ScriptLimits.MaxTimeoutSeconds)]
-  int TimeoutSeconds = ScriptLimits.DefaultTimeoutSeconds);
+  int TimeoutSeconds = ScriptLimits.DefaultTimeoutSeconds,
+  [property: StringLength(ScriptLimits.MaxNameLength)]
+  string? Folder = null);
+
+public record DeviceNotesDto(
+  [property: Required(AllowEmptyStrings = true)]
+  [property: StringLength(DtoLimits.DeviceNotesMaxLength)]
+  string Notes);
 
 public record SavedScriptDto(
   Guid Id,
@@ -21,7 +28,8 @@ public record SavedScriptDto(
   string Content,
   int TimeoutSeconds,
   string CreatedBy,
-  DateTimeOffset CreatedAt);
+  DateTimeOffset CreatedAt,
+  string? Folder);
 
 public record CreateScriptScheduleRequestDto(
   [property: Required]

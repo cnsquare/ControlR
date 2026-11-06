@@ -20,6 +20,7 @@ public static class PermissionNames
   public const string DeviceGroupAssignDevices = "device-group.assign-devices";
   public const string DeviceLogonTokenCreate = "device.logon-token.create";
   public const string DeviceLogsRead = "device.logs.read";
+  public const string DeviceNotesWrite = "device.notes.write";
   public const string DeviceOverviewRead = "device.overview.read";
   public const string DevicePowerManage = "device.power.manage";
   public const string DeviceRead = "device.read";
@@ -29,6 +30,7 @@ public static class PermissionNames
   public const string DeviceRemoteControlElevatedDesktop = "device.remote-control.elevated-desktop";
   public const string DeviceRemoteControlInteract = "device.remote-control.interact";
   public const string DeviceRemoteControlPrivacyScreen = "device.remote-control.privacy-screen";
+  public const string DeviceRemoteControlRecord = "device.remote-control.record";
   public const string DeviceScriptRun = "device.script.run";
   public const string DeviceTagsWrite = "device.tags.write";
   public const string DeviceTerminalUse = "device.terminal.use";

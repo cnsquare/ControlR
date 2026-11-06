@@ -19,7 +19,8 @@ public class ViewerCommandGateTests
     {
       RemoteControlDtoType.ToggleBlockInput,
       RemoteControlDtoType.TogglePrivacyScreen,
-      RemoteControlDtoType.ToggleAudio
+      RemoteControlDtoType.ToggleAudio,
+      RemoteControlDtoType.RecordingNotice
     };
 
     var droppedWhileViewOnly = new[]
@@ -35,7 +36,8 @@ public class ViewerCommandGateTests
       RemoteControlDtoType.ClipboardText,
       RemoteControlDtoType.ToggleBlockInput,
       RemoteControlDtoType.TogglePrivacyScreen,
-      RemoteControlDtoType.ToggleAudio
+      RemoteControlDtoType.ToggleAudio,
+      RemoteControlDtoType.RecordingNotice
     };
 
     var alwaysPassed = new[]

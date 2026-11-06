@@ -16,4 +16,6 @@ public sealed record DeviceAccessPermissionsDto(
   bool CanSendCtrlAltDel,
   bool CanTogglePrivacyScreen,
   bool CanRunScripts = false,
-  bool CanListenToAudio = false);
+  bool CanListenToAudio = false,
+  bool CanRecordSession = false,
+  bool CanEditNotes = false);

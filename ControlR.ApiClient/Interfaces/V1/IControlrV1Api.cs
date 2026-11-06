@@ -6,6 +6,7 @@ public interface IControlrV1Api
   ICustomersApi Customers { get; }
   IDeploymentOptionsApi DeploymentOptions { get; }
   IDesktopPreviewApi DesktopPreview { get; }
+  IDeviceNotesApi DeviceNotes { get; }
   IDeviceFileSystemApi DeviceFileSystem { get; }
   IDeviceGroupsApi DeviceGroups { get; }
   IDevicesApi Devices { get; }

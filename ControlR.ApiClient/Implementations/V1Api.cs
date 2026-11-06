@@ -10,6 +10,7 @@ internal partial class V1Api(ControlrApi client) :
   IDesktopPreviewApi,
   IDeviceFileSystemApi,
   IDeviceGroupsApi,
+  IDeviceNotesApi,
   IDeviceTagsApi,
   IDevicesApi,
   IEffectivePermissionsApi,
@@ -48,6 +49,7 @@ internal partial class V1Api(ControlrApi client) :
   public IDesktopPreviewApi DesktopPreview => this;
   public IDeviceFileSystemApi DeviceFileSystem => this;
   public IDeviceGroupsApi DeviceGroups => this;
+  public IDeviceNotesApi DeviceNotes => this;
   public IDevicesApi Devices => this;
   public IDeviceTagsApi DeviceTags => this;
   public IEffectivePermissionsApi EffectivePermissions => this;

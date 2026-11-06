@@ -212,6 +212,12 @@ internal sealed class RemoteControlViewerCommandHandler(
             await SendDtoToViewer(RemoteControlDtoWrapper.Create(resultDto, RemoteControlDtoType.BlockInputResult));
             break;
           }
+        case RemoteControlDtoType.RecordingNotice:
+          {
+            var payload = wrapper.GetPayload<RecordingNoticeDto>();
+            await ShowRecordingToast(payload.IsRecording);
+            break;
+          }
         case RemoteControlDtoType.ToggleAudio:
           {
             var payload = wrapper.GetPayload<ToggleAudioDto>();
@@ -276,6 +282,22 @@ internal sealed class RemoteControlViewerCommandHandler(
     var clipboardText = await _clipboardManager.GetText();
     var dto = new ClipboardTextDto(clipboardText, _startupOptions.SessionId);
     await SendDtoToViewer(RemoteControlDtoWrapper.Create(dto, RemoteControlDtoType.ClipboardText));
+  }
+
+  private async Task ShowRecordingToast(bool isRecording)
+  {
+    var viewerName = _startupOptions.ViewerName is { Length: > 0 } name
+      ? name
+      : Localization.ADeviceAdministrator;
+
+    var format = isRecording
+      ? Localization.RemoteRecordingStartToastMessage
+      : Localization.RemoteRecordingStopToastMessage;
+
+    await _toaster.ShowToast(
+      Localization.RemoteControlSessionToastTitle,
+      string.Format(format, viewerName),
+      ToastIcon.Info);
   }
 
   private async Task HandleToggleAudio(bool isEnabled)

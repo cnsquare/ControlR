@@ -22,6 +22,7 @@ public static class DeviceResourcePolicies
   public const string FileSystemWrite = "DeviceFileSystemWrite";
   public const string LogonTokenCreate = "DeviceLogonTokenCreate";
   public const string LogsRead = "DeviceLogsRead";
+  public const string NotesWrite = "DeviceNotesWrite";
   public const string OverviewRead = "DeviceOverviewRead";
   public const string PowerManage = "DevicePowerManage";
   public const string Read = "DeviceRead";
@@ -48,6 +49,7 @@ public static class DeviceResourcePolicies
       [ClipboardWrite] = PermissionNames.DeviceClipboardWrite,
       [Delete] = PermissionNames.DeviceDelete,
       [AliasWrite] = PermissionNames.DeviceAliasWrite,
+      [NotesWrite] = PermissionNames.DeviceNotesWrite,
       [ChatSend] = PermissionNames.DeviceChatSend,
       [CtrlAltDelSend] = PermissionNames.DeviceCtrlAltDelSend,
       [DesktopPreviewRead] = PermissionNames.DeviceDesktopPreviewRead,

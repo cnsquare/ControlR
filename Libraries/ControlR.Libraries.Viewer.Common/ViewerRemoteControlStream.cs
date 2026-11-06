@@ -39,6 +39,7 @@ public interface IViewerRemoteControlStream : IManagedRelayStream
     CancellationToken cancellationToken);
   Task SendPointerMove(double normalizedX, double normalizedY, CancellationToken cancellationToken);
   Task<HubResult> SendToggleBlockInput(bool isEnabled, CancellationToken cancellationToken);
+  Task<HubResult> SendRecordingNotice(bool isRecording, CancellationToken cancellationToken);
   Task<HubResult> SendToggleAudio(bool isEnabled, CancellationToken cancellationToken);
   Task<HubResult> SendTogglePrivacyScreen(bool isEnabled, CancellationToken cancellationToken);
   Task SendTypeText(string text, CancellationToken cancellationToken);
@@ -235,6 +236,17 @@ public class ViewerRemoteControlStream : ManagedRelayStream, IViewerRemoteContro
       {
         var dto = new ToggleBlockInputDto(isEnabled);
         var wrapper = RemoteControlDtoWrapper.Create(dto, RemoteControlDtoType.ToggleBlockInput);
+        return await InvokeDto(wrapper, cancellationToken);
+      });
+  }
+
+  public async Task<HubResult> SendRecordingNotice(bool isRecording, CancellationToken cancellationToken)
+  {
+    return await TryInvoke(
+      async () =>
+      {
+        var dto = new RecordingNoticeDto(isRecording);
+        var wrapper = RemoteControlDtoWrapper.Create(dto, RemoteControlDtoType.RecordingNotice);
         return await InvokeDto(wrapper, cancellationToken);
       });
   }

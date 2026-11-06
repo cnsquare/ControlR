@@ -38,7 +38,11 @@ public class RemoteControlDtoTypeTests
       (RemoteControlDtoType.SessionDisconnectRequested, 48),
       (RemoteControlDtoType.RemoteControlSessionError, 49),
       (RemoteControlDtoType.ScreenRegions, 50),
-      (RemoteControlDtoType.UpdateCaptureSettings, 51)
+      (RemoteControlDtoType.UpdateCaptureSettings, 51),
+      (RemoteControlDtoType.ToggleAudio, 52),
+      (RemoteControlDtoType.AudioState, 53),
+      (RemoteControlDtoType.AudioChunk, 54),
+      (RemoteControlDtoType.RecordingNotice, 55)
     };
 
     var tags = Enum.GetValues<RemoteControlDtoType>();

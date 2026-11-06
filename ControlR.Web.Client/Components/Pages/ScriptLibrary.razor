@@ -32,6 +32,61 @@
   }
 }
 
+<MudText Typo="Typo.h6" GutterBottom>Run Now</MudText>
+<MudPaper Outlined Class="pa-4 mb-6">
+  <div class="d-flex flex-wrap gap-4 mb-3">
+    <MudSelect T="Guid?" Label="Saved script (optional)" Value="_runScriptId" Variant="Variant.Outlined"
+               ValueChanged="@((Guid? id) => LoadRunScript(id))">
+      @foreach (var script in _scripts)
+      {
+        <MudSelectItem T="Guid?" Value="@script.Id">@script.Name</MudSelectItem>
+      }
+    </MudSelect>
+    <MudSelect T="ScriptShell" Label="Shell" @bind-Value="_runShell" Variant="Variant.Outlined">
+      @foreach (var shell in Enum.GetValues<ScriptShell>())
+      {
+        <MudSelectItem T="ScriptShell" Value="@shell">@ScriptShellOptions.GetDisplayName(shell)</MudSelectItem>
+      }
+    </MudSelect>
+    <MudSelect T="Guid" Label="Devices" MultiSelection @bind-SelectedValues="_runDeviceIds"
+               Variant="Variant.Outlined" ToStringFunc="GetDeviceName">
+      @foreach (var device in _devices)
+      {
+        <MudSelectItem T="Guid" Value="@device.Id">@device.Name</MudSelectItem>
+      }
+    </MudSelect>
+  </div>
+  <MudTextField T="string" Label="Script" @bind-Value="_runContent" Immediate Lines="5" Variant="Variant.Outlined"
+                MaxLength="ScriptLimits.MaxContentLength" spellcheck="false" Class="mb-2" />
+  <MudCheckBox T="bool" @bind-Value="_runOnNextConnect" Class="mb-2"
+               Label="If a device is offline, run this when it next connects" />
+  <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!CanRunNow)" OnClick="RunNow">
+    @(_isRunning ? "Running" : "Run")
+  </MudButton>
+
+  @if (_runResults.Length > 0)
+  {
+    <MudSimpleTable Dense Class="mt-4">
+      <thead>
+        <tr><th>Device</th><th>Status</th><th>Exit code</th><th>Output</th></tr>
+      </thead>
+      <tbody>
+        @foreach (var result in _runResults)
+        {
+          <tr @key="result.Id">
+            <td>@GetDeviceName(result.DeviceId)</td>
+            <td>
+              <MudChip T="string" Color="@ScriptShellOptions.GetStatusColor(result.Status)" Size="Size.Small">@result.Status</MudChip>
+            </td>
+            <td>@result.ExitCode</td>
+            <td style="white-space: pre-wrap;">@(result.FailureReason ?? (result.StandardOutput + result.StandardError))</td>
+          </tr>
+        }
+      </tbody>
+    </MudSimpleTable>
+  }
+</MudPaper>
+
 <MudText Typo="Typo.h6" GutterBottom>Saved Scripts</MudText>
 
 @if (_scripts.Length == 0)
@@ -43,6 +98,7 @@ else
   <MudSimpleTable Dense Hover Class="mb-4">
     <thead>
       <tr>
+        <th>Folder</th>
         <th>Name</th>
         <th>Shell</th>
         <th>Created by</th>
@@ -53,6 +109,7 @@ else
       @foreach (var script in _scripts)
       {
         <tr @key="script.Id">
+          <td>@script.Folder</td>
           <td>@script.Name</td>
           <td>@ScriptShellOptions.GetDisplayName(script.Shell)</td>
           <td>@script.CreatedBy</td>
@@ -75,6 +132,8 @@ else
     <MudText Typo="Typo.subtitle1" GutterBottom>@(_editingScriptId is null ? "New Script" : "Edit Script")</MudText>
     <div class="d-flex flex-wrap gap-4 mb-3">
       <MudTextField T="string" Label="Name" @bind-Value="_scriptName" Immediate Variant="Variant.Outlined"
+                    MaxLength="ScriptLimits.MaxNameLength" />
+      <MudTextField T="string" Label="Folder (optional)" @bind-Value="_scriptFolder" Variant="Variant.Outlined"
                     MaxLength="ScriptLimits.MaxNameLength" />
       <MudSelect T="ScriptShell" Label="Shell" @bind-Value="_scriptShell" Variant="Variant.Outlined">
         @foreach (var shell in Enum.GetValues<ScriptShell>())

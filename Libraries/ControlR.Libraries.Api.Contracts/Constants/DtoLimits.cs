@@ -6,6 +6,7 @@ public static class DtoLimits
   public const int AuthorizationChangeLogMaxPageSize = 200;
   public const int AuthorizationChangeLogSearchTextMaxLength = 128;
   public const int DeviceIdsMaxCount = 1_000;
+  public const int DeviceNotesMaxLength = 10_000;
   public const int ExpirationMinutesDefault = 15;
   public const int ExpirationMinutesMax = 1440;
   public const int ExpirationMinutesMin = 1;

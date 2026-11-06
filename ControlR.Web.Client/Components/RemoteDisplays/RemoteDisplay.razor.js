@@ -249,6 +249,62 @@ export function playAudio(pcm, sampleRate, channels) {
   nextAudioTime += buffer.duration;
 }
 
+let recorder = null;
+let recordedChunks = [];
+
+const recordingFrameRate = 15;
+
+export function startRecording(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas?.captureStream || typeof MediaRecorder === "undefined") {
+    return false;
+  }
+
+  const mimeType = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"]
+    .find(type => MediaRecorder.isTypeSupported(type));
+
+  if (!mimeType) {
+    return false;
+  }
+
+  recordedChunks = [];
+  recorder = new MediaRecorder(canvas.captureStream(recordingFrameRate), { mimeType });
+  recorder.ondataavailable = event => {
+    if (event.data.size > 0) {
+      recordedChunks.push(event.data);
+    }
+  };
+  recorder.start(1000);
+  return true;
+}
+
+export function stopRecording() {
+  return new Promise(resolve => {
+    const active = recorder;
+    recorder = null;
+
+    if (!active) {
+      resolve();
+      return;
+    }
+
+    active.onstop = () => {
+      const url = URL.createObjectURL(new Blob(recordedChunks, { type: "video/webm" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `session-${new Date().toISOString().replaceAll(":", "-")}.webm`;
+      link.click();
+
+      // Revoking now would cancel the download before the browser has read the data.
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      recordedChunks = [];
+      resolve();
+    };
+
+    active.stop();
+  });
+}
+
 export async function drawFrame(canvasId, x, y, width, height, imageFormat, encodedRegion) {
   try {
     const state = getState(canvasId);

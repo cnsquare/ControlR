@@ -110,6 +110,7 @@ public static class PermissionCatalog
 
     Add(PermissionNames.DeviceRead, PermissionCategories.Devices, "Read Device", "View device details and status.", deviceResources);
     Add(PermissionNames.DeviceDelete, PermissionCategories.Devices, "Delete Device", "Remove a device from the system.", deviceResources);
+    Add(PermissionNames.DeviceNotesWrite, PermissionCategories.Devices, "Edit Device Notes", "Edit the notes kept about a device.", deviceResources);
     Add(PermissionNames.DeviceAliasWrite, PermissionCategories.Devices, "Update Device Alias", "Change the display alias for a device.", deviceResources);
     Add(PermissionNames.DeviceTagsWrite, PermissionCategories.Devices, "Manage Device Tags", "Add and remove tags on a device.", deviceResources);
     Add(PermissionNames.DeviceDesktopPreviewRead, PermissionCategories.Devices, "View Desktop Preview", "View the desktop preview thumbnail for a device.", deviceResources);
@@ -121,6 +122,7 @@ public static class PermissionCatalog
     Add(PermissionNames.DeviceRemoteControlBlockInput, PermissionCategories.Devices, "Block Remote Input", "Block the remote user's keyboard and mouse during a remote control session.", deviceResources);
     Add(PermissionNames.DeviceRemoteControlElevatedDesktop, PermissionCategories.Devices, "Elevated Desktop Access", "Access the elevated (system) desktop during remote control.", deviceResources);
     Add(PermissionNames.DeviceRemoteControlPrivacyScreen, PermissionCategories.Devices, "Toggle Privacy Screen", "Black out the physical display on the remote device during a remote control session. The viewer continues to see the desktop.", deviceResources);
+    Add(PermissionNames.DeviceRemoteControlRecord, PermissionCategories.Devices, "Record Remote Sessions", "Save a video of a remote control session. The person at the device is told.", deviceResources);
     Add(PermissionNames.DeviceRemoteControlAudio, PermissionCategories.Devices, "Listen to Remote Audio", "Hear the sound a remote device is playing during a remote control session.", deviceResources);
     Add(PermissionNames.DeviceCtrlAltDelSend, PermissionCategories.Devices, "Send Ctrl+Alt+Del", "Send Ctrl+Alt+Del to a remote device.", deviceResources);
     Add(PermissionNames.DeviceClipboardRead, PermissionCategories.Devices, "Read Device Clipboard", "Read the clipboard contents from a remote device.", deviceResources);

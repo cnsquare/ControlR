@@ -5,14 +5,27 @@ using Microsoft.AspNetCore.Components.Authorization;
 namespace ControlR.Web.Client.Components.Pages;
 
 // ReSharper disable once ClassNeverInstantiated.Global
-public partial class ScriptLibrary
+public partial class ScriptLibrary : IDisposable
 {
   private const int MaxDevicesListed = 500;
+
+  private static readonly TimeSpan _pollInterval = TimeSpan.FromSeconds(2);
+  private static readonly TimeSpan _runWatchLimit = TimeSpan.FromMinutes(5);
+
+  private readonly CancellationTokenSource _disposeCts = new();
 
   private ScriptAlertDto[] _alerts = [];
   private bool _canWrite;
   private DeviceResponseDto[] _devices = [];
   private Guid? _editingScriptId;
+  private bool _isRunning;
+  private string _runContent = string.Empty;
+  private IReadOnlyCollection<Guid> _runDeviceIds = [];
+  private bool _runOnNextConnect;
+  private ScriptResultDto[] _runResults = [];
+  private Guid? _runScriptId;
+  private ScriptShell _runShell = ScriptShell.WindowsPowerShell;
+  private int _runTimeout = ScriptLimits.DefaultTimeoutSeconds;
   private string? _scheduleAlertEmail;
   private IReadOnlyCollection<Guid> _scheduleDeviceIds = [];
   private ScriptScheduleInterval _scheduleInterval = ScriptScheduleInterval.Daily;
@@ -22,6 +35,7 @@ public partial class ScriptLibrary
   private ScriptScheduleDto[] _schedules = [];
   private string? _scheduleStart;
   private string _scriptContent = string.Empty;
+  private string? _scriptFolder;
   private string _scriptName = string.Empty;
   private SavedScriptDto[] _scripts = [];
   private ScriptShell _scriptShell = ScriptShell.WindowsPowerShell;
@@ -35,11 +49,21 @@ public partial class ScriptLibrary
   [Inject]
   public required ISnackbar Snackbar { get; init; }
 
+  private bool CanRunNow =>
+    !_isRunning && !string.IsNullOrWhiteSpace(_runContent) && _runDeviceIds.Count > 0;
+
   private bool CanCreateSchedule =>
     !string.IsNullOrWhiteSpace(_scheduleName) && _scheduleScriptId is not null && _scheduleDeviceIds.Count > 0;
 
   private bool CanSaveScript =>
     !string.IsNullOrWhiteSpace(_scriptName) && !string.IsNullOrWhiteSpace(_scriptContent);
+
+  public void Dispose()
+  {
+    _disposeCts.Cancel();
+    _disposeCts.Dispose();
+    GC.SuppressFinalize(this);
+  }
 
   protected override async Task OnInitializedAsync()
   {
@@ -139,6 +163,7 @@ public partial class ScriptLibrary
   {
     _editingScriptId = script.Id;
     _scriptContent = script.Content;
+    _scriptFolder = script.Folder;
     _scriptName = script.Name;
     _scriptShell = script.Shell;
     _scriptTimeout = script.TimeoutSeconds;
@@ -147,6 +172,71 @@ public partial class ScriptLibrary
   private string GetDeviceName(Guid deviceId)
   {
     return _devices.FirstOrDefault(x => x.Id == deviceId)?.Name ?? deviceId.ToString();
+  }
+
+  private void LoadRunScript(Guid? scriptId)
+  {
+    _runScriptId = scriptId;
+    if (_scripts.FirstOrDefault(x => x.Id == scriptId) is { } script)
+    {
+      _runContent = script.Content;
+      _runShell = script.Shell;
+      _runTimeout = script.TimeoutSeconds;
+    }
+  }
+
+  private async Task RunNow()
+  {
+    _isRunning = true;
+    _runResults = [];
+
+    try
+    {
+      var request = new CreateScriptRunRequestDto(
+        [.. _runDeviceIds],
+        _runShell,
+        _runContent,
+        _runTimeout,
+        _runOnNextConnect);
+
+      var created = await ControlrApi.V1.ScriptRuns.CreateScriptRun(_tenantId, request, _disposeCts.Token);
+      if (!created.IsSuccess)
+      {
+        Snackbar.Add($"Failed to start the script: {created.Reason}", Severity.Error);
+        return;
+      }
+
+      _runResults = created.Value.Results;
+      await InvokeAsync(StateHasChanged);
+
+      var deadline = DateTimeOffset.UtcNow + _runWatchLimit;
+      while (_runResults.Any(x => x.Status == ScriptResultStatus.Pending) && DateTimeOffset.UtcNow < deadline)
+      {
+        await Task.Delay(_pollInterval, _disposeCts.Token);
+
+        var run = await ControlrApi.V1.ScriptRuns.GetScriptRun(created.Value.Id, _tenantId, _disposeCts.Token);
+        if (!run.IsSuccess)
+        {
+          Snackbar.Add($"Failed to read the results: {run.Reason}", Severity.Error);
+          return;
+        }
+
+        _runResults = run.Value.Results;
+        await InvokeAsync(StateHasChanged);
+      }
+    }
+    catch (OperationCanceledException)
+    {
+      // The user left the page. The scripts keep running on the devices.
+    }
+    finally
+    {
+      _isRunning = false;
+      if (!_disposeCts.IsCancellationRequested)
+      {
+        await InvokeAsync(StateHasChanged);
+      }
+    }
   }
 
   private async Task LoadDevices()
@@ -192,6 +282,7 @@ public partial class ScriptLibrary
   {
     _editingScriptId = null;
     _scriptContent = string.Empty;
+    _scriptFolder = null;
     _scriptName = string.Empty;
     _scriptShell = ScriptShell.WindowsPowerShell;
     _scriptTimeout = ScriptLimits.DefaultTimeoutSeconds;
@@ -199,7 +290,7 @@ public partial class ScriptLibrary
 
   private async Task SaveScript()
   {
-    var request = new SaveSavedScriptRequestDto(_scriptName, _scriptShell, _scriptContent, _scriptTimeout);
+    var request = new SaveSavedScriptRequestDto(_scriptName, _scriptShell, _scriptContent, _scriptTimeout, _scriptFolder);
 
     var result = _editingScriptId is { } scriptId
       ? await ControlrApi.V1.SavedScripts.UpdateSavedScript(scriptId, _tenantId, request)

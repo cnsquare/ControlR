@@ -40,6 +40,9 @@ public class Device : TenantEntityBase
   public string Name { get; set; } = string.Empty;
   public Architecture OsArchitecture { get; set; }
 
+  [StringLength(DtoLimits.DeviceNotesMaxLength)]
+  public string Notes { get; set; } = string.Empty;
+
   [StringLength(300)]
   public string OsDescription { get; set; } = string.Empty;
   public SystemPlatform Platform { get; set; }

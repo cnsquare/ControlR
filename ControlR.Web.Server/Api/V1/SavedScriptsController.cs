@@ -48,6 +48,7 @@ public class SavedScriptsController(AppDb appDb) : ControllerBase
       Id = Guid.NewGuid(),
       Content = request.Content,
       CreatedBy = User.Identity?.Name ?? "Unknown",
+      Folder = NormalizeFolder(request.Folder),
       Name = request.Name,
       Shell = request.Shell,
       TenantId = resolvedTenantId,
@@ -103,7 +104,8 @@ public class SavedScriptsController(AppDb appDb) : ControllerBase
     var scripts = await _appDb.SavedScripts
       .AsNoTracking()
       .Where(x => x.TenantId == resolvedTenantId)
-      .OrderBy(x => x.Name)
+      .OrderBy(x => x.Folder)
+      .ThenBy(x => x.Name)
       .ToListAsync(cancellationToken);
 
     return Ok(scripts.Select(ToDto).ToArray());
@@ -145,12 +147,18 @@ public class SavedScriptsController(AppDb appDb) : ControllerBase
     }
 
     script.Content = request.Content;
+    script.Folder = NormalizeFolder(request.Folder);
     script.Name = request.Name;
     script.Shell = request.Shell;
     script.TimeoutSeconds = request.TimeoutSeconds;
 
     await _appDb.SaveChangesAsync(cancellationToken);
     return Ok(ToDto(script));
+  }
+
+  private static string? NormalizeFolder(string? folder)
+  {
+    return string.IsNullOrWhiteSpace(folder) ? null : folder.Trim();
   }
 
   private static V1Dtos.SavedScriptDto ToDto(SavedScript script)
@@ -162,7 +170,8 @@ public class SavedScriptsController(AppDb appDb) : ControllerBase
       script.Content,
       script.TimeoutSeconds,
       script.CreatedBy,
-      script.CreatedAt);
+      script.CreatedAt,
+      script.Folder);
   }
 
   private Task<SavedScript?> FindScript(Guid id, Guid tenantId, CancellationToken cancellationToken)

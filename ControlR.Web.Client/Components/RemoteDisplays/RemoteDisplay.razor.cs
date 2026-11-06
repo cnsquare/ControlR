@@ -7,6 +7,7 @@ namespace ControlR.Web.Client.Components.RemoteDisplays;
 
 public partial class RemoteDisplay : JsInteropableComponent
 {
+  private bool _isRecordingActive;
   private readonly string _canvasId = $"canvas-{Guid.NewGuid()}";
   private readonly SemaphoreSlim _typeLock = new(1, 1);
 
@@ -214,6 +215,7 @@ public partial class RemoteDisplay : JsInteropableComponent
     {
       Disposer.DisposeAll(_componentRef);
       await TryStopAudio();
+      await TryStopRecording();
     }
     await base.DisposeAsync(disposing);
   }
@@ -258,6 +260,7 @@ public partial class RemoteDisplay : JsInteropableComponent
       RemoteControlStream.RegisterMessageHandler(this, HandleRemoteControlDtoReceived),
       RemoteControlState.OnStateChanged(async () =>
       {
+        await SyncRecording();
         await InvokeAsync(StateHasChanged);
       })
     );
@@ -434,6 +437,47 @@ public partial class RemoteDisplay : JsInteropableComponent
     else
     {
       await _virtualKeyboard.MudBlurAsync();
+    }
+  }
+
+  private async Task SyncRecording()
+  {
+    if (RemoteControlState.IsRecording == _isRecordingActive)
+    {
+      return;
+    }
+
+    if (!RemoteControlState.IsRecording)
+    {
+      _isRecordingActive = false;
+      await JsModule.InvokeVoidAsync("stopRecording");
+      return;
+    }
+
+    _isRecordingActive = await JsModule.InvokeAsync<bool>("startRecording", _canvasId);
+    if (!_isRecordingActive)
+    {
+      RemoteControlState.IsRecording = false;
+      Snackbar.Add("This browser cannot record the session", Severity.Error);
+    }
+  }
+
+  private async Task TryStopRecording()
+  {
+    if (!_isRecordingActive)
+    {
+      return;
+    }
+
+    _isRecordingActive = false;
+
+    try
+    {
+      await JsModule.InvokeVoidAsync("stopRecording");
+    }
+    catch (Exception ex)
+    {
+      Logger.LogWarning(ex, "The recording could not be saved because the page closed.");
     }
   }
 

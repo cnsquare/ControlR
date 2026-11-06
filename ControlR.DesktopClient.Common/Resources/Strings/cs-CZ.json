@@ -25,6 +25,8 @@
   "LearnMore": "Zjistit více",
   "RemoteControlSessionEndToastMessage": "{0} se odpojil. Sdílení obrazovky skončilo.",
   "RemoteAudioStartToastMessage": "{0} nyní slyší zvuk přehrávaný na tomto počítači.",
+  "RemoteRecordingStartToastMessage": "{0} nahrává tuto relaci včetně obsahu vaší obrazovky.",
+  "RemoteRecordingStopToastMessage": "{0} ukončil nahrávání této relace.",
   "RemoteControlSessionToastTitle": "Relace vzdáleného ovládání",
   "RemoteControlSessionStartToastMessage": "{0} se připojil a nyní sdílí vaši obrazovku.",
   "NewChatMessageToastTitle": "Nová zpráva v chatu",

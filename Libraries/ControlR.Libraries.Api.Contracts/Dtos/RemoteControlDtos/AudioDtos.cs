@@ -1,6 +1,9 @@
 namespace ControlR.Libraries.Api.Contracts.Dtos.RemoteControlDtos;
 
 [MessagePackObject(keyAsPropertyName: true)]
+public record RecordingNoticeDto(bool IsRecording);
+
+[MessagePackObject(keyAsPropertyName: true)]
 public record ToggleAudioDto(bool IsEnabled);
 
 [MessagePackObject(keyAsPropertyName: true)]

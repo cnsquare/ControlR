@@ -20,6 +20,9 @@ public class RemoteControlCommandPermissionsTests
       PermissionNames.DeviceRemoteControlPrivacyScreen,
       RemoteControlCommandPermissions.GetRequiredPermission(RemoteControlDtoType.TogglePrivacyScreen));
     Assert.Equal(
+      PermissionNames.DeviceRemoteControlRecord,
+      RemoteControlCommandPermissions.GetRequiredPermission(RemoteControlDtoType.RecordingNotice));
+    Assert.Equal(
       PermissionNames.DeviceRemoteControlAudio,
       RemoteControlCommandPermissions.GetRequiredPermission(RemoteControlDtoType.ToggleAudio));
     Assert.Equal(

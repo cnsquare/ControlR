@@ -12,6 +12,9 @@ public class SavedScript : TenantEntityBase
   public required string CreatedBy { get; set; }
 
   [StringLength(ScriptLimits.MaxNameLength)]
+  public string? Folder { get; set; }
+
+  [StringLength(ScriptLimits.MaxNameLength)]
   public required string Name { get; set; }
 
   public required ScriptShell Shell { get; set; }

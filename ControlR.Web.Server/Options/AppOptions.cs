@@ -80,6 +80,11 @@ public class AppOptions
   public bool DisableRemoteAudio { get; init; }
 
   /// <summary>
+  /// Removes session recording for every session on this server.
+  /// </summary>
+  public bool DisableSessionRecording { get; init; }
+
+  /// <summary>
   /// Disables all email sending from the application.
   /// When enabled, no emails will be sent for account confirmation, password reset, etc.
   /// </summary>

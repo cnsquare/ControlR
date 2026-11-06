@@ -53,6 +53,7 @@ public class RemoteControlViewerCommandHandlerTests
   [InlineData(RemoteControlDtoType.MouseClick)]
   [InlineData(RemoteControlDtoType.MovePointer)]
   [InlineData(RemoteControlDtoType.RequestClipboardText)]
+  [InlineData(RemoteControlDtoType.RecordingNotice)]
   [InlineData(RemoteControlDtoType.ToggleBlockInput)]
   [InlineData(RemoteControlDtoType.TogglePrivacyScreen)]
   [InlineData(RemoteControlDtoType.TypeText)]

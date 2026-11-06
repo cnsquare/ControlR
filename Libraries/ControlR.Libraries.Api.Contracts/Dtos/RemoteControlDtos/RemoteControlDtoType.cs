@@ -38,5 +38,6 @@ public enum RemoteControlDtoType
   UpdateCaptureSettings = 51,
   ToggleAudio = 52,
   AudioState = 53,
-  AudioChunk = 54
+  AudioChunk = 54,
+  RecordingNotice = 55
 }

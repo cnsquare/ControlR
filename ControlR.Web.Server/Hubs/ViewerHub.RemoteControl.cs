@@ -17,7 +17,8 @@ public partial class ViewerHub
     PermissionNames.DeviceRemoteControlBlockInput,
     PermissionNames.DeviceRemoteControlConnect,
     PermissionNames.DeviceRemoteControlInteract,
-    PermissionNames.DeviceRemoteControlPrivacyScreen
+    PermissionNames.DeviceRemoteControlPrivacyScreen,
+    PermissionNames.DeviceRemoteControlRecord
   ];
 
   // Commands arrive at input rate, so the device's permissions are resolved once and reused.
@@ -217,7 +218,12 @@ public partial class ViewerHub
         // one point where audio is decided. It replaces whatever the viewer sent.
         AllowAudio = !_appOptions.CurrentValue.DisableRemoteAudio &&
           allowedPermissions.Contains(PermissionNames.DeviceRemoteControlAudio),
-        AllowedPermissions = [.. allowedPermissions],
+        AllowedPermissions =
+        [
+          .. allowedPermissions.Where(x =>
+            x != PermissionNames.DeviceRemoteControlRecord ||
+            !_appOptions.CurrentValue.DisableSessionRecording)
+        ],
         NotifyUserOnSessionStart = notifyUser,
         ViewerConnectionId = Context.ConnectionId,
         ViewerName = displayName

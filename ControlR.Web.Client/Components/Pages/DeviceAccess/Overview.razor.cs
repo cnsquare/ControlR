@@ -6,6 +6,8 @@ public partial class Overview : IDisposable
   private readonly ConcurrentList<IDisposable> _disposables = [];
 
   [Inject]
+  public required IDeviceAccessPermissionsState DeviceAccessPermissionsState { get; init; }
+  [Inject]
   public required IDeviceState DeviceAccessState { get; init; }
 
   [SupplyParameterFromQuery]
