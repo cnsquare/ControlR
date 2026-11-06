@@ -1,4 +1,5 @@
 using System.Net;
+using ControlR.Web.Server.Services.Alerts;
 
 namespace ControlR.Web.Server.Services.Scripting;
 
@@ -16,6 +17,7 @@ public interface IScriptAlertManager
 public class ScriptAlertManager(
   AppDb appDb,
   IControlrEmailSender emailSender,
+  IWebhookSender webhookSender,
   TimeProvider timeProvider,
   ILogger<ScriptAlertManager> logger) : IScriptAlertManager
 {
@@ -26,6 +28,7 @@ public class ScriptAlertManager(
   private readonly IControlrEmailSender _emailSender = emailSender;
   private readonly ILogger<ScriptAlertManager> _logger = logger;
   private readonly TimeProvider _timeProvider = timeProvider;
+  private readonly IWebhookSender _webhookSender = webhookSender;
 
   public async Task<int> RaiseForFailedResults(CancellationToken cancellationToken)
   {
@@ -118,6 +121,31 @@ public class ScriptAlertManager(
     });
 
     await TrySendEmail(schedule, device, message);
+    await TrySendWebhook(schedule, device, message, cancellationToken);
+  }
+
+  private async Task TrySendWebhook(
+    ScriptSchedule schedule,
+    Device? device,
+    string message,
+    CancellationToken cancellationToken)
+  {
+    var webhookUrl = await _appDb.AlertSettings
+      .Where(x => x.TenantId == schedule.TenantId)
+      .Select(x => x.WebhookUrl)
+      .FirstOrDefaultAsync(cancellationToken);
+
+    if (string.IsNullOrWhiteSpace(webhookUrl))
+    {
+      return;
+    }
+
+    // As with email, script output stays out of this.
+    List<string> lines = device is null
+      ? [$"Schedule: {schedule.Name}", message]
+      : [$"Schedule: {schedule.Name}", $"Device: {device.Name}", message];
+
+    await _webhookSender.Send(webhookUrl, "A scheduled script needs attention", lines, cancellationToken);
   }
 
   private async Task TrySendEmail(ScriptSchedule schedule, Device? device, string message)

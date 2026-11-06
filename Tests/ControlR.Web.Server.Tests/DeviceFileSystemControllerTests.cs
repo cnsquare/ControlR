@@ -6,6 +6,7 @@ using ControlR.Web.Server.Data.Entities;
 using ControlR.Web.Server.Hubs;
 using ControlR.Web.Server.Options;
 using ControlR.Web.Server.Services.DeviceFileSystem;
+using ControlR.Web.Server.Services.RemoteSessions;
 using ControlR.Web.Server.Tests.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -1635,6 +1636,7 @@ public class DeviceFileSystemControllerTests(ITestOutputHelper testOutput)
         agentHub,
         HubStreamStore,
         Authz,
+        Services.GetRequiredService<IRemoteSessionLogger>(),
         Services.GetRequiredService<ILogger<DeviceFileSystemService>>());
 
     public async Task SetDeviceOnline(bool isOnline)

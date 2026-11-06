@@ -1,11 +1,14 @@
 using ControlR.Libraries.Api.Contracts.Dtos.ServerApi.V1;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.JSInterop;
 
 namespace ControlR.Web.Client.Components.Pages;
 
 // ReSharper disable once ClassNeverInstantiated.Global
 public partial class SessionHistory
 {
+  private const int MaxLogs = 1000;
+
   private string? _filter;
   private bool _isLoaded;
   private RemoteSessionLogDto[] _logs = [];
@@ -14,6 +17,8 @@ public partial class SessionHistory
   public required AuthenticationStateProvider AuthState { get; init; }
   [Inject]
   public required IControlrApi ControlrApi { get; init; }
+  [Inject]
+  public required IJSRuntime JsRuntime { get; init; }
   [Inject]
   public required ISnackbar Snackbar { get; init; }
 
@@ -33,7 +38,7 @@ public partial class SessionHistory
       return;
     }
 
-    var result = await ControlrApi.V1.RemoteSessionLogs.GetRemoteSessionLogs(tenantId);
+    var result = await ControlrApi.V1.RemoteSessionLogs.GetRemoteSessionLogs(tenantId, MaxLogs);
     if (result.IsSuccess && result.Value is { } logs)
     {
       _logs = logs;
@@ -46,14 +51,48 @@ public partial class SessionHistory
     _isLoaded = true;
   }
 
+  private async Task ExportCsv()
+  {
+    var csv = CsvBuilder.Build(
+      ["Started", "Ended", "Type", "Device", "User", "IP address", "Status", "Details"],
+      FilteredLogs.Select(x => new[]
+      {
+        x.StartedAt.ToString("u"),
+        x.EndedAt?.ToString("u"),
+        GetKind(x),
+        x.DeviceName,
+        x.UserName,
+        x.IpAddress,
+        GetStatus(x),
+        x.Detail,
+      }));
+
+    await JsRuntime.InvokeVoidAsync("downloadCsvFile", "session-history.csv", csv);
+  }
+
   private static string GetDuration(RemoteSessionLogDto log)
   {
-    if (log.EndedAt is not { } endedAt || log.FailureReason is not null)
+    if (log.EndedAt is not { } endedAt ||
+        log.FailureReason is not null ||
+        log.Kind == RemoteSessionKind.FileOperation)
     {
       return string.Empty;
     }
 
     return (endedAt - log.StartedAt).ToString(@"hh\:mm\:ss");
+  }
+
+  private static string GetKind(RemoteSessionLogDto log)
+  {
+    return log.Kind switch
+    {
+      RemoteSessionKind.RemoteControl => "Remote control",
+      RemoteSessionKind.FlashAssist => "Flash Assist",
+      RemoteSessionKind.Terminal => "Terminal",
+      RemoteSessionKind.VncRelay => "VNC",
+      RemoteSessionKind.FileOperation => "File",
+      _ => log.Kind.ToString(),
+    };
   }
 
   private static string GetStatus(RemoteSessionLogDto log)
@@ -68,6 +107,11 @@ public partial class SessionHistory
       return "End unknown (server restarted)";
     }
 
+    if (log.Kind == RemoteSessionKind.FileOperation)
+    {
+      return "Requested";
+    }
+
     return log.EndedAt is null ? "In progress" : "Ended";
   }
 
@@ -75,6 +119,7 @@ public partial class SessionHistory
   {
     return log.DeviceName.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
       log.UserName.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+      (log.Detail?.Contains(filter, StringComparison.OrdinalIgnoreCase) ?? false) ||
       (log.IpAddress?.Contains(filter, StringComparison.OrdinalIgnoreCase) ?? false);
   }
 }

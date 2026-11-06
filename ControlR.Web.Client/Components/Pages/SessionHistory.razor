@@ -8,12 +8,16 @@
 </PrimaryTitle>
 
 <MudAlert Severity="Severity.Info" Class="mb-4">
-  Who remotely controlled which device, when, and from where. Flash Assist sessions, terminals and
-  file transfers are not listed.
+  Who connected to which device, when, and from where, along with file transfers and deletions.
+  Listing a folder or reading a log file is not recorded.
 </MudAlert>
 
 <MudTextField T="string" @bind-Value="_filter" Immediate Label="Filter by device, user or IP address"
-              Variant="Variant.Outlined" Class="mb-4" />
+              Variant="Variant.Outlined" Class="mb-2" />
+
+<MudButton Variant="Variant.Outlined" Class="mb-4" Disabled="@(FilteredLogs.Length == 0)" OnClick="ExportCsv">
+  Export CSV
+</MudButton>
 
 @if (!_isLoaded)
 {
@@ -27,18 +31,20 @@ else
 {
   <MudSimpleTable Dense>
     <thead>
-      <tr><th>Started</th><th>Device</th><th>User</th><th>IP address</th><th>Duration</th><th>Status</th></tr>
+      <tr><th>Started</th><th>Type</th><th>Device</th><th>User</th><th>IP address</th><th>Duration</th><th>Status</th><th>Details</th></tr>
     </thead>
     <tbody>
       @foreach (var log in FilteredLogs)
       {
         <tr @key="log.Id">
           <td>@log.StartedAt.ToLocalTime().ToString("g")</td>
+          <td>@GetKind(log)</td>
           <td>@log.DeviceName</td>
           <td>@log.UserName</td>
           <td>@log.IpAddress</td>
           <td>@GetDuration(log)</td>
           <td>@GetStatus(log)</td>
+          <td>@log.Detail</td>
         </tr>
       }
     </tbody>

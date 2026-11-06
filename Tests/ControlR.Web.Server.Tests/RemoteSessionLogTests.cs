@@ -136,6 +136,31 @@ public class RemoteSessionLogTests(ITestOutputHelper testOutput)
   }
 
   [Fact]
+  public async Task LogFileOperation_LongDetail_IsStoredAsAnEndedRow()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    using var scope = testApp.Services.CreateScope();
+    var controller = await scope.CreateControllerWithUser<RemoteSessionLogsController>(user);
+    var stored = await scope.ServiceProvider.GetRequiredService<AppDb>().Devices
+      .IgnoreQueryFilters()
+      .AsNoTracking()
+      .SingleAsync(x => x.Id == device.Id, Ct);
+
+    await testApp.Services.GetRequiredService<IRemoteSessionLogger>()
+      .LogFileOperation(stored, controller.User, new string('p', 2000), Ct);
+
+    var log = (await GetLogs(testApp)).Single();
+    Assert.Equal(RemoteSessionKind.FileOperation, log.Kind);
+    Assert.Equal(device.Id, log.DeviceId);
+    Assert.Equal(user.Id, log.UserId);
+    Assert.Equal(512, log.Detail?.Length);
+    Assert.NotNull(log.EndedAt);
+  }
+
+  [Fact]
   public async Task Postgres_LogLifecycle_Persists()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(

@@ -18,7 +18,7 @@ namespace ControlR.Web.Server.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.13")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -99,6 +99,43 @@ namespace ControlR.Web.Server.Data.Migrations
                     b.HasIndex("TenantId");
 
                     b.ToTable("AgentInstallerKeyUsages");
+                });
+
+            modelBuilder.Entity("ControlR.Web.Server.Data.Entities.AlertSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("LowDiskPercent")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OfflineMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("WebhookUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId")
+                        .IsUnique();
+
+                    b.ToTable("AlertSettings");
                 });
 
             modelBuilder.Entity("ControlR.Web.Server.Data.Entities.AppUser", b =>
@@ -420,6 +457,57 @@ namespace ControlR.Web.Server.Data.Migrations
                     b.ToTable("Devices");
                 });
 
+            modelBuilder.Entity("ControlR.Web.Server.Data.Entities.DeviceAlert", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<Guid>("DeviceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DeviceName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset?>("DismissedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DismissedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<DateTimeOffset>("RaisedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "DeviceId", "Kind");
+
+                    b.ToTable("DeviceAlerts");
+                });
+
             modelBuilder.Entity("ControlR.Web.Server.Data.Entities.DeviceGroup", b =>
                 {
                     b.Property<Guid>("Id")
@@ -689,7 +777,11 @@ namespace ControlR.Web.Server.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<Guid>("DeviceId")
+                    b.Property<string>("Detail")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<Guid?>("DeviceId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("DeviceName")
@@ -707,6 +799,9 @@ namespace ControlR.Web.Server.Data.Migrations
                     b.Property<string>("IpAddress")
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("SessionId")
                         .HasColumnType("uuid");
@@ -1580,6 +1675,17 @@ namespace ControlR.Web.Server.Data.Migrations
                     b.Navigation("Tenant");
                 });
 
+            modelBuilder.Entity("ControlR.Web.Server.Data.Entities.AlertSettings", b =>
+                {
+                    b.HasOne("ControlR.Web.Server.Data.Entities.Tenant", "Tenant")
+                        .WithOne("AlertSettings")
+                        .HasForeignKey("ControlR.Web.Server.Data.Entities.AlertSettings", "TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
+                });
+
             modelBuilder.Entity("ControlR.Web.Server.Data.Entities.AppUser", b =>
                 {
                     b.HasOne("ControlR.Web.Server.Data.Entities.Tenant", "Tenant")
@@ -1655,6 +1761,17 @@ namespace ControlR.Web.Server.Data.Migrations
                     b.Navigation("Customer");
 
                     b.Navigation("Drives");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("ControlR.Web.Server.Data.Entities.DeviceAlert", b =>
+                {
+                    b.HasOne("ControlR.Web.Server.Data.Entities.Tenant", "Tenant")
+                        .WithMany("DeviceAlerts")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Tenant");
                 });
@@ -2052,7 +2169,11 @@ namespace ControlR.Web.Server.Data.Migrations
 
             modelBuilder.Entity("ControlR.Web.Server.Data.Entities.Tenant", b =>
                 {
+                    b.Navigation("AlertSettings");
+
                     b.Navigation("Customers");
+
+                    b.Navigation("DeviceAlerts");
 
                     b.Navigation("DeviceGroups");
 

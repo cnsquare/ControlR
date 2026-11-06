@@ -25,7 +25,10 @@ public partial class Dashboard : IAsyncDisposable
 
   private bool? _anyDevicesForUser;
   private List<CustomerDto> _customers = [];
+  private HashSet<DeviceViewModel> _bulkSelection = [];
+  private Guid? _bulkTagId;
   private MudDataGrid<DeviceViewModel>? _dataGrid;
+  private bool _isBulkBusy;
   private FilterMatchMode _deviceGroupFilterMatchMode = FilterMatchMode.Any;
   private List<DeviceGroupDto> _deviceGroups = [];
   private InternalDtos.DeviceSearchFilterCountsDto _filterCounts = new();
@@ -660,6 +663,78 @@ public partial class Dashboard : IAsyncDisposable
     {
       Logger.LogError(ex, "Error while sending update request.");
     }
+  }
+
+  private async Task BulkAddTag()
+  {
+    if (_bulkTagId is not { } tagId || await AuthState.GetTenantId(Snackbar) is not { } tenantId)
+    {
+      return;
+    }
+
+    await RunBulk(async device =>
+    {
+      var result = await ControlrApi.V1.DeviceTags.AddDeviceTag(tenantId, new(device.Id, tagId));
+      return result.IsSuccess;
+    }, _bulkSelection, "Tagged");
+
+    await TagStore.Refresh();
+  }
+
+  private void BulkRunScript()
+  {
+    var deviceIds = string.Join(',', _bulkSelection.Select(x => x.Id));
+    NavMan.NavigateTo($"{ClientRoutes.ScriptLibrary}?devices={deviceIds}");
+  }
+
+  private async Task BulkWake()
+  {
+    var targets = _bulkSelection
+      .Where(x => !x.Dto.IsOnline && x.Dto.MacAddresses.Count > 0)
+      .ToArray();
+
+    if (targets.Length == 0)
+    {
+      Snackbar.Add("None of the selected devices are offline with a known MAC address.", Severity.Warning);
+      return;
+    }
+
+    await RunBulk(async device =>
+    {
+      var result = await MainHub.Server.SendWakeDevice2(new(device.Id, [.. device.Dto.MacAddresses]));
+      return result.IsSuccess;
+    }, targets, "Wake sent to");
+  }
+
+  private async Task RunBulk(
+    Func<DeviceViewModel, Task<bool>> action,
+    IReadOnlyCollection<DeviceViewModel> devices,
+    string verb)
+  {
+    _isBulkBusy = true;
+    var succeeded = 0;
+
+    try
+    {
+      foreach (var device in devices)
+      {
+        try
+        {
+          succeeded += await action(device) ? 1 : 0;
+        }
+        catch (Exception ex)
+        {
+          Logger.LogError(ex, "Bulk action failed for device {DeviceId}.", device.Id);
+        }
+      }
+    }
+    finally
+    {
+      _isBulkBusy = false;
+    }
+
+    var severity = succeeded == devices.Count ? Severity.Success : Severity.Warning;
+    Snackbar.Add($"{verb} {succeeded} of {devices.Count} devices.", severity);
   }
 
   private async Task WakeDevice(DeviceViewModel device)

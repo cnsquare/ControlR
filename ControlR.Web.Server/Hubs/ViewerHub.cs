@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using ControlR.Libraries.Api.Contracts.Dtos.HubDtos;
@@ -50,6 +51,25 @@ public partial class ViewerHub(
   private readonly IResourceDescriptorFactory _resourceFactory = resourceFactory;
   private readonly TimeProvider _timeProvider = timeProvider;
   private readonly UserManager<AppUser> _userManager = userManager;
+
+  // Terminals outlive no hub connection, so a dropped viewer ends whatever it left open.
+  private ConcurrentDictionary<Guid, byte> OpenTerminals
+  {
+    get
+    {
+      lock (Context.Items)
+      {
+        if (GetItem<ConcurrentDictionary<Guid, byte>?>(null) is { } existing)
+        {
+          return existing;
+        }
+
+        var created = new ConcurrentDictionary<Guid, byte>();
+        SetItem(created);
+        return created;
+      }
+    }
+  }
 
   public Activity? SessionActivity
   {
@@ -105,6 +125,11 @@ public partial class ViewerHub(
         .Client(authResult.Value.ConnectionId)
         .CloseTerminalSession(request.TerminalId);
 
+      if (OpenTerminals.TryRemove(request.TerminalId, out _))
+      {
+        await _remoteSessionLogger.LogEnded(request.TerminalId);
+      }
+
       return HubResult.Ok();
     }
     catch (Exception ex)
@@ -123,11 +148,29 @@ public partial class ViewerHub(
         return HubResult.Fail("Forbidden.");
       }
 
-      var createResult = await _agentHub.Clients
-        .Client(authResult.Value.ConnectionId)
-        .CreateTerminalSession(request.TerminalId, Context.ConnectionId);
+      var device = authResult.Value;
+      _ = TryGetUserId(out var userId);
+
+      var createResult = await StartLoggedSession(
+        new RemoteSessionStart(
+          request.TerminalId,
+          device.TenantId,
+          device.Id,
+          device.Name,
+          userId,
+          Context.User?.Identity?.Name ?? "Unknown",
+          Context.GetHttpContext()?.Connection.RemoteIpAddress?.ToString(),
+          RemoteSessionKind.Terminal),
+        () => _agentHub.Clients
+          .Client(device.ConnectionId)
+          .CreateTerminalSession(request.TerminalId, Context.ConnectionId));
 
       _logger.LogInformation("Create terminal session.  Success: {IsSuccess}", createResult.IsSuccess);
+
+      if (createResult.IsSuccess)
+      {
+        OpenTerminals.TryAdd(request.TerminalId, 0);
+      }
 
       return createResult;
     }
@@ -283,6 +326,11 @@ public partial class ViewerHub(
     {
       await base.OnDisconnectedAsync(exception);
 
+      foreach (var terminalId in OpenTerminals.Keys)
+      {
+        await _remoteSessionLogger.LogEnded(terminalId);
+      }
+
       SessionActivity?.Dispose();
       SessionActivity = null;
 
@@ -396,9 +444,20 @@ public partial class ViewerHub(
         ViewerName = displayName,
       };
 
-      return await _agentHub.Clients
-        .Client(device.ConnectionId)
-        .CreateVncSession(sessionRequestDto);
+      return await StartLoggedSession(
+        new RemoteSessionStart(
+          sessionRequestDto.SessionId,
+          device.TenantId,
+          device.Id,
+          device.Name,
+          userId,
+          displayName,
+          remoteIp,
+          RemoteSessionKind.VncRelay,
+          $"Port {sessionRequestDto.Port}"),
+        () => _agentHub.Clients
+          .Client(device.ConnectionId)
+          .CreateVncSession(sessionRequestDto));
     }
     catch (Exception ex)
     {

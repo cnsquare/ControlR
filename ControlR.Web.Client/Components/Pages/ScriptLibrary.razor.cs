@@ -1,6 +1,7 @@
 using System.Globalization;
 using ControlR.Libraries.Api.Contracts.Dtos.ServerApi.V1;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.JSInterop;
 
 namespace ControlR.Web.Client.Components.Pages;
 
@@ -46,6 +47,10 @@ public partial class ScriptLibrary : IDisposable
   public required AuthenticationStateProvider AuthState { get; init; }
   [Inject]
   public required IControlrApi ControlrApi { get; init; }
+  [SupplyParameterFromQuery(Name = "devices")]
+  public string? DevicesQuery { get; init; }
+  [Inject]
+  public required IJSRuntime JsRuntime { get; init; }
   [Inject]
   public required ISnackbar Snackbar { get; init; }
 
@@ -80,6 +85,18 @@ public partial class ScriptLibrary : IDisposable
     _tenantId = tenantId;
     await Refresh();
     await LoadDevices();
+
+    // Sent by the dashboard's bulk actions. The server still checks each device when this runs.
+    if (DevicesQuery is { Length: > 0 } devicesQuery)
+    {
+      _runDeviceIds =
+      [
+        .. devicesQuery
+          .Split(',')
+          .Select(x => Guid.TryParse(x, out var id) ? id : Guid.Empty)
+          .Where(x => _devices.Any(device => device.Id == x))
+      ];
+    }
   }
 
   private async Task CreateSchedule()
@@ -237,6 +254,25 @@ public partial class ScriptLibrary : IDisposable
         await InvokeAsync(StateHasChanged);
       }
     }
+  }
+
+  private async Task ExportRunResults()
+  {
+    var csv = CsvBuilder.Build(
+      ["Device", "Status", "Exit code", "Started", "Finished", "Output", "Errors", "Failure"],
+      _runResults.Select(x => new[]
+      {
+        GetDeviceName(x.DeviceId),
+        x.Status.ToString(),
+        x.ExitCode?.ToString(CultureInfo.InvariantCulture),
+        x.StartedAt?.ToString("u"),
+        x.FinishedAt?.ToString("u"),
+        x.StandardOutput,
+        x.StandardError,
+        x.FailureReason,
+      }));
+
+    await JsRuntime.InvokeVoidAsync("downloadCsvFile", "script-results.csv", csv);
   }
 
   private async Task LoadDevices()

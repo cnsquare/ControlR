@@ -5,6 +5,7 @@ using ControlR.Web.Server.Services.AgentInstaller;
 using ControlR.Web.Server.Services.Assist;
 using ControlR.Web.Server.Services.Authorization;
 using System.Threading.RateLimiting;
+using ControlR.Web.Server.Services.RemoteSessions;
 using Microsoft.AspNetCore.SignalR;
 
 namespace ControlR.Web.Server.Hubs;
@@ -24,6 +25,7 @@ public class AssistHub(
   IPermissionEvaluator permissionEvaluator,
   IResourceDescriptorFactory resourceFactory,
   IAgentInstallerKeyManager installerKeyManager,
+  IRemoteSessionLogger remoteSessionLogger,
   TimeProvider timeProvider,
   ILogger<AssistHub> logger)
   : HubWithItems<IAssistHubClient>, IAssistHub
@@ -35,6 +37,7 @@ public class AssistHub(
   private readonly IAgentInstallerKeyManager _installerKeyManager = installerKeyManager;
   private readonly ILogger<AssistHub> _logger = logger;
   private readonly IPermissionEvaluator _permissionEvaluator = permissionEvaluator;
+  private readonly IRemoteSessionLogger _remoteSessionLogger = remoteSessionLogger;
   private readonly IResourceDescriptorFactory _resourceFactory = resourceFactory;
   private readonly TimeProvider _timeProvider = timeProvider;
   private readonly IAssistSessionCache _sessionCache = sessionCache;
@@ -147,6 +150,7 @@ public class AssistHub(
       }
 
       _ = await _sessionCache.RemoveAsync(request.SessionId, Context.ConnectionAborted);
+      await _remoteSessionLogger.LogEnded(request.SessionId);
       await NotifyOtherSide(session, AssistSessionEndedReason.EndedByPeer);
 
       return HubResult.Ok();
@@ -213,7 +217,8 @@ public class AssistHub(
         userId,
         displayName,
         user.Email,
-        Context.ConnectionAborted);
+        Context.ConnectionAborted,
+        Context.GetHttpContext()?.Connection.RemoteIpAddress?.ToString());
 
       if (pending is null)
       {
@@ -415,12 +420,16 @@ public class AssistHub(
         return HubResult.Ok();
       }
 
+      // Written before the technician is let in, so a failed write stops the session.
+      await LogAssistSessionStart(session);
+
       var activated = await _sessionCache.TryActivateAsync(
         request.SessionId,
         request.ConsentNonce,
         Context.ConnectionAborted);
       if (activated?.ViewerConnectionId is not { Length: > 0 } viewerConnectionId)
       {
+        await _remoteSessionLogger.LogFailed(request.SessionId, "The consent request was no longer pending.");
         return HubResult.Fail("The consent request is no longer pending.");
       }
 
@@ -448,6 +457,39 @@ public class AssistHub(
       _logger.LogError(ex, "Error while responding to consent for assist session {SessionId}.", request.SessionId);
       return HubResult.Fail("An error occurred while responding to the consent request.");
     }
+  }
+
+  private async Task LogAssistSessionStart(AssistSession session)
+  {
+    if (!Guid.TryParse(session.ViewerUserId, out var userId))
+    {
+      return;
+    }
+
+    var user = await _userManager.Users
+      .AsNoTracking()
+      .FirstOrDefaultAsync(x => x.Id == userId, Context.ConnectionAborted);
+
+    if (user is null)
+    {
+      _logger.LogWarning("Technician {UserId} no longer exists, so assist session {SessionId} has no log.", userId, session.SessionId);
+      return;
+    }
+
+    var customerIp = Context.GetHttpContext()?.Connection.RemoteIpAddress?.ToString();
+
+    await _remoteSessionLogger.LogStarted(
+      new RemoteSessionStart(
+        session.SessionId,
+        user.TenantId,
+        DeviceId: null,
+        "Flash Assist customer",
+        user.Id,
+        session.ViewerDisplayName ?? user.Email ?? "Unknown",
+        session.ViewerIpAddress,
+        RemoteSessionKind.FlashAssist,
+        customerIp is null ? null : $"Customer IP {customerIp}"),
+      Context.ConnectionAborted);
   }
 
   private static string GetDisplayName(AppUser user)

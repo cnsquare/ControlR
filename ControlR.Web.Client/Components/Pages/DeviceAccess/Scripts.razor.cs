@@ -1,3 +1,4 @@
+using Microsoft.JSInterop;
 using ControlR.Libraries.Api.Contracts.Dtos.ServerApi.V1;
 
 namespace ControlR.Web.Client.Components.Pages.DeviceAccess;
@@ -28,6 +29,8 @@ public partial class Scripts : IDisposable
   public required Guid DeviceId { get; init; }
   [Inject]
   public required IDeviceState DeviceState { get; init; }
+  [Inject]
+  public required IJSRuntime JsRuntime { get; init; }
   [Inject]
   public required ILogger<Scripts> Logger { get; init; }
   [Inject]
@@ -73,6 +76,21 @@ public partial class Scripts : IDisposable
         $"This script uses {ScriptShellOptions.GetDisplayName(script.Shell)}, which this device does not offer.",
         Severity.Warning);
     }
+  }
+
+  private async Task ExportHistory()
+  {
+    var csv = CsvBuilder.Build(
+      ["Time", "Status", "Run by", "Script"],
+      _history.Select(x => new[]
+      {
+        x.CreatedAt.ToString("u"),
+        x.Status.ToString(),
+        x.InitiatedBy,
+        x.ContentPreview,
+      }));
+
+    await JsRuntime.InvokeVoidAsync("downloadCsvFile", "script-history.csv", csv);
   }
 
   private async Task LoadSavedScripts()

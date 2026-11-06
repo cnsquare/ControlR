@@ -1,0 +1,64 @@
+@attribute [Route(ClientRoutes.Alerts)]
+@attribute [Authorize(Policy = PolicyNames.RequireTenantSettingsRead)]
+
+<PageTitle>Alerts</PageTitle>
+
+<PrimaryTitle>
+  Alerts
+</PrimaryTitle>
+
+<MudText Typo="Typo.h6" GutterBottom>Active Device Alerts</MudText>
+
+@if (_alerts.Length == 0)
+{
+  <MudText Class="mb-6">No active alerts.</MudText>
+}
+else
+{
+  <MudSimpleTable Dense Class="mb-6">
+    <thead>
+      <tr><th>Raised</th><th>Device</th><th>Problem</th><th>Details</th><th></th></tr>
+    </thead>
+    <tbody>
+      @foreach (var alert in _alerts)
+      {
+        <tr @key="alert.Id">
+          <td>@alert.RaisedAt.ToLocalTime().ToString("g")</td>
+          <td>@alert.DeviceName</td>
+          <td>@(alert.Kind == DeviceAlertKind.Offline ? "Offline" : "Low disk space")</td>
+          <td>@alert.Message</td>
+          <td>
+            @if (_canWrite)
+            {
+              <MudButton Size="Size.Small" OnClick="@(() => Dismiss(alert))">Dismiss</MudButton>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </MudSimpleTable>
+}
+
+@if (_canWrite)
+{
+  <MudPaper Class="pa-4" Style="max-width: 640px;">
+    <MudText Typo="Typo.h6" GutterBottom>Settings</MudText>
+    <MudText Typo="Typo.body2" Class="mb-4">
+      Devices are checked every 5 minutes. Set a threshold to 0 to turn that check off. The webhook also
+      receives failed scheduled scripts. Script output is never sent.
+    </MudText>
+
+    <MudNumericField T="int" Label="Alert when offline for (minutes)" @bind-Value="_offlineMinutes" Min="0"
+                     Variant="Variant.Outlined" Class="mb-4" />
+    <MudNumericField T="int" Label="Alert when a disk has less than this % free" @bind-Value="_lowDiskPercent"
+                     Min="0" Max="99" Variant="Variant.Outlined" Class="mb-4" />
+    <MudTextField T="string" Label="Email address (optional)" @bind-Value="_email" Immediate
+                  Variant="Variant.Outlined" Class="mb-4" />
+    <MudTextField T="string" Label="Webhook URL (optional)" @bind-Value="_webhookUrl" Immediate
+                  HelperText="Slack, Teams, Discord, or anything that accepts a JSON POST."
+                  Variant="Variant.Outlined" Class="mb-4" />
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save">Save</MudButton>
+    <MudButton Variant="Variant.Outlined" Class="ml-2" OnClick="SendTest">Send Test</MudButton>
+  </MudPaper>
+}

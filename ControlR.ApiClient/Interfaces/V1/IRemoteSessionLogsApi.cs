@@ -6,6 +6,6 @@ namespace ControlR.ApiClient.Interfaces.V1;
 
 public interface IRemoteSessionLogsApi
 {
-  [ApiRoute($"{HttpConstants.V1.RemoteSessionLogsEndpoint}?tenantId={{tenantId}}", "GET")]
-  Task<ApiResult<RemoteSessionLogDto[]>> GetRemoteSessionLogs(Guid tenantId, CancellationToken cancellationToken = default);
+  [ApiRoute($"{HttpConstants.V1.RemoteSessionLogsEndpoint}?tenantId={{tenantId}}&take={{take}}", "GET")]
+  Task<ApiResult<RemoteSessionLogDto[]>> GetRemoteSessionLogs(Guid tenantId, int take = 0, CancellationToken cancellationToken = default);
 }

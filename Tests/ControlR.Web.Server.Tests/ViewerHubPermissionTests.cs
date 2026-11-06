@@ -370,6 +370,54 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   }
 
   [Fact]
+  public async Task CreateTerminalSession_ThenClose_LogsStartAndEnd()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    await SeedAssignment(testApp, user.Id, device.Id, tenant.Id, PermissionNames.DeviceTerminalUse);
+    var terminalId = Guid.NewGuid();
+
+    var (hub, agentClient) = CreateHub(testApp, user, tenant.Id);
+    agentClient
+      .Setup(client => client.CreateTerminalSession(terminalId, It.IsAny<string>()))
+      .ReturnsAsync(HubResult.Ok());
+
+    var result = await hub.CreateTerminalSession2(new(device.Id, terminalId));
+
+    Assert.True(result.IsSuccess);
+    var log = Assert.Single(await GetSessionLogs(testApp));
+    Assert.Equal(RemoteSessionKind.Terminal, log.Kind);
+    Assert.Null(log.EndedAt);
+
+    await hub.CloseTerminalSession2(new(device.Id, terminalId));
+
+    Assert.NotNull(Assert.Single(await GetSessionLogs(testApp)).EndedAt);
+  }
+
+  [Fact]
+  public async Task ViewerDisconnects_WithATerminalOpen_EndsItsLog()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    await SeedAssignment(testApp, user.Id, device.Id, tenant.Id, PermissionNames.DeviceTerminalUse);
+    var terminalId = Guid.NewGuid();
+
+    var (hub, agentClient) = CreateHub(testApp, user, tenant.Id);
+    agentClient
+      .Setup(client => client.CreateTerminalSession(terminalId, It.IsAny<string>()))
+      .ReturnsAsync(HubResult.Ok());
+
+    await hub.CreateTerminalSession2(new(device.Id, terminalId));
+    await hub.OnDisconnectedAsync(null);
+
+    Assert.NotNull(Assert.Single(await GetSessionLogs(testApp)).EndedAt);
+  }
+
+  [Fact]
   public async Task RequestRemoteControlSession_Unauthorized_NothingIsLogged()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);

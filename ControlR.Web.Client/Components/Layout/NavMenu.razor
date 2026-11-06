@@ -94,6 +94,12 @@
           </MudNavLink>
         </AuthorizeView>
       }
+      <AuthorizeView Policy="@(PolicyNames.RequireTenantSettingsRead)">
+        <MudNavLink Href="@(ClientRoutes.Alerts)" Match="NavLinkMatch.Prefix"
+                    Icon="@Icons.Material.Filled.NotificationsActive">
+          Alerts
+        </MudNavLink>
+      </AuthorizeView>
       <AuthorizeView Policy="@(PolicyNames.RequireAuthorizationLogsRead)">
         <MudNavLink Href="@(ClientRoutes.SessionHistory)" Match="NavLinkMatch.Prefix"
                     Icon="@Icons.Material.Filled.ManageHistory">

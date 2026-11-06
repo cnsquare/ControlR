@@ -230,9 +230,7 @@ public partial class ViewerHub
         ViewerName = displayName
       };
 
-      // Written before the agent hears about it, so a failed write stops the session
-      // instead of letting one run with no record.
-      await _remoteSessionLogger.LogStarted(
+      var result = await StartLoggedSession(
         new RemoteSessionStart(
           sessionRequestDto.SessionId,
           device.TenantId,
@@ -241,26 +239,15 @@ public partial class ViewerHub
           userId,
           displayName,
           remoteIp),
-        Context.ConnectionAborted);
-
-      HubResult result;
-      try
-      {
-        result = await _agentHub.Clients
+        () => _agentHub.Clients
           .Client(device.ConnectionId)
-          .CreateRemoteControlSession(sessionRequestDto);
-      }
-      catch (Exception)
-      {
-        await _remoteSessionLogger.LogFailed(sessionRequestDto.SessionId, "The agent could not be reached.");
-        throw;
-      }
+          .CreateRemoteControlSession(sessionRequestDto));
 
       if (!result.IsSuccess)
       {
-        var reason = result.Reason ?? "The agent failed to start the remote control session.";
-        await _remoteSessionLogger.LogFailed(sessionRequestDto.SessionId, reason);
-        return HubResult.Fail(reason, result.FailureCode);
+        return HubResult.Fail(
+          result.Reason ?? "The agent failed to start the remote control session.",
+          result.FailureCode);
       }
 
       return HubResult.Ok();
@@ -271,6 +258,33 @@ public partial class ViewerHub
       _logger.LogError(ex, reason);
       return HubResult.Fail(reason);
     }
+  }
+
+  /// <summary>
+  /// Writes the log before the agent hears about the session, so a failed write stops the
+  /// session instead of letting one run with no record.
+  /// </summary>
+  private async Task<HubResult> StartLoggedSession(RemoteSessionStart start, Func<Task<HubResult>> startOnAgent)
+  {
+    await _remoteSessionLogger.LogStarted(start, Context.ConnectionAborted);
+
+    HubResult result;
+    try
+    {
+      result = await startOnAgent();
+    }
+    catch (Exception)
+    {
+      await _remoteSessionLogger.LogFailed(start.SessionId, "The agent could not be reached.");
+      throw;
+    }
+
+    if (result is not { IsSuccess: true })
+    {
+      await _remoteSessionLogger.LogFailed(start.SessionId, result?.Reason ?? "The agent refused the session.");
+    }
+
+    return result!;
   }
 
   private async Task<IReadOnlySet<string>?> TryGetRemoteControlPermissions(

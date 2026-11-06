@@ -8,6 +8,7 @@ using ControlR.Web.Server.Components.Account;
 using ControlR.Web.Server.Constants;
 using ControlR.Libraries.WebSocketRelay.Common.Extensions;
 using ControlR.Libraries.WebSocketRelay.Common.Sessions;
+using ControlR.Web.Server.Services.Alerts;
 using ControlR.Web.Server.Services.RemoteSessions;
 using ControlR.Web.Server.Services.Scripting;
 using ControlR.Web.Server.Services.Users;
@@ -268,6 +269,10 @@ public static class WebApplicationBuilderExtensions
     builder.Services.AddHostedService(sp => sp.GetRequiredService<ExternalUserCleanupBackgroundService>());
     builder.Services.AddSingleton<ScriptScheduleBackgroundService>();
     builder.Services.AddHostedService(sp => sp.GetRequiredService<ScriptScheduleBackgroundService>());
+    builder.Services.AddSingleton<IWebhookSender, WebhookSender>();
+    builder.Services.AddScoped<IAlertNotifier, AlertNotifier>();
+    builder.Services.AddSingleton<DeviceHealthBackgroundService>();
+    builder.Services.AddHostedService(sp => sp.GetRequiredService<DeviceHealthBackgroundService>());
     builder.Services.AddSingleton<RemoteSessionLogger>();
     builder.Services.AddSingleton<IRemoteSessionLogger>(sp => sp.GetRequiredService<RemoteSessionLogger>());
     builder.Services.AddSingleton<IRelaySessionObserver>(sp => sp.GetRequiredService<RemoteSessionLogger>());

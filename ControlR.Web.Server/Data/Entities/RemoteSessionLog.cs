@@ -4,12 +4,21 @@ using ControlR.Web.Server.Data.Entities.Bases;
 namespace ControlR.Web.Server.Data.Entities;
 
 /// <summary>
-/// One remote control session. The device and user are copied rather than linked, so the record
+/// One remote session or file operation. The device and user are copied rather than linked, so the record
 /// still reads correctly after either is deleted.
 /// </summary>
 public class RemoteSessionLog : TenantEntityBase
 {
-  public required Guid DeviceId { get; set; }
+  /// <summary>
+  /// What was done, such as the path of a file operation.
+  /// </summary>
+  [StringLength(512)]
+  public string? Detail { get; set; }
+
+  /// <summary>
+  /// Null for Flash Assist, because the person being helped has no device record.
+  /// </summary>
+  public Guid? DeviceId { get; set; }
 
   [StringLength(256)]
   public required string DeviceName { get; set; }
@@ -21,6 +30,8 @@ public class RemoteSessionLog : TenantEntityBase
 
   [StringLength(64)]
   public string? IpAddress { get; set; }
+
+  public RemoteSessionKind Kind { get; set; }
 
   public required Guid SessionId { get; set; }
 

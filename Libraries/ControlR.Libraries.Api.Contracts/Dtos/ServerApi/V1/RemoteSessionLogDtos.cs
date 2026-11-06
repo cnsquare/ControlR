@@ -3,7 +3,7 @@ namespace ControlR.Libraries.Api.Contracts.Dtos.ServerApi.V1;
 public record RemoteSessionLogDto(
   Guid Id,
   Guid SessionId,
-  Guid DeviceId,
+  Guid? DeviceId,
   string DeviceName,
   Guid UserId,
   string UserName,
@@ -11,4 +11,6 @@ public record RemoteSessionLogDto(
   DateTimeOffset StartedAt,
   DateTimeOffset? EndedAt,
   string? FailureReason,
-  bool WasInterrupted);
+  bool WasInterrupted,
+  RemoteSessionKind Kind,
+  string? Detail);

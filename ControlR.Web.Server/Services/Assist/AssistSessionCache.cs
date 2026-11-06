@@ -22,7 +22,8 @@ public sealed record AssistSession(
   string? ViewerUserId = null,
   string? ViewerDisplayName = null,
   string? ViewerEmail = null,
-  Guid? ConsentNonce = null);
+  Guid? ConsentNonce = null,
+  string? ViewerIpAddress = null);
 
 /// <summary>
 /// Thrown by <see cref="IAssistSessionCache.CreateAsync"/> when the global session cap is hit.
@@ -64,7 +65,8 @@ public interface IAssistSessionCache
     Guid viewerUserId,
     string displayName,
     string? email,
-    CancellationToken cancellationToken = default);
+    CancellationToken cancellationToken = default,
+    string? viewerIpAddress = null);
     
   Task<AssistSession?> TryGetAsync(Guid sessionId, CancellationToken cancellationToken = default);
 
@@ -203,7 +205,8 @@ public sealed class AssistSessionCache(TimeProvider timeProvider, Func<string>? 
     Guid viewerUserId,
     string displayName,
     string? email,
-    CancellationToken cancellationToken = default)
+    CancellationToken cancellationToken = default,
+    string? viewerIpAddress = null)
   {
     cancellationToken.ThrowIfCancellationRequested();
 
@@ -219,6 +222,7 @@ public sealed class AssistSessionCache(TimeProvider timeProvider, Func<string>? 
       {
         Status = AssistSessionStatus.PendingConsent,
         StatusChangedAt = _timeProvider.GetUtcNow(),
+        ViewerIpAddress = viewerIpAddress,
         ViewerConnectionId = viewerConnectionId,
         ViewerUserId = viewerUserId.ToString(),
         ViewerDisplayName = displayName,

@@ -6,6 +6,7 @@ public interface IControlrV1Api
   ICustomersApi Customers { get; }
   IDeploymentOptionsApi DeploymentOptions { get; }
   IDesktopPreviewApi DesktopPreview { get; }
+  IDeviceAlertsApi DeviceAlerts { get; }
   IDeviceNotesApi DeviceNotes { get; }
   IRemoteSessionLogsApi RemoteSessionLogs { get; }
   IDeviceFileSystemApi DeviceFileSystem { get; }

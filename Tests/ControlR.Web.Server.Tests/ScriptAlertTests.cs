@@ -3,6 +3,7 @@ using ControlR.Web.Server.Data;
 using ControlR.Web.Server.Data.Entities;
 using ControlR.Web.Server.Primitives;
 using ControlR.Web.Server.Services;
+using ControlR.Web.Server.Services.Alerts;
 using ControlR.Web.Server.Services.Scripting;
 using ControlR.Web.Server.Tests.Helpers;
 using Microsoft.AspNetCore.Mvc;
@@ -262,12 +263,51 @@ public class ScriptAlertTests(ITestOutputHelper testOutput)
     return email;
   }
 
-  private static async Task RaiseAlerts(TestApp testApp, Mock<IControlrEmailSender>? email = null)
+  [Fact]
+  public async Task RaiseForFailedResults_TenantHasAWebhook_SendsItWithoutScriptOutput()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var fixture = await CreateFixture(testApp);
+    await SeedResult(testApp, fixture, ScriptResultStatus.Failed);
+    using (var scope = testApp.Services.CreateScope())
+    {
+      var db = scope.ServiceProvider.GetRequiredService<AppDb>();
+      db.AlertSettings.Add(new AlertSettings
+      {
+        Id = Guid.NewGuid(),
+        TenantId = fixture.TenantId,
+        WebhookUrl = "https://hooks.example.com/a",
+      });
+      await db.SaveChangesAsync(Ct);
+    }
+
+    var webhook = new Mock<IWebhookSender>();
+    IReadOnlyList<string>? sent = null;
+    webhook
+      .Setup(x => x.Send(
+        "https://hooks.example.com/a",
+        It.IsAny<string>(),
+        It.IsAny<IReadOnlyList<string>>(),
+        It.IsAny<CancellationToken>()))
+      .Callback((string _, string _, IReadOnlyList<string> lines, CancellationToken _) => sent = lines)
+      .ReturnsAsync(true);
+
+    await RaiseAlerts(testApp, webhook: webhook.Object);
+
+    Assert.NotNull(sent);
+    Assert.DoesNotContain(sent, x => x.Contains(Secret, StringComparison.Ordinal));
+  }
+
+  private static async Task RaiseAlerts(
+    TestApp testApp,
+    Mock<IControlrEmailSender>? email = null,
+    IWebhookSender? webhook = null)
   {
     using var scope = testApp.Services.CreateScope();
     var manager = new ScriptAlertManager(
       scope.ServiceProvider.GetRequiredService<AppDb>(),
       (email ?? EmailMock()).Object,
+      webhook ?? Mock.Of<IWebhookSender>(),
       scope.ServiceProvider.GetRequiredService<TimeProvider>(),
       NullLogger<ScriptAlertManager>.Instance);
 

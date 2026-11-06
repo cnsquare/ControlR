@@ -10,6 +10,7 @@ using ControlR.Web.Server.Hubs;
 using ControlR.Web.Server.Options;
 using ControlR.Web.Server.Services;
 using ControlR.Web.Server.Services.DeviceFileSystem;
+using ControlR.Web.Server.Services.RemoteSessions;
 using ControlR.Web.Server.Tests.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -2738,6 +2739,7 @@ public class DeviceFileSystemV1ControllerTests(ITestOutputHelper testOutput)
         agentHub.Object,
         hubStreamStore,
         services.GetRequiredService<IAuthorizationService>(),
+        services.GetRequiredService<IRemoteSessionLogger>(),
         services.GetRequiredService<ILogger<DeviceFileSystemService>>());
 
       // The caller context is reused rather than rebuilt, because it already carries the principal the

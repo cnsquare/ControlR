@@ -49,6 +49,13 @@ public class AppOptions
   public int AuthorizationChangeLogRetentionDays { get; init; } = 365;
 
   /// <summary>
+  /// Lets alert webhooks use plain http and reach private addresses. Leave this off on any server
+  /// where people you do not fully trust can edit alert settings, because a webhook is a request
+  /// made from inside your network.
+  /// </summary>
+  public bool AllowPrivateWebhookTargets { get; init; }
+
+  /// <summary>
   /// The number of days to retain the remote control session history.
   /// Entries older than this are pruned by a background service.
   /// Set to 0 or less to disable pruning and retain entries indefinitely.

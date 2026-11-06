@@ -10,6 +10,7 @@ using ControlR.Web.Server.Hubs;
 using ControlR.Web.Server.Services.AgentInstaller;
 using ControlR.Web.Server.Services.Assist;
 using ControlR.Web.Server.Services.Authorization;
+using ControlR.Web.Server.Services.RemoteSessions;
 using ControlR.Web.Server.Tests.Helpers;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
@@ -100,6 +101,57 @@ public class AssistHubTests(ITestOutputHelper testOutput)
     using var scope = testApp.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDb>();
     Assert.Single(await db.AgentInstallerKeys.IgnoreQueryFilters().ToListAsync(TestContext.Current.CancellationToken));
+  }
+
+  [Fact]
+  public async Task RespondToAssistConsent_Approved_LogsTheSessionUnderTheTechniciansTenant()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var technician = await testApp.Services.CreateTestUser(tenant.Id);
+    var cache = GetCache(testApp);
+    var session = await cache.CreateAsync("assist-conn-1", TestContext.Current.CancellationToken);
+    var pending = await cache.TryBeginConsentAsync(
+      session.SessionId,
+      "viewer-conn-1",
+      technician.Id,
+      "Jane",
+      null,
+      TestContext.Current.CancellationToken,
+      "203.0.113.5");
+    var (hub, _) = await CreateHubAsync(testApp, user: null, connectionId: "assist-conn-1");
+
+    var result = await hub.RespondToAssistConsent(new(session.SessionId, true, pending!.ConsentNonce!.Value));
+
+    Assert.True(result.IsSuccess);
+    using var scope = testApp.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDb>();
+    var log = await db.RemoteSessionLogs.IgnoreQueryFilters().AsNoTracking().SingleAsync(TestContext.Current.CancellationToken);
+    Assert.Equal(RemoteSessionKind.FlashAssist, log.Kind);
+    Assert.Equal(tenant.Id, log.TenantId);
+    Assert.Equal(technician.Id, log.UserId);
+    Assert.Equal("Jane", log.UserName);
+    Assert.Equal("203.0.113.5", log.IpAddress);
+    Assert.Null(log.DeviceId);
+  }
+
+  [Fact]
+  public async Task RespondToAssistConsent_Declined_LogsNothing()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    var technician = await testApp.Services.CreateTestUser(tenant.Id);
+    var cache = GetCache(testApp);
+    var session = await cache.CreateAsync("assist-conn-1", TestContext.Current.CancellationToken);
+    var pending = await cache.TryBeginConsentAsync(
+      session.SessionId, "viewer-conn-1", technician.Id, "Jane", null, TestContext.Current.CancellationToken);
+    var (hub, _) = await CreateHubAsync(testApp, user: null, connectionId: "assist-conn-1");
+
+    await hub.RespondToAssistConsent(new(session.SessionId, false, pending!.ConsentNonce!.Value));
+
+    using var scope = testApp.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDb>();
+    Assert.False(await db.RemoteSessionLogs.IgnoreQueryFilters().AnyAsync(TestContext.Current.CancellationToken));
   }
 
   [Fact]
@@ -564,6 +616,7 @@ public class AssistHubTests(ITestOutputHelper testOutput)
       scope.ServiceProvider.GetRequiredService<IPermissionEvaluator>(),
       scope.ServiceProvider.GetRequiredService<IResourceDescriptorFactory>(),
       scope.ServiceProvider.GetRequiredService<IAgentInstallerKeyManager>(),
+      testApp.Services.GetRequiredService<IRemoteSessionLogger>(),
       testApp.Services.GetRequiredService<TimeProvider>(),
       testApp.Services.GetRequiredService<ILogger<AssistHub>>());
 

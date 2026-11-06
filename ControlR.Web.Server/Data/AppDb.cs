@@ -40,6 +40,8 @@ public class AppDb : IdentityUserContext<AppUser, Guid>, IDataProtectionKeyConte
   public DbSet<PermissionAssignment> PermissionAssignments { get; init; }
   public DbSet<PersonalAccessToken> PersonalAccessTokens { get; init; }
   public DbSet<SavedScript> SavedScripts { get; init; }
+  public DbSet<AlertSettings> AlertSettings { get; init; }
+  public DbSet<DeviceAlert> DeviceAlerts { get; init; }
   public DbSet<RemoteSessionLog> RemoteSessionLogs { get; init; }
   public DbSet<ScriptAlert> ScriptAlerts { get; init; }
   public DbSet<ScriptResult> ScriptResults { get; init; }
@@ -541,8 +543,34 @@ public class AppDb : IdentityUserContext<AppUser, Guid>, IDataProtectionKeyConte
       .Entity<RemoteSessionLog>()
       .HasIndex(x => x.SessionId);
 
+    builder
+      .Entity<AlertSettings>()
+      .HasOne(x => x.Tenant)
+      .WithOne(x => x.AlertSettings)
+      .HasForeignKey<AlertSettings>(x => x.TenantId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    builder
+      .Entity<DeviceAlert>()
+      .HasOne(x => x.Tenant)
+      .WithMany(x => x.DeviceAlerts)
+      .HasForeignKey(x => x.TenantId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    builder
+      .Entity<DeviceAlert>()
+      .HasIndex(x => new { x.TenantId, x.DeviceId, x.Kind });
+
     if (_tenantId is not null)
     {
+      builder
+        .Entity<AlertSettings>()
+        .HasQueryFilter(x => x.TenantId == _tenantId);
+
+      builder
+        .Entity<DeviceAlert>()
+        .HasQueryFilter(x => x.TenantId == _tenantId);
+
       builder
         .Entity<RemoteSessionLog>()
         .HasQueryFilter(x => x.TenantId == _tenantId);

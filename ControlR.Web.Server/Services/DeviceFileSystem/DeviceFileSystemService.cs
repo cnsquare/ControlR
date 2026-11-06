@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Threading.Channels;
 using ControlR.Libraries.Api.Contracts.Dtos.HubDtos;
 using ControlR.Libraries.Api.Contracts.Hubs.Clients;
+using ControlR.Web.Server.Services.RemoteSessions;
 using Microsoft.AspNetCore.SignalR;
 
 namespace ControlR.Web.Server.Services.DeviceFileSystem;
@@ -172,6 +173,7 @@ public class DeviceFileSystemService(
   IHubContext<AgentHub, IAgentHubClient> agentHub,
   IHubStreamStore hubStreamStore,
   IAuthorizationService authorizationService,
+  IRemoteSessionLogger remoteSessionLogger,
   ILogger<DeviceFileSystemService> logger) : IDeviceFileSystemService
 {
   private readonly IHubContext<AgentHub, IAgentHubClient> _agentHub = agentHub;
@@ -179,6 +181,7 @@ public class DeviceFileSystemService(
   private readonly IAuthorizationService _authorizationService = authorizationService;
   private readonly IHubStreamStore _hubStreamStore = hubStreamStore;
   private readonly ILogger<DeviceFileSystemService> _logger = logger;
+  private readonly IRemoteSessionLogger _remoteSessionLogger = remoteSessionLogger;
 
   public async Task<FileSystemOutcome> AuthorizeUpload(
     ClaimsPrincipal user,
@@ -265,6 +268,8 @@ public class DeviceFileSystemService(
     {
       return new(guarded.Failure, guarded.Reason);
     }
+
+    await _remoteSessionLogger.LogFileOperation(device, user, $"Delete {request.FilePath}", cancellationToken);
 
     var deleteRequest = new FileDeleteHubDto(request.FilePath);
 
@@ -564,6 +569,12 @@ public class DeviceFileSystemService(
       return new(guarded.Failure, guarded.Reason, null);
     }
 
+    await _remoteSessionLogger.LogFileOperation(
+      device,
+      user,
+      $"Download archive of {string.Join(", ", request.TargetPaths)}",
+      cancellationToken);
+
     var streamId = Guid.NewGuid();
     var signaler = _hubStreamStore.GetOrCreate<byte[]>(streamId, HubStreamExpiration.FileTransfer);
     FileTransferSession? session = null;
@@ -642,6 +653,8 @@ public class DeviceFileSystemService(
     {
       return new(guarded.Failure, guarded.Reason, null);
     }
+
+    await _remoteSessionLogger.LogFileOperation(device, user, $"Download {filePath}", cancellationToken);
 
     var streamId = Guid.NewGuid();
     var signaler = _hubStreamStore.GetOrCreate<byte[]>(streamId, HubStreamExpiration.FileTransfer);
@@ -796,6 +809,12 @@ public class DeviceFileSystemService(
     {
       return new(guarded.Failure, guarded.Reason);
     }
+
+    await _remoteSessionLogger.LogFileOperation(
+      device,
+      user,
+      $"Upload {fileName} to {targetSaveDirectory}",
+      cancellationToken);
 
     var streamId = Guid.NewGuid();
     using var signaler = _hubStreamStore.GetOrCreate<byte[]>(streamId, HubStreamExpiration.FileTransfer);

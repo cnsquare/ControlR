@@ -10,6 +10,7 @@ public static class ClientRoutes
   public const string GetSupport = "/get-support";
   public const string ScriptLibrary = "/script-library";
   public const string SessionHistory = "/session-history";
+  public const string Alerts = "/alerts";
   public const string DeviceAccess = "/device-access";
   public const string DeviceAccessChat = $"{DeviceAccess}/chat";
   public const string DeviceAccessFileSystem = $"{DeviceAccess}/file-system";

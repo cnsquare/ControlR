@@ -1429,6 +1429,540 @@
         ]
       }
     },
+    "/api/v1/device-alerts/{alertId}/dismiss": {
+      "post": {
+        "tags": [
+          "DeviceAlerts"
+        ],
+        "summary": "Hides an alert. It is not raised again until the condition clears and comes back.",
+        "parameters": [
+          {
+            "name": "alertId",
+            "in": "path",
+            "description": "Hides an alert. It is not raised again until the condition clears and comes back.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "tenantId",
+            "in": "query",
+            "description": "Hides an alert. It is not raised again until the condition clears and comes back.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "api-version",
+            "in": "query",
+            "description": "The requested API version",
+            "schema": {
+              "enum": [
+                "1.0"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ServiceAccountCredential": [ ]
+          },
+          {
+            "Cookie": [ ]
+          },
+          {
+            "PersonalAccessToken": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/device-alerts": {
+      "get": {
+        "tags": [
+          "DeviceAlerts"
+        ],
+        "summary": "Lists alerts that are still active and have not been dismissed, most recent first.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "query",
+            "description": "Lists alerts that are still active and have not been dismissed, most recent first.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "api-version",
+            "in": "query",
+            "description": "The requested API version",
+            "schema": {
+              "enum": [
+                "1.0"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceAlertDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceAlertDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceAlertDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ServiceAccountCredential": [ ]
+          },
+          {
+            "Cookie": [ ]
+          },
+          {
+            "PersonalAccessToken": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/device-alerts/settings": {
+      "get": {
+        "tags": [
+          "DeviceAlerts"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "api-version",
+            "in": "query",
+            "description": "The requested API version",
+            "schema": {
+              "enum": [
+                "1.0"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertSettingsDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertSettingsDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertSettingsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ServiceAccountCredential": [ ]
+          },
+          {
+            "Cookie": [ ]
+          },
+          {
+            "PersonalAccessToken": [ ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "DeviceAlerts"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "api-version",
+            "in": "query",
+            "description": "The requested API version",
+            "schema": {
+              "enum": [
+                "1.0"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertSettingsDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertSettingsDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertSettingsDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertSettingsDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertSettingsDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertSettingsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ServiceAccountCredential": [ ]
+          },
+          {
+            "Cookie": [ ]
+          },
+          {
+            "PersonalAccessToken": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/device-alerts/settings/test": {
+      "post": {
+        "tags": [
+          "DeviceAlerts"
+        ],
+        "summary": "Sends a test message to the saved email address and webhook.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "query",
+            "description": "Sends a test message to the saved email address and webhook.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "api-version",
+            "in": "query",
+            "description": "The requested API version",
+            "schema": {
+              "enum": [
+                "1.0"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Bad Gateway",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ServiceAccountCredential": [ ]
+          },
+          {
+            "Cookie": [ ]
+          },
+          {
+            "PersonalAccessToken": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/device-file-system/create-directory/{deviceId}": {
       "post": {
         "tags": [
@@ -17136,6 +17670,39 @@
           }
         }
       },
+      "AlertSettingsDto": {
+        "required": [
+          "offlineMinutes",
+          "lowDiskPercent",
+          "email",
+          "webhookUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "offlineMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": "integer",
+            "format": "int32"
+          },
+          "lowDiskPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": "integer",
+            "format": "int32"
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "webhookUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "ApplyPermissionPresetsRequestDto": {
         "required": [
           "principalKind",
@@ -18257,6 +18824,43 @@
           "Rdp"
         ],
         "description": "REST-facing desktop session type. Kept separate from the hub's\nDesktopSessionType so the REST API can serialize it as\na string while the SignalR hub stays numeric for backwards compatibility."
+      },
+      "DeviceAlertDto": {
+        "required": [
+          "id",
+          "deviceId",
+          "deviceName",
+          "kind",
+          "message",
+          "raisedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deviceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deviceName": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/DeviceAlertKind"
+          },
+          "message": {
+            "type": "string"
+          },
+          "raisedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DeviceAlertKind": {
+        "type": "integer"
       },
       "DeviceColumnFilter": {
         "type": "object",
@@ -19740,6 +20344,9 @@
         },
         "description": "Server-side settings exposed to any caller, including unauthenticated clients, so a client\ncan adapt to server configuration before authenticating. Never put sensitive or per-tenant\ndata here."
       },
+      "RemoteSessionKind": {
+        "type": "integer"
+      },
       "RemoteSessionLogDto": {
         "required": [
           "id",
@@ -19752,7 +20359,9 @@
           "startedAt",
           "endedAt",
           "failureReason",
-          "wasInterrupted"
+          "wasInterrupted",
+          "kind",
+          "detail"
         ],
         "type": "object",
         "properties": {
@@ -19765,7 +20374,10 @@
             "format": "uuid"
           },
           "deviceId": {
-            "type": "string",
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "uuid"
           },
           "deviceName": {
@@ -19803,6 +20415,15 @@
           },
           "wasInterrupted": {
             "type": "boolean"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/RemoteSessionKind"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -21301,6 +21922,9 @@
     },
     {
       "name": "DesktopPreview"
+    },
+    {
+      "name": "DeviceAlerts"
     },
     {
       "name": "DeviceFileSystem"

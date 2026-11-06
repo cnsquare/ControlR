@@ -114,11 +114,30 @@
     </div>
   </MudPaper>
 
+  @if (_bulkSelection.Count > 0)
+  {
+    <MudPaper Class="pa-3 mb-2 d-flex flex-wrap align-center gap-3" Elevation="1">
+      <MudText>@_bulkSelection.Count selected</MudText>
+      <MudButton Variant="Variant.Outlined" Disabled="_isBulkBusy" OnClick="BulkRunScript">Run Script</MudButton>
+      <MudButton Variant="Variant.Outlined" Disabled="_isBulkBusy" OnClick="BulkWake">Wake Offline</MudButton>
+      <MudSelect T="Guid?" Label="Tag" @bind-Value="_bulkTagId" Dense Variant="Variant.Outlined" Margin="Margin.Dense"
+                 Style="min-width: 180px; max-width: 240px;">
+        @foreach (var tag in TagStore.Items)
+        {
+          <MudSelectItem T="Guid?" Value="@tag.Id">@tag.Name</MudSelectItem>
+        }
+      </MudSelect>
+      <MudButton Variant="Variant.Outlined" Disabled="@(_isBulkBusy || _bulkTagId is null)" OnClick="BulkAddTag">Add Tag</MudButton>
+    </MudPaper>
+  }
+
   <MudDataGrid T="DeviceViewModel" @ref="_dataGrid" ServerData="LoadServerData" @bind-RowsPerPage="_rowsPerPage"
                SortMode="SortMode.Multiple" Loading="_loading" Hideable="true" SortDefinitions="_sortDefinitions"
-               ShowColumnOptions="true" Filterable="true">
+               ShowColumnOptions="true" Filterable="true" MultiSelection="true"
+               @bind-SelectedItems="_bulkSelection">
 
     <Columns>
+      <SelectColumn T="DeviceViewModel" ShowInFooter="false" />
       <TemplateColumn T="DeviceViewModel" Sortable="false" Filterable="false" ShowColumnOptions="false" Title="Actions">
         <CellTemplate>
           <div class="d-flex align-center">

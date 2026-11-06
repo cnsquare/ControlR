@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ControlR.Web.Server.Api.V1;
 
 /// <summary>
-/// The history of remote control sessions. It is read-only, because an audit trail that can be
+/// The history of remote sessions and file operations. It is read-only, because an audit trail that can be
 /// edited through the API is not one.
 /// </summary>
 [Route(HttpConstants.V1.RemoteSessionLogsEndpoint)]
@@ -62,7 +62,9 @@ public class RemoteSessionLogsController(AppDb appDb) : ControllerBase
         x.StartedAt,
         x.EndedAt,
         x.FailureReason,
-        x.WasInterrupted))
+        x.WasInterrupted,
+        x.Kind,
+        x.Detail))
       .ToArrayAsync(cancellationToken);
 
     return Ok(logs);
