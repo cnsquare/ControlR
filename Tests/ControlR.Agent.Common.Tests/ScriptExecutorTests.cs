@@ -13,7 +13,8 @@ namespace ControlR.Agent.Common.Tests;
 
 public sealed class ScriptExecutorTests : IDisposable
 {
-  private readonly string _installDirectory = Path.Combine(Path.GetTempPath(), $"script-tests-{Guid.NewGuid():N}");
+  // The space is deliberate. Program Files has one, and the Windows launch goes through cmd quoting.
+  private readonly string _installDirectory = Path.Combine(Path.GetTempPath(), $"script tests {Guid.NewGuid():N}");
 
   public void Dispose()
   {
@@ -67,6 +68,71 @@ public sealed class ScriptExecutorTests : IDisposable
     await CreateExecutor().Execute(Request(shell, content), TestContext.Current.CancellationToken);
 
     Assert.Empty(Directory.GetFiles(Path.Combine(_installDirectory, "ScriptRuns")));
+  }
+
+  [Fact]
+  public async Task Execute_KeepsUnicodeOutputIntact()
+  {
+    var (shell, content) = OperatingSystem.IsWindows()
+      ? (ScriptShell.WindowsPowerShell, "\"café 語 😀\"")
+      : (ScriptShell.Bash, "echo 'café 語 😀'");
+
+    var result = await CreateExecutor().Execute(Request(shell, content), TestContext.Current.CancellationToken);
+
+    Assert.Equal(0, result.ExitCode);
+    Assert.Contains("café 語 😀", result.StandardOutput);
+  }
+
+  [Fact]
+  public async Task Execute_NativeToolOutput_KeepsUnicodeIntact()
+  {
+    Assert.SkipUnless(OperatingSystem.IsWindows(), "Console code pages only exist on Windows.");
+
+    var result = await CreateExecutor().Execute(
+      Request(ScriptShell.Cmd, "@echo café 語"),
+      TestContext.Current.CancellationToken);
+
+    Assert.Equal(0, result.ExitCode);
+    Assert.Contains("café 語", result.StandardOutput);
+  }
+
+  [Fact]
+  public async Task Execute_PowerShellExitCode_IsReported()
+  {
+    Assert.SkipUnless(OperatingSystem.IsWindows(), "Windows PowerShell only exists on Windows.");
+
+    var result = await CreateExecutor().Execute(
+      Request(ScriptShell.WindowsPowerShell, "exit 42"),
+      TestContext.Current.CancellationToken);
+
+    Assert.Equal(42, result.ExitCode);
+  }
+
+  [Fact]
+  public async Task Execute_PowerShellParamBlock_StillWorks()
+  {
+    Assert.SkipUnless(OperatingSystem.IsWindows(), "Windows PowerShell only exists on Windows.");
+
+    var content = "param([string]$Name = 'default')\n\"name=$Name\"";
+
+    var result = await CreateExecutor().Execute(
+      Request(ScriptShell.WindowsPowerShell, content),
+      TestContext.Current.CancellationToken);
+
+    Assert.Equal(0, result.ExitCode);
+    Assert.Contains("name=default", result.StandardOutput);
+  }
+
+  [Fact]
+  public async Task Execute_PowerShellFailedNativeCommandMidScript_DoesNotChangeExitCode()
+  {
+    Assert.SkipUnless(OperatingSystem.IsWindows(), "Windows PowerShell only exists on Windows.");
+
+    var result = await CreateExecutor().Execute(
+      Request(ScriptShell.WindowsPowerShell, "cmd /c exit 5\n\"carried on\""),
+      TestContext.Current.CancellationToken);
+
+    Assert.Equal(0, result.ExitCode);
   }
 
   [Fact]

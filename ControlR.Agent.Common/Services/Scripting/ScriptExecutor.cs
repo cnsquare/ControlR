@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 using ControlR.Libraries.Api.Contracts.Constants;
@@ -48,6 +49,11 @@ internal class ScriptExecutor(
       scriptPath = await WriteScriptFile(request, cancellationToken);
       return await RunProcess(request, scriptPath, startedAt, cancellationToken);
     }
+    catch (Win32Exception ex)
+    {
+      _logger.LogWarning(ex, "Could not start {Shell} for script result {ScriptResultId}.", request.Shell, request.ScriptResultId);
+      return Failed(request, startedAt, $"{request.Shell} is not installed on this device.");
+    }
     catch (Exception ex)
     {
       _logger.LogError(ex, "Error while running script result {ScriptResultId}.", request.ScriptResultId);
@@ -73,20 +79,24 @@ internal class ScriptExecutor(
       WorkingDirectory = workingDirectory,
     };
 
+    if (OperatingSystem.IsWindows() && shell != ScriptShell.Bash)
+    {
+      // Shells write the console code page, which cannot hold most of Unicode, so
+      // reading it as UTF-8 corrupts output. Switching the hidden console first keeps
+      // the script file and its exit code untouched, and also covers native tools.
+      startInfo.FileName = "cmd.exe";
+      startInfo.Arguments = $"/d /s /c \"chcp 65001 >nul & {GetWindowsCommand(shell, scriptPath)}\"";
+      return startInfo;
+    }
+
     switch (shell)
     {
-      case ScriptShell.WindowsPowerShell:
-        startInfo.FileName = "powershell.exe";
-        AddPowerShellArguments(startInfo, scriptPath);
-        break;
       case ScriptShell.PowerShell:
         startInfo.FileName = "pwsh";
-        AddPowerShellArguments(startInfo, scriptPath);
-        break;
-      case ScriptShell.Cmd:
-        startInfo.FileName = "cmd.exe";
-        startInfo.ArgumentList.Add("/d");
-        startInfo.ArgumentList.Add("/c");
+        startInfo.ArgumentList.Add("-NoLogo");
+        startInfo.ArgumentList.Add("-NoProfile");
+        startInfo.ArgumentList.Add("-NonInteractive");
+        startInfo.ArgumentList.Add("-File");
         startInfo.ArgumentList.Add(scriptPath);
         break;
       case ScriptShell.Bash:
@@ -105,20 +115,6 @@ internal class ScriptExecutor(
     return content.ReplaceLineEndings(shell == ScriptShell.Bash ? "\n" : "\r\n");
   }
 
-  private static void AddPowerShellArguments(ProcessStartInfo startInfo, string scriptPath)
-  {
-    startInfo.ArgumentList.Add("-NoLogo");
-    startInfo.ArgumentList.Add("-NoProfile");
-    startInfo.ArgumentList.Add("-NonInteractive");
-    if (OperatingSystem.IsWindows())
-    {
-      startInfo.ArgumentList.Add("-ExecutionPolicy");
-      startInfo.ArgumentList.Add("Bypass");
-    }
-    startInfo.ArgumentList.Add("-File");
-    startInfo.ArgumentList.Add(scriptPath);
-  }
-
   private static string GetExtension(ScriptShell shell)
   {
     return shell switch
@@ -126,6 +122,19 @@ internal class ScriptExecutor(
       ScriptShell.Bash => ".sh",
       ScriptShell.Cmd => ".cmd",
       _ => ".ps1",
+    };
+  }
+
+  private static string GetWindowsCommand(ScriptShell shell, string scriptPath)
+  {
+    const string powerShellArguments = "-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File";
+
+    return shell switch
+    {
+      ScriptShell.WindowsPowerShell => $"powershell.exe {powerShellArguments} \"{scriptPath}\"",
+      ScriptShell.PowerShell => $"pwsh {powerShellArguments} \"{scriptPath}\"",
+      ScriptShell.Cmd => $"\"{scriptPath}\"",
+      _ => throw new ArgumentOutOfRangeException(nameof(shell), shell, "Unknown script shell."),
     };
   }
 
