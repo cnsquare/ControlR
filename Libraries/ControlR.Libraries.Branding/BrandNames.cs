@@ -15,6 +15,7 @@ public sealed partial class BrandNames(string brandName)
   public static BrandNames Current { get; } = new(BrandingConstants.BrandName);
 
   public string AgentBaseName => $"{BrandKey}.Agent";
+  public string AssistBaseName => $"{BrandKey}.Assist";
   public string BrandKey { get; } = ResolveBrandKey(brandName);
   public string BundleHashFileName => $".{UnixBrandKey}-bundle.sha256";
   public string BundleZipBaseName => $"{BrandKey}.Agent.bundle";

@@ -97,6 +97,16 @@ public static class AppConstants
   /// <summary>
   /// Gets the download path for the bootstrap installer for a specific runtime.
   /// </summary>
+  public static string GetAssistDownloadPath(RuntimeId runtime)
+  {
+    var assistBase = BrandingConstants.AssistBaseName;
+    return runtime switch
+    {
+      RuntimeId.WinX64 => $"/downloads/win-x64/{assistBase}.exe",
+      _ => throw new PlatformNotSupportedException()
+    };
+  }
+
   public static string GetInstallerDownloadPath(RuntimeId runtime)
   {
     var installerBase = BrandingConstants.InstallerBaseName;

@@ -35,6 +35,10 @@
       Flash Assist
     </MudNavLink>
   </AuthorizeView>
+  <MudNavLink Href="@(ClientRoutes.GetSupport)" Match="NavLinkMatch.Prefix"
+              Icon="@Icons.Material.Filled.Help">
+    Get Support
+  </MudNavLink>
   <MudNavLink Disabled="!_isAuthenticated" Href="@(ClientRoutes.Settings)" Match="NavLinkMatch.Prefix"
               Icon="@Icons.Material.Filled.Settings">
     Settings

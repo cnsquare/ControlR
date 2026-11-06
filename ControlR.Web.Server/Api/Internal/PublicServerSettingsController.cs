@@ -20,6 +20,7 @@ public class PublicServerSettingsController(
       settings.IsPublicRegistrationEnabled,
       settings.DisableDesktopPreview,
       settings.PublicBaseUrl,
-      settings.DisableRemoteAudio);
+      settings.DisableRemoteAudio,
+      settings.IsAssistDownloadAvailable);
   }
 }

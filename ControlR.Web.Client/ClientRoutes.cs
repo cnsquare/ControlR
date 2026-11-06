@@ -7,6 +7,7 @@ public static class ClientRoutes
   public const string AuthorizationLogs = "/authorization-logs";
   public const string Customers = "/customers";
   public const string Deploy = "/deploy";
+  public const string GetSupport = "/get-support";
   public const string DeviceAccess = "/device-access";
   public const string DeviceAccessChat = $"{DeviceAccess}/chat";
   public const string DeviceAccessFileSystem = $"{DeviceAccess}/file-system";

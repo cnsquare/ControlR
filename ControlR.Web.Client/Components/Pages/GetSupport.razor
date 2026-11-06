@@ -1,0 +1,69 @@
+@attribute [Route(ClientRoutes.GetSupport)]
+
+<PageTitle>Get Support</PageTitle>
+
+<div class="pa-4" style="max-width: 640px;">
+  <MudText Typo="Typo.h4" GutterBottom>Get Support</MudText>
+  <MudText Typo="Typo.body1" Class="mb-4">
+    Let a technician see and control this computer for one support session. Nothing is installed,
+    and you approve the connection before it starts.
+  </MudText>
+
+  <MudAlert Severity="Severity.Warning" Class="mb-4">
+    Only continue if you contacted this technician or already know them. Never do this because
+    of an unexpected call, message or pop-up. Anyone you connect can see your screen.
+  </MudAlert>
+
+  @if (_isLoading)
+  {
+    <MudProgressCircular Indeterminate Size="Size.Small" />
+  }
+  else if (!_isDownloadAvailable)
+  {
+    <MudAlert Severity="Severity.Info">
+      The support app is not available on this server yet. Please contact your administrator.
+    </MudAlert>
+  }
+  else
+  {
+    <MudText Typo="Typo.h6" GutterBottom>1. Download the app</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
+               Href="@_downloadPath" Class="mb-1">
+      Download for Windows
+    </MudButton>
+    <MudText Typo="Typo.caption" Class="d-block mb-4">Windows 64-bit</MudText>
+
+    <MudText Typo="Typo.h6" GutterBottom>2. Open it and enter this server address</MudText>
+    <MudTextField T="string" Value="_serverAddress" ReadOnly Variant="Variant.Outlined"
+                  Label="Server address" Class="mb-4" />
+
+    <MudText Typo="Typo.h6" GutterBottom>3. Tell your technician the code</MudText>
+    <MudText Typo="Typo.body1">
+      The app shows a 9-character code. Read it to your technician, then accept when the app asks
+      if they can connect. You can end the session at any time.
+    </MudText>
+  }
+</div>
+
+@code {
+  private string _downloadPath = string.Empty;
+  private bool _isDownloadAvailable;
+  private bool _isLoading = true;
+  private string _serverAddress = string.Empty;
+
+  [Inject]
+  public required IPublicServerSettingsProvider PublicServerSettings { get; init; }
+  [Inject]
+  public required IServerUriResolver ServerUriResolver { get; init; }
+
+  protected override async Task OnInitializedAsync()
+  {
+    await base.OnInitializedAsync();
+
+    var settings = await PublicServerSettings.GetPublicServerSettings();
+    _isDownloadAvailable = settings.IsAssistDownloadAvailable;
+    _downloadPath = AppConstants.GetAssistDownloadPath(RuntimeId.WinX64);
+    _serverAddress = (await ServerUriResolver.ResolveBaseUriAsync()).ToString().TrimEnd('/');
+    _isLoading = false;
+  }
+}

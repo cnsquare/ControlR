@@ -9,4 +9,5 @@ public record PublicServerSettingsDto(
   bool IsPublicRegistrationEnabled,
   bool DisableDesktopPreview,
   string? PublicBaseUrl = null,
-  bool DisableRemoteAudio = false);
+  bool DisableRemoteAudio = false,
+  bool IsAssistDownloadAvailable = false);

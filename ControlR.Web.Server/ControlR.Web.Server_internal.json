@@ -8269,6 +8269,10 @@
           "disableRemoteAudio": {
             "type": "boolean",
             "default": false
+          },
+          "isAssistDownloadAvailable": {
+            "type": "boolean",
+            "default": false
           }
         },
         "description": "Server-side settings that are exposed to any caller (including unauthenticated clients)\nso the UI can adapt to server configuration without requiring a login."

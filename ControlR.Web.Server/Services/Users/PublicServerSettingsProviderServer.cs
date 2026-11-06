@@ -7,12 +7,14 @@ internal class PublicServerSettingsProviderServer(
   IDbContextFactory<AppDb> dbFactory,
   IOptionsMonitor<AppOptions> appOptions,
   ILogger<PublicServerSettingsProviderServer> logger,
-  IPublicUrlProvider publicUrlProvider) : IPublicServerSettingsProvider
+  IPublicUrlProvider publicUrlProvider,
+  IWebHostEnvironment webHostEnvironment) : IPublicServerSettingsProvider
 {
   private readonly IOptionsMonitor<AppOptions> _appOptions = appOptions;
   private readonly IDbContextFactory<AppDb> _dbFactory = dbFactory;
   private readonly ILogger<PublicServerSettingsProviderServer> _logger = logger;
   private readonly IPublicUrlProvider _publicUrlProvider = publicUrlProvider;
+  private readonly IWebHostEnvironment _webHostEnvironment = webHostEnvironment;
 
   public async Task<PublicServerSettings> GetPublicServerSettings()
   {
@@ -28,7 +30,8 @@ internal class PublicServerSettingsProviderServer(
         IsPublicRegistrationEnabled: registrationEnabled,
         DisableDesktopPreview: appOpts.DisableDesktopPreview,
         PublicBaseUrl: _publicUrlProvider.TryGetBaseUrl(),
-        DisableRemoteAudio: appOpts.DisableRemoteAudio);
+        DisableRemoteAudio: appOpts.DisableRemoteAudio,
+        IsAssistDownloadAvailable: IsAssistDownloadAvailable());
     }
     catch (Exception ex)
     {
@@ -37,7 +40,15 @@ internal class PublicServerSettingsProviderServer(
         IsPublicRegistrationEnabled: false,
         DisableDesktopPreview: _appOptions.CurrentValue.DisableDesktopPreview,
         PublicBaseUrl: _publicUrlProvider.TryGetBaseUrl(),
-        DisableRemoteAudio: _appOptions.CurrentValue.DisableRemoteAudio);
+        DisableRemoteAudio: _appOptions.CurrentValue.DisableRemoteAudio,
+        IsAssistDownloadAvailable: IsAssistDownloadAvailable());
     }
+  }
+
+  // Only the release pipeline puts the app on the server, so it can legitimately be absent.
+  private bool IsAssistDownloadAvailable()
+  {
+    var path = AppConstants.GetAssistDownloadPath(RuntimeId.WinX64);
+    return _webHostEnvironment.WebRootFileProvider.GetFileInfo(path).Exists;
   }
 }

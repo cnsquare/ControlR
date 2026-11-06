@@ -439,6 +439,19 @@ jobs:
           azure-key-vault-certificate-name: ${{ secrets.CODESIGN_KEYVAULT_CERT_NAME }}
           signing-description-url: ${{ vars.CODESIGN_DESCRIPTION_URL }}
 
+      # Not code signed yet, unlike the agent bundle, so Windows warns when it is first opened.
+      - name: Publish Assist App
+        if: matrix.arch == 'win-x64'
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.set-version.outputs.version }}
+        run: |
+          $brandKey = (Get-ChildItem "ControlR.Web.Server/wwwroot/downloads/win-x64/*.Agent.Installer.exe" |
+            Select-Object -First 1).Name -replace '\.Agent\.Installer\.exe$', ''
+          dotnet publish ControlR.Assist/ControlR.Assist.csproj -c Release -r win-x64 "-p:Version=$env:VERSION" -o artifacts/assist
+          if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE." }
+          Copy-Item "artifacts/assist/ControlR.Assist.exe" "ControlR.Web.Server/wwwroot/downloads/win-x64/$brandKey.Assist.exe"
+
       - name: Upload Downloads (${{ matrix.arch }})
         uses: ./.github/actions/upload-artifact
         with:

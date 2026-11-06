@@ -76,6 +76,7 @@ public static class BrandingConstants
   public static string UpdaterTempDirectoryName => BrandNames.Current.UpdaterTempDirectoryName;
 
   public static string AgentBaseName => BrandNames.Current.AgentBaseName;
+  public static string AssistBaseName => BrandNames.Current.AssistBaseName;
   public static string DesktopClientBaseName => BrandNames.Current.DesktopClientBaseName;
   public static string InstallerBaseName => BrandNames.Current.InstallerBaseName;
   public static string WebServerAssemblyName => "ControlR.Web.Server";
