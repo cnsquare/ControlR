@@ -100,6 +100,8 @@ public static class PermissionCatalog
     Add(PermissionNames.TenantDeviceGroupsWrite, PermissionCategories.Tenants, "Manage Device Groups", "Create, update, and delete device groups within the tenant.", tenant);
     Add(PermissionNames.TenantCustomersRead, PermissionCategories.Tenants, "Read Customers", "View customers within the tenant.", tenant);
     Add(PermissionNames.TenantCustomersWrite, PermissionCategories.Tenants, "Manage Customers", "Create, update, and delete customers within the tenant.", tenant);
+    Add(PermissionNames.TenantScriptsRead, PermissionCategories.Tenants, "Read Script Library", "View saved scripts and schedules within the tenant.", tenant);
+    Add(PermissionNames.TenantScriptsWrite, PermissionCategories.Tenants, "Manage Script Library", "Create, update, and delete saved scripts and schedules within the tenant.", tenant);
     Add(PermissionNames.TenantTagsWrite, PermissionCategories.Tenants, "Manage Tags", "Create, update, and delete tag definitions within the tenant.", tenant);
     Add(PermissionNames.TenantPermissionsRead, PermissionCategories.Tenants, "Read Permissions", "View permission assignments within the tenant.", tenant);
     Add(PermissionNames.TenantAuthorizationLogsRead, PermissionCategories.Tenants, "Read Authorization Logs", "View the tenant's authorization change log.", tenant);

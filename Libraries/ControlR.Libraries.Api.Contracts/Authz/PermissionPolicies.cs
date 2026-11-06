@@ -44,6 +44,8 @@ public static class PermissionPolicies
       [PolicyNames.RequireAuthorizationLogsRead] = new(PermissionNames.TenantAuthorizationLogsRead, PermissionScopeKind.Tenant),
       [PolicyNames.RequireCustomersRead] = new(PermissionNames.TenantCustomersRead, PermissionScopeKind.Tenant),
       [PolicyNames.RequireCustomersWrite] = new(PermissionNames.TenantCustomersWrite, PermissionScopeKind.Tenant),
+      [PolicyNames.RequireScriptsRead] = new(PermissionNames.TenantScriptsRead, PermissionScopeKind.Tenant),
+      [PolicyNames.RequireScriptsWrite] = new(PermissionNames.TenantScriptsWrite, PermissionScopeKind.Tenant),
       [PolicyNames.RequireDeviceGroupAssignDevices] = new(PermissionNames.DeviceGroupAssignDevices, PermissionScopeKind.DeviceGroup),
       [PolicyNames.RequireDeviceGroupsRead] = new(PermissionNames.TenantDeviceGroupsRead, PermissionScopeKind.Tenant),
       [PolicyNames.RequireDeviceGroupsWrite] = new(PermissionNames.TenantDeviceGroupsWrite, PermissionScopeKind.Tenant),

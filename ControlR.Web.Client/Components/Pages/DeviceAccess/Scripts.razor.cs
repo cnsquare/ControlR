@@ -16,6 +16,8 @@ public partial class Scripts : IDisposable
   private ScriptRunHistoryItemDto[] _history = [];
   private bool _isRunning;
   private ScriptResultDto? _result;
+  private SavedScriptDto[] _savedScripts = [];
+  private Guid? _selectedScriptId;
   private ScriptShell _shell;
   private int _timeoutSeconds = ScriptLimits.DefaultTimeoutSeconds;
 
@@ -47,6 +49,51 @@ public partial class Scripts : IDisposable
     await base.OnInitializedAsync();
     _shell = AvailableShells[0];
     await LoadHistory();
+    await LoadSavedScripts();
+  }
+
+  private void LoadSavedScript(Guid? scriptId)
+  {
+    _selectedScriptId = scriptId;
+    if (_savedScripts.FirstOrDefault(x => x.Id == scriptId) is not { } script)
+    {
+      return;
+    }
+
+    _content = script.Content;
+    _timeoutSeconds = script.TimeoutSeconds;
+    if (AvailableShells.Contains(script.Shell))
+    {
+      _shell = script.Shell;
+    }
+    else
+    {
+      Snackbar.Add(
+        $"This script uses {ScriptShellOptions.GetDisplayName(script.Shell)}, which this device does not offer.",
+        Severity.Warning);
+    }
+  }
+
+  private async Task LoadSavedScripts()
+  {
+    if (DeviceState.TryGetCurrentDevice() is not { } device)
+    {
+      return;
+    }
+
+    try
+    {
+      // Reading the library is a separate permission, so a refusal just means no list.
+      var result = await ControlrApi.V1.SavedScripts.GetSavedScripts(device.TenantId, _disposeCts.Token);
+      if (result.IsSuccess)
+      {
+        _savedScripts = result.Value;
+      }
+    }
+    catch (OperationCanceledException)
+    {
+      // The user left the page.
+    }
   }
 
   private async Task LoadHistory()

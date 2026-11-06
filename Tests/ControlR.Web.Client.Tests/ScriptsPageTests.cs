@@ -263,7 +263,13 @@ public class ScriptsPageTests
       .Setup(x => x.GetScriptRunHistory(_deviceId, _tenantId, It.IsAny<int>(), It.IsAny<CancellationToken>()))
       .ReturnsAsync(ApiResult.Ok(history));
 
+    var savedScripts = new Mock<ISavedScriptsApi>();
+    savedScripts
+      .Setup(x => x.GetSavedScripts(_tenantId, It.IsAny<CancellationToken>()))
+      .ReturnsAsync(ApiResult.Ok<SavedScriptDto[]>([]));
+
     var v1 = new Mock<IControlrV1Api>();
+    v1.SetupGet(x => x.SavedScripts).Returns(savedScripts.Object);
     v1.SetupGet(x => x.ScriptRuns).Returns(scriptRuns.Object);
     var api = new Mock<IControlrApi>();
     api.SetupGet(x => x.V1).Returns(v1.Object);

@@ -22,6 +22,17 @@
                      Variant="Variant.Outlined" Class="script-option" />
   </div>
 
+  @if (_savedScripts.Length > 0)
+  {
+    <MudSelect T="Guid?" Label="Load a saved script" Value="_selectedScriptId" Disabled="_isRunning"
+               ValueChanged="@((Guid? id) => LoadSavedScript(id))" Variant="Variant.Outlined" Class="mb-4">
+      @foreach (var script in _savedScripts)
+      {
+        <MudSelectItem T="Guid?" Value="@script.Id">@script.Name</MudSelectItem>
+      }
+    </MudSelect>
+  }
+
   <MudTextField T="string" Label="Script" @bind-Value="_content" Immediate Disabled="_isRunning"
                 Lines="12" Variant="Variant.Outlined" MaxLength="ScriptLimits.MaxContentLength"
                 Class="script-editor mb-4" spellcheck="false" />

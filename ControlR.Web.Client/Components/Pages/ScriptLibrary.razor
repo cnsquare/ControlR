@@ -1,0 +1,169 @@
+@attribute [Route(ClientRoutes.ScriptLibrary)]
+@using ControlR.Web.Client.Components.Pages.DeviceAccess
+@attribute [Authorize(Policy = PolicyNames.RequireScriptsRead)]
+
+<PageTitle>Script Library</PageTitle>
+
+<PrimaryTitle>Script Library</PrimaryTitle>
+
+<MudAlert Severity="Severity.Warning" Dense Class="mb-4">
+  Scheduled scripts run on devices with the agent's privileges, which is normally SYSTEM or root,
+  with nobody watching. A schedule keeps the copy of the script it was created with, so editing a
+  saved script does not change existing schedules.
+</MudAlert>
+
+<MudText Typo="Typo.h6" GutterBottom>Saved Scripts</MudText>
+
+@if (_scripts.Length == 0)
+{
+  <MudText Typo="Typo.body2" Class="mb-4">No saved scripts yet.</MudText>
+}
+else
+{
+  <MudSimpleTable Dense Hover Class="mb-4">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Shell</th>
+        <th>Created by</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @foreach (var script in _scripts)
+      {
+        <tr @key="script.Id">
+          <td>@script.Name</td>
+          <td>@ScriptShellOptions.GetDisplayName(script.Shell)</td>
+          <td>@script.CreatedBy</td>
+          <td>
+            @if (_canWrite)
+            {
+              <MudButton Size="Size.Small" OnClick="@(() => EditScript(script))">Edit</MudButton>
+              <MudButton Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteScript(script))">Delete</MudButton>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </MudSimpleTable>
+}
+
+@if (_canWrite)
+{
+  <MudPaper Outlined Class="pa-4 mb-6">
+    <MudText Typo="Typo.subtitle1" GutterBottom>@(_editingScriptId is null ? "New Script" : "Edit Script")</MudText>
+    <div class="d-flex flex-wrap gap-4 mb-3">
+      <MudTextField T="string" Label="Name" @bind-Value="_scriptName" Immediate Variant="Variant.Outlined"
+                    MaxLength="ScriptLimits.MaxNameLength" />
+      <MudSelect T="ScriptShell" Label="Shell" @bind-Value="_scriptShell" Variant="Variant.Outlined">
+        @foreach (var shell in Enum.GetValues<ScriptShell>())
+        {
+          <MudSelectItem T="ScriptShell" Value="@shell">@ScriptShellOptions.GetDisplayName(shell)</MudSelectItem>
+        }
+      </MudSelect>
+      <MudNumericField T="int" Label="Timeout (seconds)" @bind-Value="_scriptTimeout" Variant="Variant.Outlined"
+                       Min="ScriptLimits.MinTimeoutSeconds" Max="ScriptLimits.MaxTimeoutSeconds" />
+    </div>
+    <MudTextField T="string" Label="Script" @bind-Value="_scriptContent" Immediate Lines="8"
+                  Variant="Variant.Outlined" MaxLength="ScriptLimits.MaxContentLength"
+                  spellcheck="false" Class="mb-3" />
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!CanSaveScript)" OnClick="SaveScript">
+      Save
+    </MudButton>
+    @if (_editingScriptId is not null)
+    {
+      <MudButton Class="ml-2" OnClick="ResetScriptForm">Cancel</MudButton>
+    }
+  </MudPaper>
+}
+
+<MudText Typo="Typo.h6" GutterBottom>Schedules</MudText>
+
+@if (_schedules.Length == 0)
+{
+  <MudText Typo="Typo.body2" Class="mb-4">No schedules yet.</MudText>
+}
+else
+{
+  <MudSimpleTable Dense Hover Class="mb-4">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Script</th>
+        <th>Repeats</th>
+        <th>Devices</th>
+        <th>Next run</th>
+        <th>Last run</th>
+        <th>Enabled</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @foreach (var schedule in _schedules)
+      {
+        <tr @key="schedule.Id">
+          <td>
+            @schedule.Name
+            @if (!string.IsNullOrWhiteSpace(schedule.LastError))
+            {
+              <MudText Typo="Typo.caption" Color="Color.Error" Class="d-block">@schedule.LastError</MudText>
+            }
+          </td>
+          <td>@schedule.ScriptName</td>
+          <td>@schedule.Interval</td>
+          <td>@schedule.DeviceIds.Length</td>
+          <td>@schedule.NextRun.ToLocalTime().ToString("g")</td>
+          <td>@(schedule.LastRun?.ToLocalTime().ToString("g") ?? "Never")</td>
+          <td>
+            <MudSwitch T="bool" Value="schedule.IsEnabled" Disabled="@(!_canWrite)" Color="Color.Primary"
+                       ValueChanged="@((bool value) => SetScheduleEnabled(schedule, value))" />
+          </td>
+          <td>
+            @if (_canWrite)
+            {
+              <MudButton Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteSchedule(schedule))">Delete</MudButton>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </MudSimpleTable>
+}
+
+@if (_canWrite)
+{
+  <MudPaper Outlined Class="pa-4">
+    <MudText Typo="Typo.subtitle1" GutterBottom>New Schedule</MudText>
+    <div class="d-flex flex-wrap gap-4 mb-3">
+      <MudTextField T="string" Label="Name" @bind-Value="_scheduleName" Immediate Variant="Variant.Outlined"
+                    MaxLength="ScriptLimits.MaxNameLength" />
+      <MudSelect T="Guid?" Label="Script" @bind-Value="_scheduleScriptId" Variant="Variant.Outlined">
+        @foreach (var script in _scripts)
+        {
+          <MudSelectItem T="Guid?" Value="@script.Id">@script.Name</MudSelectItem>
+        }
+      </MudSelect>
+      <MudSelect T="ScriptScheduleInterval" Label="Repeats" @bind-Value="_scheduleInterval" Variant="Variant.Outlined">
+        @foreach (var interval in Enum.GetValues<ScriptScheduleInterval>())
+        {
+          <MudSelectItem T="ScriptScheduleInterval" Value="@interval">@interval</MudSelectItem>
+        }
+      </MudSelect>
+    </div>
+    <div class="d-flex flex-wrap gap-4 mb-3">
+      <MudSelect T="Guid" Label="Devices" MultiSelection @bind-SelectedValues="_scheduleDeviceIds"
+                 Variant="Variant.Outlined" ToStringFunc="GetDeviceName">
+        @foreach (var device in _devices)
+        {
+          <MudSelectItem T="Guid" Value="@device.Id">@device.Name</MudSelectItem>
+        }
+      </MudSelect>
+      <MudTextField T="string" Label="First run (blank for now)" @bind-Value="_scheduleStart"
+                    InputType="InputType.DateTimeLocal" Variant="Variant.Outlined" />
+    </div>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!CanCreateSchedule)" OnClick="CreateSchedule">
+      Create Schedule
+    </MudButton>
+  </MudPaper>
+}

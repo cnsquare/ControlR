@@ -7,6 +7,7 @@ public static class ScriptLimits
   public const int HistoryDefaultCount = 50;
   public const int HistoryMaxCount = 100;
   public const int MaxContentLength = 256 * 1024;
+  public const int MaxNameLength = 100;
 
   // Stdout and stderr travel in one hub message, and the server rejects messages
   // over 100,000 bytes. Two full streams must fit with room for the envelope.

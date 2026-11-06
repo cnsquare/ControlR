@@ -340,7 +340,7 @@ public class AssistHub(
         PrincipalType.User,
         technician.Id,
         technician.TenantId,
-        technician.UserName ?? technician.Id.ToString());
+        AuthMethod: "assist-unattended-access");
 
       var decision = await _permissionEvaluator.Evaluate(
         principal,

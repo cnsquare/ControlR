@@ -29,6 +29,12 @@
       Access Tokens
     </MudNavLink>
   </AuthorizeView>
+  <AuthorizeView Policy="@(PolicyNames.RequireScriptsRead)">
+    <MudNavLink Disabled="!_isAuthenticated" Href="@(ClientRoutes.ScriptLibrary)" Match="NavLinkMatch.Prefix"
+                Icon="@Icons.Material.Filled.Code">
+      Script Library
+    </MudNavLink>
+  </AuthorizeView>
   <AuthorizeView Policy="@(PolicyNames.RequireAssistSessionsConnect)">
     <MudNavLink Disabled="!_isAuthenticated" Href="@(ClientRoutes.AssistViewer)" Match="NavLinkMatch.Prefix"
                 Icon="@Icons.Material.Filled.SupportAgent">

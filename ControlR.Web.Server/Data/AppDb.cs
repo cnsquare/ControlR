@@ -39,8 +39,10 @@ public class AppDb : IdentityUserContext<AppUser, Guid>, IDataProtectionKeyConte
   public DbSet<LogonToken> LogonTokens { get; init; }
   public DbSet<PermissionAssignment> PermissionAssignments { get; init; }
   public DbSet<PersonalAccessToken> PersonalAccessTokens { get; init; }
+  public DbSet<SavedScript> SavedScripts { get; init; }
   public DbSet<ScriptResult> ScriptResults { get; init; }
   public DbSet<ScriptRun> ScriptRuns { get; init; }
+  public DbSet<ScriptSchedule> ScriptSchedules { get; init; }
   public DbSet<ServerAlert> ServerAlerts { get; init; }
   public DbSet<ServiceAccountCredential> ServiceAccountCredentials { get; init; }
   public DbSet<ServiceAccount> ServiceAccounts { get; init; }
@@ -71,6 +73,7 @@ public class AppDb : IdentityUserContext<AppUser, Guid>, IDataProtectionKeyConte
 
     ConfigurePersonalAccessTokens(builder);
     ConfigureServerAlert(builder);
+    ConfigureScriptLibrary(builder);
     ConfigureScriptRuns(builder);
     ConfigureTenant(builder);
     ConfigureDevices(builder);
@@ -481,6 +484,43 @@ public class AppDb : IdentityUserContext<AppUser, Guid>, IDataProtectionKeyConte
     {
       builder
         .Entity<Tag>()
+        .HasQueryFilter(x => x.TenantId == _tenantId);
+    }
+  }
+
+  private void ConfigureScriptLibrary(ModelBuilder builder)
+  {
+    builder
+      .Entity<SavedScript>()
+      .HasOne(x => x.Tenant)
+      .WithMany(x => x.SavedScripts)
+      .HasForeignKey(x => x.TenantId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    builder
+      .Entity<SavedScript>()
+      .HasIndex(x => new { x.TenantId, x.Name })
+      .IsUnique();
+
+    builder
+      .Entity<ScriptSchedule>()
+      .HasOne(x => x.Tenant)
+      .WithMany(x => x.ScriptSchedules)
+      .HasForeignKey(x => x.TenantId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    builder
+      .Entity<ScriptSchedule>()
+      .HasIndex(x => new { x.IsEnabled, x.NextRun });
+
+    if (_tenantId is not null)
+    {
+      builder
+        .Entity<SavedScript>()
+        .HasQueryFilter(x => x.TenantId == _tenantId);
+
+      builder
+        .Entity<ScriptSchedule>()
         .HasQueryFilter(x => x.TenantId == _tenantId);
     }
   }

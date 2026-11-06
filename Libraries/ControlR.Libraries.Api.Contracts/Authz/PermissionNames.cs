@@ -64,6 +64,8 @@ public static class PermissionNames
   public const string TenantPermissionsDeny = "tenant.permissions.deny";
   public const string TenantPermissionsRead = "tenant.permissions.read";
   public const string TenantPermissionsWrite = "tenant.permissions.write";
+  public const string TenantScriptsRead = "tenant.scripts.read";
+  public const string TenantScriptsWrite = "tenant.scripts.write";
   public const string TenantSettingsRead = "tenant.settings.read";
   public const string TenantSettingsWrite = "tenant.settings.write";
   public const string TenantTagsWrite = "tenant.tags.write";
