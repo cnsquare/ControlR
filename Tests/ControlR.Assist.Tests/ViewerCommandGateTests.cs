@@ -101,6 +101,47 @@ public class ViewerCommandGateTests
   }
 
   [Theory]
+  [InlineData(RemoteControlDtoType.ClipboardText)]
+  [InlineData(RemoteControlDtoType.KeyEvent)]
+  [InlineData(RemoteControlDtoType.MouseButtonEvent)]
+  [InlineData(RemoteControlDtoType.MouseClick)]
+  [InlineData(RemoteControlDtoType.MovePointer)]
+  [InlineData(RemoteControlDtoType.TypeText)]
+  public async Task Handle_InputSuspended_DropsEverythingThatCouldAnswerAPrompt(RemoteControlDtoType dtoType)
+  {
+    var inner = new RecordingHandler();
+    var gate = new AssistInputGate { IsInputSuspended = true };
+
+    var result = await CreateGate(inner, gate).Handle(CreateWrapper(dtoType));
+
+    Assert.True(result.IsSuccess);
+    Assert.Empty(inner.Handled);
+  }
+
+  [Fact]
+  public async Task Handle_InputSuspended_KeepsTheViewerWatching()
+  {
+    var inner = new RecordingHandler();
+    var gate = new AssistInputGate { IsInputSuspended = true };
+
+    await CreateGate(inner, gate).Handle(CreateWrapper(RemoteControlDtoType.RequestKeyFrame));
+
+    Assert.Single(inner.Handled);
+  }
+
+  [Fact]
+  public async Task Handle_SuspensionLifted_KeepsTheCustomersViewOnlyChoice()
+  {
+    var inner = new RecordingHandler();
+    var gate = new AssistInputGate { IsViewOnly = true, IsInputSuspended = true };
+
+    gate.IsInputSuspended = false;
+    await CreateGate(inner, gate).Handle(CreateWrapper(RemoteControlDtoType.KeyEvent));
+
+    Assert.Empty(inner.Handled);
+  }
+
+  [Theory]
   [InlineData(RemoteControlDtoType.KeyEvent)]
   [InlineData(RemoteControlDtoType.RequestClipboardText)]
   [InlineData(RemoteControlDtoType.ClipboardText)]

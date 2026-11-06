@@ -54,6 +54,14 @@ public class AssistSessionCoordinatorTests
   }
 
   [Fact]
+  public void TrySetInputSuspended_NoSession_ReportsFailureSoTheCallerStops()
+  {
+    var controller = CreateController(new FakeHubClient());
+
+    Assert.False(controller.TrySetInputSuspended(true));
+  }
+
+  [Fact]
   public async Task HandleConsentCancelled_MatchingPendingSession_ClearsConsentAndGoesReady()
   {
     var hub = new FakeHubClient();

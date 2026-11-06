@@ -149,22 +149,32 @@ public sealed partial class HomeViewModel : ViewModelBase, IDisposable
   private async Task SetUpUnattendedAccessAsync()
   {
     if (RequestConfirmationAsync is null ||
-        !await RequestConfirmationAsync(Localization.UnattendedAccessConfirmMessage))
+        !AssistSessionCoordinator.TryNormalizeServerUri(ServerUrl, out var serverUri) ||
+        serverUri is null)
     {
+      UnattendedAccessStatus = Localization.UnattendedAccessInstallFailed;
       return;
     }
 
-    if (!AssistSessionCoordinator.TryNormalizeServerUri(ServerUrl, out var serverUri) || serverUri is null)
+    // Before the question appears, so a remote click cannot land on it as it opens. Only the
+    // person at this computer may answer. If input cannot be stopped, the question is not asked.
+    if (!_controller.TrySetInputSuspended(true))
     {
       UnattendedAccessStatus = Localization.UnattendedAccessInstallFailed;
       return;
     }
 
     IsSettingUpUnattendedAccess = true;
-    UnattendedAccessStatus = Localization.UnattendedAccessInstalling;
 
     try
     {
+      if (!await RequestConfirmationAsync(Localization.UnattendedAccessConfirmMessage))
+      {
+        return;
+      }
+
+      UnattendedAccessStatus = Localization.UnattendedAccessInstalling;
+
       var grant = await _controller.RequestUnattendedAccessAsync();
       if (!grant.IsSuccess || grant.Value is null)
       {
@@ -179,6 +189,7 @@ public sealed partial class HomeViewModel : ViewModelBase, IDisposable
     }
     finally
     {
+      _controller.TrySetInputSuspended(false);
       IsSettingUpUnattendedAccess = false;
     }
   }

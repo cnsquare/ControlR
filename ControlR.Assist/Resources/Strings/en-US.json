@@ -24,7 +24,7 @@
   "ConfirmButtonText": "Confirm",
   "ConfirmDisconnectMessage": "Disconnect from the server?",
   "UnattendedAccessButtonText": "Allow permanent access to this computer",
-  "UnattendedAccessConfirmMessage": "This installs {brand_name} as a background service. The technician's organization will then be able to connect to this computer at any time, even when you are away and without asking first. You can remove it later from Installed Apps in Windows Settings. Only continue if you trust them. Continue?",
+  "UnattendedAccessConfirmMessage": "This installs {brand_name} as a background service. The technician's organization will then be able to connect to this computer at any time, even when you are away and without asking first. You can remove it later from Installed Apps in Windows Settings. Only continue if you trust them. The technician cannot control this computer until you answer. Continue?",
   "UnattendedAccessDeclined": "Permanent access was not set up.",
   "UnattendedAccessInstalled": "Permanent access is set up. You can remove it from Installed Apps in Windows Settings.",
   "UnattendedAccessInstallFailed": "Permanent access could not be set up.",

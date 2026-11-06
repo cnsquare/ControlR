@@ -10,6 +10,13 @@ namespace ControlR.Assist.Services;
 /// </summary>
 public sealed class AssistInputGate
 {
+  /// <summary>
+  /// Set while the customer is deciding something only they should decide, so the technician
+  /// cannot answer on their behalf. Independent of <see cref="IsViewOnly"/>, which is the
+  /// customer's own choice and must survive this being cleared.
+  /// </summary>
+  public volatile bool IsInputSuspended;
+
   public volatile bool IsViewOnly;
 }
 
@@ -51,7 +58,7 @@ public sealed class ViewerCommandGate(
       return Result.Ok();
     }
 
-    if (gate.IsViewOnly && _viewOnlyDroppedDtoTypes.Contains(wrapper.DtoType))
+    if ((gate.IsViewOnly || gate.IsInputSuspended) && _viewOnlyDroppedDtoTypes.Contains(wrapper.DtoType))
     {
       return Result.Ok();
     }

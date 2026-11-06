@@ -196,6 +196,22 @@ public sealed class AssistSessionCoordinator : IAsyncDisposable
 
   public Task RespondToConsentAsync(bool approved) => EnqueueAsync(() => RespondToConsentCoreAsync(approved));
 
+  /// <summary>
+  /// Returns false when there is no session to suspend, so a caller can refuse to proceed
+  /// rather than assume the technician is locked out.
+  /// </summary>
+  public bool TrySetInputSuspended(bool isSuspended)
+  {
+    if (_sessionHost?.Services.GetService<AssistInputGate>() is not { } gate)
+    {
+      return false;
+    }
+
+    gate.IsInputSuspended = isSuspended;
+    _logger.LogInformation("Viewer input {State}.", isSuspended ? "suspended" : "restored");
+    return true;
+  }
+
   public void SetViewOnly(bool enabled)
   {
     if (_sessionHost?.Services.GetService<AssistInputGate>() is not { } gate)
