@@ -41,11 +41,16 @@ public class ChatWindowViewModelFake : IChatWindowViewModel
 #pragma warning restore CS0067
 
   public string ChatTitle => "Chat with viewer@example.com";
+  public ICommand DecreaseOpacityCommand => new RelayCommand(() => { });
+  public ICommand IncreaseOpacityCommand => new RelayCommand(() => { });
+  public bool IsAlwaysOnTop { get; set; }
+  public bool IsTransparent { get; set; }
   public ObservableCollection<ChatMessageViewModel> Messages => Session?.Messages ?? [];
   public string NewMessage { get; set; } = string.Empty;
   public ICommand SendMessageCommand => new RelayCommand(() => { });
 
   public ChatSession? Session { get; set; }
+  public double WindowOpacity => 1;
 
   public Task HandleChatWindowClosed() => Task.CompletedTask;
   public Task SendMessage() => Task.CompletedTask;

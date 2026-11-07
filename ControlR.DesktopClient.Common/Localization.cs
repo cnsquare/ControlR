@@ -41,10 +41,14 @@ public static class Localization
   public static string AgentStatus => GetString();
   public static string Auto => GetString();
   public static string CancelText => GetString();
+  public static string ChatAlwaysOnTopButton => GetString();
+  public static string ChatLessTransparentTooltip => GetString();
   public static string ChatMessageSendFailureMessage => GetString();
   public static string ChatMessageSendFailureTitle => GetString();
+  public static string ChatMoreTransparentTooltip => GetString();
   public static string ChatSessionClosedToastMessage => GetString();
   public static string ChatSessionClosedToastTitle => GetString();
+  public static string ChatTransparentButton => GetString();
   public static string ChatWindowClosedSystemMessage => GetString();
   public static string ChatWindowDefaultTitle => GetString();
   public static string ChatWindowTitle => GetString();

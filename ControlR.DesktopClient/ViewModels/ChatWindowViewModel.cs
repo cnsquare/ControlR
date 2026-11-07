@@ -13,10 +13,15 @@ public interface IChatWindowViewModel
   event EventHandler? MessagesChanged;
   
   string ChatTitle { get; }
+  ICommand DecreaseOpacityCommand { get; }
+  ICommand IncreaseOpacityCommand { get; }
+  bool IsAlwaysOnTop { get; set; }
+  bool IsTransparent { get; set; }
   ObservableCollection<ChatMessageViewModel> Messages { get; }
   string NewMessage { get; set; }
   ICommand SendMessageCommand { get; }
   ChatSession? Session { get; set; }
+  double WindowOpacity { get; }
 
   Task HandleChatWindowClosed();
 
@@ -28,13 +33,25 @@ public class ChatWindowViewModel(
   IToaster toaster,
   ILogger<ChatWindowViewModel> logger) : ViewModelBase<ChatWindow>, IChatWindowViewModel
 {
+  /// <summary>
+  /// The floor keeps the window readable, so a chat can never be made effectively invisible.
+  /// </summary>
+  public const double MinimumOpacity = 0.3;
+
+  private const double FullOpacity = 1;
+  private const double OpacityStep = 0.1;
+  private const double TransparentOpacity = 0.6;
 
   private readonly IChatSessionManager _chatSessionManager = chatSessionManager;
   private readonly ILogger<ChatWindowViewModel> _logger = logger;
   private readonly IToaster _toaster = toaster;
 
+  private bool _isAlwaysOnTop;
+  private bool _isTransparent;
   private string _newMessage = string.Empty;
+  private double _opacityBeforeTransparent = FullOpacity;
   private ChatSession? _session;
+  private double _windowOpacity = FullOpacity;
 
   public event EventHandler? MessagesChanged;
 
@@ -45,6 +62,38 @@ public class ChatWindowViewModel(
   public ObservableCollection<ChatMessageViewModel> Messages => 
     Session?.Messages ?? [];
 
+  public ICommand DecreaseOpacityCommand => new RelayCommand(() => AdjustOpacity(-OpacityStep));
+
+  public ICommand IncreaseOpacityCommand => new RelayCommand(() => AdjustOpacity(OpacityStep));
+
+  public bool IsAlwaysOnTop
+  {
+    get => _isAlwaysOnTop;
+    set => SetProperty(ref _isAlwaysOnTop, value);
+  }
+
+  public bool IsTransparent
+  {
+    get => _isTransparent;
+    set
+    {
+      if (!SetProperty(ref _isTransparent, value))
+      {
+        return;
+      }
+
+      if (value)
+      {
+        _opacityBeforeTransparent = WindowOpacity;
+        WindowOpacity = Math.Min(WindowOpacity, TransparentOpacity);
+      }
+      else
+      {
+        WindowOpacity = _opacityBeforeTransparent;
+      }
+    }
+  }
+
   public string NewMessage
   {
     get => _newMessage;
@@ -52,6 +101,12 @@ public class ChatWindowViewModel(
   }
 
   public ICommand SendMessageCommand => new AsyncRelayCommand(SendMessage);
+
+  public double WindowOpacity
+  {
+    get => _windowOpacity;
+    private set => SetProperty(ref _windowOpacity, value);
+  }
 
   public ChatSession? Session 
   { 
@@ -79,6 +134,15 @@ public class ChatWindowViewModel(
         MessagesChanged?.Invoke(this, EventArgs.Empty);
       }
     }
+  }
+
+  private void AdjustOpacity(double change)
+  {
+    // Fine adjustment takes over from the toggle, so the two never disagree.
+    _isTransparent = false;
+    OnPropertyChanged(nameof(IsTransparent));
+
+    WindowOpacity = Math.Clamp(Math.Round(WindowOpacity + change, 1), MinimumOpacity, FullOpacity);
   }
 
   public async Task HandleChatWindowClosed()

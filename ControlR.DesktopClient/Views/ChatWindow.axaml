@@ -14,15 +14,36 @@
         MinHeight="400"
         MinWidth="350"
         WindowStartupLocation="CenterScreen"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent"
+        Topmost="{Binding IsAlwaysOnTop}"
         Title="{Binding ChatTitle}">
 
     <Design.DataContext>
         <fakes:ChatWindowViewModelFake />
     </Design.DataContext>
 
-    <Grid RowDefinitions="*,Auto">
+    <!-- The window itself is see-through, so this border is what the opacity applies to. -->
+    <Border Background="{DynamicResource BackgroundBrush}" Opacity="{Binding WindowOpacity}">
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- Overlay Controls -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6" Margin="10,8">
+            <ToggleButton Content="{x:Static common:Localization.ChatTransparentButton}"
+                          IsChecked="{Binding IsTransparent}" />
+            <Button Content="-"
+                    ToolTip.Tip="{x:Static common:Localization.ChatMoreTransparentTooltip}"
+                    AutomationProperties.Name="{x:Static common:Localization.ChatMoreTransparentTooltip}"
+                    Command="{Binding DecreaseOpacityCommand}" />
+            <Button Content="+"
+                    ToolTip.Tip="{x:Static common:Localization.ChatLessTransparentTooltip}"
+                    AutomationProperties.Name="{x:Static common:Localization.ChatLessTransparentTooltip}"
+                    Command="{Binding IncreaseOpacityCommand}" />
+            <ToggleButton Content="{x:Static common:Localization.ChatAlwaysOnTopButton}"
+                          IsChecked="{Binding IsAlwaysOnTop}" />
+        </StackPanel>
+
         <!-- Messages Area -->
-        <ScrollViewer Grid.Row="0" Name="_messagesScrollViewer"
+        <ScrollViewer Grid.Row="1" Name="_messagesScrollViewer"
                       VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="10">
                 <TextBlock Text="{x:Static common:Localization.NoMessagesText}"
@@ -89,7 +110,7 @@
         </ScrollViewer>
 
         <!-- Input Area -->
-        <Border Grid.Row="1"
+        <Border Grid.Row="2"
                 Background="{DynamicResource ChatInputBackgroundBrush}"
                 Padding="10"
                 BorderBrush="{DynamicResource ChatInputBorderBrush}"
@@ -122,4 +143,5 @@
             </Grid>
         </Border>
     </Grid>
+    </Border>
 </Window>
