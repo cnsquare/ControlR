@@ -1,4 +1,5 @@
 @attribute [Route(ClientRoutes.TenantSettings)]
+@using ControlR.Libraries.Api.Contracts.Settings
 @attribute [Authorize(Policy = PolicyNames.RequireTenantSettingsRead)]
 
 @inject AuthenticationStateProvider AuthState
@@ -57,9 +58,29 @@
                   Placeholder="If empty, defaults to this server's hostname."
                   Class="mt-3" />
   </div>
+
+  <div class="mt-10">
+    <MudText Typo="Typo.h6" Color="Color.Primary" GutterBottom>
+      Agent Name
+    </MudText>
+    <MudText Typo="Typo.body2" Class="mb-3">
+      The name shown for the agent in Windows Services and Installed Apps. Devices pick up a change
+      within a few minutes. Leave it empty for the default. Windows only.
+    </MudText>
+
+    <MudTextField T="string"
+                  @bind-Value="_agentDisplayName"
+                  Immediate="true"
+                  Validation="@(new Func<string?, string?>(TenantSettingDefinitions.GetAgentDisplayNameError))"
+                  OnBlur="SaveAgentDisplayNameOnBlur"
+                  Disabled="!_canWrite"
+                  MaxLength="60"
+                  Label="Agent Name" />
+  </div>
 </div>
 
 @code {
+  private string? _agentDisplayName;
   private bool _appendInstanceId = true;
   private bool _canWrite;
   private string? _instanceId;
@@ -73,6 +94,7 @@
     _notifyUser = settings.NotifyUserOnSessionStart;
     _appendInstanceId = settings.AppendInstanceId ?? false;
     _instanceId = settings.InstanceId;
+    _agentDisplayName = settings.AgentDisplayName;
     await base.OnInitializedAsync();
   }
 
@@ -107,6 +129,20 @@
       : _instanceId.Trim();
 
     if (await TenantSettingsProvider.SetInstanceId(_instanceId))
+    {
+      Snackbar.Add("Setting updated", Severity.Success);
+    }
+  }
+
+  private async Task SaveAgentDisplayNameOnBlur()
+  {
+    if (TenantSettingDefinitions.GetAgentDisplayNameError(_agentDisplayName) is { } error)
+    {
+      Snackbar.Add(error, Severity.Error);
+      return;
+    }
+
+    if (await TenantSettingsProvider.SetAgentDisplayName(_agentDisplayName))
     {
       Snackbar.Add("Setting updated", Severity.Success);
     }

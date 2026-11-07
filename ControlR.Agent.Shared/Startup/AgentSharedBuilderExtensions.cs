@@ -30,6 +30,7 @@ public static class AgentSharedBuilderExtensions
     {
       services.AddSingleton<IAgentInstaller, AgentInstallerWindows>();
       services.AddSingleton<IServiceControl, ServiceControlWindows>();
+      services.AddSingleton<IAgentDisplayNameApplier, AgentDisplayNameApplierWindows>();
       services.AddSingleton<IElevationChecker, ElevationCheckerWin>();
       services.AddSingleton<IRegistryAccessor, RegistryAccessor>();
       services.AddSingleton<IAgentServiceRegistration, AgentServiceRegistration>();
@@ -43,6 +44,7 @@ public static class AgentSharedBuilderExtensions
       services.AddSingleton<ILoggedInUserProvider, LoggedInUserProviderLinux>();
       services.AddSingleton<IHeadlessServerDetector, HeadlessServerDetector>();
       services.AddSingleton<IServiceControl, ServiceControlLinux>();
+      services.AddSingleton<IAgentDisplayNameApplier, AgentDisplayNameApplierNoOp>();
       services.AddSingleton<ILinuxDesktopClientProcessLocator, LinuxDesktopClientProcessLocator>();
       // TODO: Temporary migration code for v0.31.x
       services.AddSingleton<ILegacyPathMigrationUnix, LegacyPathMigrationUnix>();
@@ -51,6 +53,7 @@ public static class AgentSharedBuilderExtensions
     {
       services.AddSingleton<IAgentInstaller, AgentInstallerMac>();
       services.AddSingleton<IServiceControl, ServiceControlMac>();
+      services.AddSingleton<IAgentDisplayNameApplier, AgentDisplayNameApplierNoOp>();
       services.AddSingleton<IElevationChecker, ElevationCheckerMac>();
       // TODO: Temporary migration code for v0.31.x
       services.AddSingleton<ILegacyPathMigrationUnix, LegacyPathMigrationUnix>();

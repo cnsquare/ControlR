@@ -8626,6 +8626,12 @@
               "null",
               "boolean"
             ]
+          },
+          "agentDisplayName": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

@@ -171,7 +171,8 @@ public class TenantSettingsController : ControllerBase
       new InternalDtos.TenantSettingsDto(
         settings.AppendInstanceId,
         settings.InstanceId,
-        settings.NotifyUserOnSessionStart),
+        settings.NotifyUserOnSessionStart,
+        settings.AgentDisplayName),
       cancellationToken);
 
     if (!result.IsSuccess)
@@ -197,6 +198,7 @@ public class TenantSettingsController : ControllerBase
     return new TenantSettingsDto(
       settings.AppendInstanceId,
       settings.InstanceId,
-      settings.NotifyUserOnSessionStart);
+      settings.NotifyUserOnSessionStart,
+      settings.AgentDisplayName);
   }
 }

@@ -21283,6 +21283,12 @@
               "null",
               "boolean"
             ]
+          },
+          "agentDisplayName": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "description": "The tenant's settings as a typed aggregate. A null member means the setting is unset, which\nis distinct from a set value that happens to be the definition's default."

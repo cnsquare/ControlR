@@ -3,6 +3,7 @@ using ControlR.Libraries.Api.Contracts.Dtos.HubDtos;
 using ControlR.Libraries.Api.Contracts.Hubs.Clients;
 using ControlR.Libraries.Shared.Services.Encryption;
 using ControlR.Web.Server.Data;
+using ControlR.Web.Server.Data.Entities;
 using ControlR.Web.Server.Hubs;
 using ControlR.Web.Server.Options;
 using ControlR.Web.Server.Primitives;
@@ -28,6 +29,44 @@ namespace ControlR.Web.Server.Tests;
 public class AgentHubDeviceUpdateSecurityTests(ITestOutputHelper testOutput)
 {
   private readonly ITestOutputHelper _testOutput = testOutput;
+
+  [Fact]
+  public async Task GetAgentDisplayName_ReturnsOnlyTheVerifiedDevicesTenantName()
+  {
+    await using var fixture = await HubFixture.Create(_testOutput, allowSelfBootstrap: true);
+    var ct = TestContext.Current.CancellationToken;
+
+    var keyPair = fixture.KeyProvider.GenerateKeyPair();
+    var signedDto = fixture.KeyProvider.Sign(
+      CreateDeviceDto(Guid.NewGuid(), fixture.TenantId),
+      keyPair.PrivateKey,
+      Convert.ToBase64String(keyPair.PublicKey));
+
+    Assert.Null(await fixture.Hub.GetAgentDisplayName());
+    Assert.True((await fixture.Hub.UpdateDeviceSigned(signedDto)).IsSuccess);
+    Assert.Null(await fixture.Hub.GetAgentDisplayName());
+
+    var otherTenant = await fixture.Services.CreateTestTenant();
+    fixture.AppDb.TenantSettings.Add(new TenantSetting
+    {
+      Name = TenantSettingNames.AgentDisplayName,
+      TenantId = otherTenant.Id,
+      Value = "Theirs",
+    });
+    await fixture.AppDb.SaveChangesAsync(ct);
+
+    Assert.Null(await fixture.Hub.GetAgentDisplayName());
+
+    fixture.AppDb.TenantSettings.Add(new TenantSetting
+    {
+      Name = TenantSettingNames.AgentDisplayName,
+      TenantId = fixture.TenantId,
+      Value = "Mine",
+    });
+    await fixture.AppDb.SaveChangesAsync(ct);
+
+    Assert.Equal("Mine", await fixture.Hub.GetAgentDisplayName());
+  }
 
   [Fact]
   public async Task UpdateDeviceSigned_ExistingKeylessDevice_IsRejected()

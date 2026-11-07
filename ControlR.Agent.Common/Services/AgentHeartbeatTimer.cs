@@ -17,8 +17,10 @@ internal class AgentHeartbeatTimer(
   IDeviceInfoProvider deviceDataGenerator,
   IOptionsAccessor optionsAccessor,
   IEd25519KeyProvider keyProvider,
+  IAgentDisplayNameApplier displayNameApplier,
   ILogger<AgentHeartbeatTimer> logger) : BackgroundService, IAgentHeartbeatTimer
 {
+  private readonly IAgentDisplayNameApplier _displayNameApplier = displayNameApplier;
   private readonly IDeviceInfoProvider _deviceDataGenerator = deviceDataGenerator;
   private readonly IHubConnection<IAgentHub> _hubConnection = hubConnection;
   private readonly IEd25519KeyProvider _keyProvider = keyProvider;
@@ -78,10 +80,26 @@ internal class AgentHeartbeatTimer(
         _logger.LogInformation("Device ID changed.  Updating appsettings.");
         await _optionsAccessor.UpdateId(updateResult.Value.Id);
       }
+
+      await ApplyDisplayName();
     }
     catch (Exception ex)
     {
       _logger.LogError(ex, "Error while sending device update.");
+    }
+  }
+
+  // Kept apart from the heartbeat, because a problem renaming must not look like a failed update.
+  private async Task ApplyDisplayName()
+  {
+    try
+    {
+      var displayName = await _hubConnection.Server.GetAgentDisplayName();
+      await _displayNameApplier.Apply(displayName, CancellationToken.None);
+    }
+    catch (Exception ex)
+    {
+      _logger.LogWarning(ex, "Failed to apply the agent display name.");
     }
   }
 

@@ -6,6 +6,7 @@ namespace ControlR.Libraries.Api.Contracts.Settings;
 
 public static class TenantSettingDefinitions
 {
+  private const int MaxAgentDisplayNameLength = 60;
 
   /// <summary>
   /// Every setting, in <see cref="InternalDtos.TenantSettingsDto"/> constructor order.
@@ -14,8 +15,16 @@ public static class TenantSettingDefinitions
   [
     AppendInstanceId,
     InstanceId,
-    NotifyUserOnSessionStart
+    NotifyUserOnSessionStart,
+    AgentDisplayName
   ];
+  public static SettingDefinition<string?> AgentDisplayName { get; } =
+    new(
+      TenantSettingNames.AgentDisplayName,
+      null,
+      value => ParseResult<string?>.Success(string.IsNullOrWhiteSpace(value) ? null : value.Trim()),
+      validate: GetAgentDisplayNameError,
+      invalidValueMessageFactory: settingName => $"{settingName} has an invalid value.");
   public static SettingDefinition<bool?> AppendInstanceId { get; } =
     new(
       TenantSettingNames.AppendInstanceId,
@@ -55,7 +64,35 @@ public static class TenantSettingDefinitions
     return new TenantSettingsDto(
       Read(AppendInstanceId),
       Read(InstanceId),
-      Read(NotifyUserOnSessionStart));
+      Read(NotifyUserOnSessionStart),
+      Read(AgentDisplayName));
+  }
+
+  /// <summary>
+  /// The agent applies this name to the operating system with SYSTEM rights, so it is limited to
+  /// characters that mean nothing to a shell. The agent checks it again rather than trust the server.
+  /// </summary>
+  public static string? GetAgentDisplayNameError(string? value)
+  {
+    if (string.IsNullOrWhiteSpace(value))
+    {
+      return null;
+    }
+
+    var name = value.Trim();
+    if (name.Length > MaxAgentDisplayNameLength)
+    {
+      return $"The agent name can be at most {MaxAgentDisplayNameLength} characters.";
+    }
+
+    if (!char.IsAsciiLetterOrDigit(name[0]))
+    {
+      return "The agent name must start with a letter or number.";
+    }
+
+    return name.All(c => char.IsAsciiLetterOrDigit(c) || c is ' ' or '.' or '_' or '-')
+      ? null
+      : "The agent name can only use letters, numbers, spaces, periods, hyphens and underscores.";
   }
 
   public static string? FormatValue(string name, object? value)
@@ -79,7 +116,8 @@ public static class TenantSettingDefinitions
     [
       (AppendInstanceId.Name, AppendInstanceId.FormatValue(settings.AppendInstanceId)),
       (InstanceId.Name, InstanceId.FormatValue(settings.InstanceId)),
-      (NotifyUserOnSessionStart.Name, NotifyUserOnSessionStart.FormatValue(settings.NotifyUserOnSessionStart))
+      (NotifyUserOnSessionStart.Name, NotifyUserOnSessionStart.FormatValue(settings.NotifyUserOnSessionStart)),
+      (AgentDisplayName.Name, AgentDisplayName.FormatValue(settings.AgentDisplayName))
     ];
   }
 

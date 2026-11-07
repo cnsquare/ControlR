@@ -10,6 +10,7 @@ public interface ITenantSettingsProvider
   Task<string?> GetInstanceId();
   Task<bool?> GetNotifyUserOnSessionStart();
   Task<TenantSettingsDto> GetSettings();
+  Task<bool> SetAgentDisplayName(string? value);
   Task<bool> SetAppendInstanceId(bool value);
   Task<bool> SetInstanceId(string? value);
   Task<bool> SetNotifyUserOnSessionStart(bool? value);
@@ -71,6 +72,12 @@ internal class TenantSettingsProvider(
     return _settings ?? CreateDefaultSettings();
   }
 
+  public async Task<bool> SetAgentDisplayName(string? value)
+  {
+    var name = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    return await SetSetting(TenantSettingNames.AgentDisplayName, name);
+  }
+
   public async Task<bool> SetAppendInstanceId(bool value)
   {
     return await SetSetting(TenantSettingNames.AppendInstanceId, value);
@@ -110,7 +117,8 @@ internal class TenantSettingsProvider(
     return new TenantSettingsDto(
       defaults.AppendInstanceId,
       defaults.InstanceId,
-      defaults.NotifyUserOnSessionStart);
+      defaults.NotifyUserOnSessionStart,
+      defaults.AgentDisplayName);
   }
 
   private async Task<bool> SetSetting<T>(string settingName, T newValue)

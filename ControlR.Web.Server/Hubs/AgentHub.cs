@@ -221,6 +221,25 @@ public class AgentHub(
     }
   }
 
+  /// <summary>
+  /// The name chosen for this device's tenant, or null for the default. The tenant comes from the
+  /// device this connection proved it is, never from anything the caller sends.
+  /// </summary>
+  public async Task<string?> GetAgentDisplayName()
+  {
+    if (Device is not { } device)
+    {
+      return null;
+    }
+
+    return await _appDb.TenantSettings
+      .IgnoreQueryFilters()
+      .AsNoTracking()
+      .Where(x => x.TenantId == device.TenantId && x.Name == TenantSettingNames.AgentDisplayName)
+      .Select(x => x.Value)
+      .FirstOrDefaultAsync(Context.ConnectionAborted);
+  }
+
   public async Task<HubResult> ReportScriptResult(ScriptExecutionResultDto resultDto)
   {
     try

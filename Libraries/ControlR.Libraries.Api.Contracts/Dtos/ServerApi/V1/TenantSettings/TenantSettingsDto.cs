@@ -7,4 +7,5 @@ namespace ControlR.Libraries.Api.Contracts.Dtos.ServerApi.V1.TenantSettings;
 public sealed record TenantSettingsDto(
   bool? AppendInstanceId,
   string? InstanceId,
-  bool? NotifyUserOnSessionStart);
+  bool? NotifyUserOnSessionStart,
+  string? AgentDisplayName = null);
