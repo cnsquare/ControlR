@@ -1,8 +1,31 @@
 {
-  "brandName": "Enkroma",
-  "publisher": "Enkroma",
-  "colors": null,
-  "images": null,
+  "brandName": "EnkrOma",
+  "publisher": "EnkrOma Group",
+  "colors": {
+    "dark": {
+      "primary": "#c8a86a",
+      "secondary": "#c8c0b2",
+      "tertiary": "#8a8070",
+      "info": "#8fbbdb",
+      "success": "#a9c47f",
+      "warning": "#dcbc72",
+      "error": "#e39a6f"
+    },
+    "light": {
+      "primary": "#7d5f12",
+      "secondary": "#3d3830",
+      "tertiary": "#7a736a",
+      "info": "#2a5677",
+      "success": "#3f6122",
+      "warning": "#7d5f12",
+      "error": "#8a3f22"
+    }
+  },
+  "images": {
+    "appIconUri": ".branding/enkroma-icon.png",
+    "shellIconUri": ".branding/enkroma-icon.ico",
+    "companyLogoUri": ".branding/enkroma-logo.png"
+  },
   "controlrServerUrl": "https://control.enkroma.com",
   "hideSponsorshipInfo": true
 }
