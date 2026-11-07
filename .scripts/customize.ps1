@@ -1098,6 +1098,15 @@ $linuxBundleZip = Join-Path $linuxDownloadDir "$brandKey.Agent.bundle.zip"
 if (Test-Path -LiteralPath $linuxBundleZip) { Remove-Item -LiteralPath $linuxBundleZip -Force }
 Compress-Archive -Path "$linuxBundleDir/*" -DestinationPath $linuxBundleZip -Force
 
+Write-Host "Building Assist app (win-x64)..." -ForegroundColor Cyan
+$assistOut = Join-Path $tempBuildRoot "assist"
+dotnet publish ControlR.Assist/ControlR.Assist.csproj -c Release -r win-x64 -p:Version=$Version -p:FileVersion=$Version -o $assistOut
+if ($LASTEXITCODE -ne 0) { throw "Assist build failed" }
+$assistExe = Get-ChildItem -Path $assistOut -Filter "*.Assist.exe" | Select-Object -First 1
+if (-not $assistExe) { throw "Assist executable not found after publish." }
+# The Get Support page serves this from /downloads/win-x64/<brand>.Assist.exe.
+Copy-Item $assistExe.FullName (Join-Path $downloadsBase "win-x64/$brandKey.Assist.exe") -Force
+
 Write-Host "Creating Version.txt" -ForegroundColor Cyan
 Set-Content -LiteralPath "$downloadsBase/Version.txt" -Value $Version -Encoding UTF8 -Force
 
@@ -1113,6 +1122,7 @@ $requiredArtifacts = @(
   "ControlR.Web.Server/bin/publish/wwwroot/downloads/win-x86/$brandKey.Agent.Installer.exe"
   "ControlR.Web.Server/bin/publish/wwwroot/downloads/win-x64/$brandKey.Agent.bundle.zip"
   "ControlR.Web.Server/bin/publish/wwwroot/downloads/win-x86/$brandKey.Agent.bundle.zip"
+  "ControlR.Web.Server/bin/publish/wwwroot/downloads/win-x64/$brandKey.Assist.exe"
   "ControlR.Web.Server/bin/publish/wwwroot/downloads/linux-x64/$brandKey.Agent.Installer"
   "ControlR.Web.Server/bin/publish/wwwroot/downloads/linux-x64/$brandKey.Agent.bundle.zip"
 )
