@@ -1,3 +1,4 @@
+using ControlR.Libraries.Branding;
 using ControlR.Libraries.Hosting;
 
 namespace ControlR.Web.Server.Services.Alerts;
@@ -158,6 +159,6 @@ public class DeviceHealthBackgroundService(
 
     using var scope = _scopeFactory.CreateScope();
     var notifier = scope.ServiceProvider.GetRequiredService<IAlertNotifier>();
-    await notifier.Notify(settings, "ControlR device alerts", lines, cancellationToken);
+    await notifier.Notify(settings, $"{BrandingConstants.BrandName} device alerts", lines, cancellationToken);
   }
 }

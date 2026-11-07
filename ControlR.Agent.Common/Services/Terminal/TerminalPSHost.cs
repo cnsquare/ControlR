@@ -1,3 +1,4 @@
+using ControlR.Libraries.Branding;
 using System.Globalization;
 using System.Management.Automation.Host;
 
@@ -22,7 +23,7 @@ internal class TerminalPSHost : PSHost
 
   public override Guid InstanceId => _instanceId;
 
-  public override string Name => "ControlR Terminal Host";
+  public override string Name => $"{BrandingConstants.BrandName} Terminal Host";
 
   public override PSHostUserInterface UI => _ui;
 

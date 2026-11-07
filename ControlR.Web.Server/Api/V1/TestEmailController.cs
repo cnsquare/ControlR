@@ -1,3 +1,4 @@
+using ControlR.Libraries.Branding;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using ControlR.Web.Server.Constants;
@@ -50,7 +51,7 @@ public class TestEmailController : ControllerBase
 
     var result = await emailSender.SendEmailWithResult(
       user.Email,
-      "ControlR Test Email",
+      $"{BrandingConstants.BrandName} Test Email",
       "<h1>Test Email</h1>" +
         "<p>This is a test email from your ControlR server.</p>");
 

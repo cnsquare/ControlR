@@ -1,3 +1,4 @@
+using ControlR.Libraries.Branding;
 using System.Net;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -39,7 +40,7 @@ internal sealed class IdentityEmailSender(
 
     return _emailSender.SendEmailAsync(
       email,
-      "ControlR Account Confirmation",
+      $"{BrandingConstants.BrandName} Account Confirmation",
       $"Please confirm your ControlR account by following this link: <a href='{rewrittenLink}'>{rewrittenLink}</a>.");
   }
 
@@ -48,8 +49,8 @@ internal sealed class IdentityEmailSender(
     // A bare code carries no origin, so there is nothing to rewrite.
     return _emailSender.SendEmailAsync(
       email,
-      "ControlR Password Reset",
-      $"Please reset your ControlR password using the following code: {resetCode}");
+      $"{BrandingConstants.BrandName} Password Reset",
+      $"Please reset your {BrandingConstants.BrandName} password using the following code: {resetCode}");
   }
 
   public Task SendPasswordResetLinkAsync(AppUser user, string email, string resetLink)
@@ -61,7 +62,7 @@ internal sealed class IdentityEmailSender(
 
     return _emailSender.SendEmailAsync(
       email,
-      "ControlR Password Reset",
+      $"{BrandingConstants.BrandName} Password Reset",
       $"Please reset your ControlR password by following this link: <a href='{rewrittenLink}'>{rewrittenLink}</a>.");
   }
 

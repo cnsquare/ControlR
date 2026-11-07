@@ -1,3 +1,4 @@
+using ControlR.Libraries.Branding;
 using System.Net.Mail;
 using Asp.Versioning;
 using ControlR.Web.Server.Constants;
@@ -136,8 +137,8 @@ public class DeviceAlertsController(
 
     var succeeded = await _alertNotifier.Notify(
       settings,
-      "ControlR test alert",
-      ["Alerts from ControlR will arrive here."],
+      $"{BrandingConstants.BrandName} test alert",
+      [$"Alerts from {BrandingConstants.BrandName} will arrive here."],
       cancellationToken);
 
     return succeeded

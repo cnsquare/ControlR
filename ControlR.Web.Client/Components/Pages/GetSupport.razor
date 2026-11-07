@@ -33,11 +33,20 @@
     </MudButton>
     <MudText Typo="Typo.caption" Class="d-block mb-4">Windows 64-bit</MudText>
 
-    <MudText Typo="Typo.h6" GutterBottom>2. Open it and enter this server address</MudText>
-    <MudTextField T="string" Value="_serverAddress" ReadOnly Variant="Variant.Outlined"
-                  Label="Server address" Class="mb-4" />
+    @* A branded build has the server built in, so the app does not ask for it. *@
+    @if (BrandingConstants.ControlrServerUrl is null)
+    {
+      <MudText Typo="Typo.h6" GutterBottom>2. Open it and enter this server address</MudText>
+      <MudTextField T="string" Value="_serverAddress" ReadOnly Variant="Variant.Outlined"
+                    Label="Server address" Class="mb-4" />
 
-    <MudText Typo="Typo.h6" GutterBottom>3. Tell your technician the code</MudText>
+      <MudText Typo="Typo.h6" GutterBottom>3. Tell your technician the code</MudText>
+    }
+    else
+    {
+      <MudText Typo="Typo.h6" GutterBottom>2. Open it and tell your technician the code</MudText>
+    }
+
     <MudText Typo="Typo.body1">
       The app shows a 9-character code. Read it to your technician, then accept when the app asks
       if they can connect. You can end the session at any time.
