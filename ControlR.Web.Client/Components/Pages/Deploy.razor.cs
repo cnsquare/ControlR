@@ -1,3 +1,4 @@
+using ControlR.Libraries.Api.Contracts.Settings;
 using ControlR.Libraries.Branding;
 using Microsoft.AspNetCore.Components.Authorization;
 using ControlR.Libraries.Api.Contracts.Dtos.ServerApi.V1.Customers;
@@ -13,6 +14,7 @@ public partial class Deploy
   private readonly SemaphoreSlim _tagCapabilityLock = new(1, 1);
 
   private bool _addTags;
+  private string? _agentName;
   private bool _appendInstanceId = true;
   private bool _canAssignDeviceTags;
   private bool _canReadCustomers;
@@ -113,7 +115,7 @@ public partial class Deploy
       var downloadUri = new Uri(GetServerUri(), AppConstants.GetInstallerDownloadPath(RuntimeId.WinX64));
       return "$ProgressPreference = 'SilentlyContinue'; " +
              $"Invoke-WebRequest -Uri \"{downloadUri}\" -OutFile \"$env:TEMP/{BrandingConstants.InstallerBaseName}.exe\" -UseBasicParsing; " +
-             $"Start-Process -FilePath \"$env:TEMP/{BrandingConstants.InstallerBaseName}.exe\" -ArgumentList \"install {GetCommonArgs()}\" -Verb RunAs;";
+             $"Start-Process -FilePath \"$env:TEMP/{BrandingConstants.InstallerBaseName}.exe\" -ArgumentList 'install {GetCommonArgs()}' -Verb RunAs;";
     }
   }
   private string WindowsX86DeployScript
@@ -123,7 +125,7 @@ public partial class Deploy
       var downloadUri = new Uri(GetServerUri(), AppConstants.GetInstallerDownloadPath(RuntimeId.WinX86));
       return "$ProgressPreference = 'SilentlyContinue'; " +
              $"Invoke-WebRequest -Uri \"{downloadUri}\" -OutFile \"$env:TEMP/{BrandingConstants.InstallerBaseName}.exe\" -UseBasicParsing; " +
-             $"Start-Process -FilePath \"$env:TEMP/{BrandingConstants.InstallerBaseName}.exe\" -ArgumentList \"install {GetCommonArgs()}\" -Verb RunAs;";
+             $"Start-Process -FilePath \"$env:TEMP/{BrandingConstants.InstallerBaseName}.exe\" -ArgumentList 'install {GetCommonArgs()}' -Verb RunAs;";
     }
   }
 
@@ -392,6 +394,14 @@ public partial class Deploy
     if (_selectedCustomer is not null)
     {
       args += $" -c {_selectedCustomer.Id}";
+    }
+
+    // Validation limits this to characters with no meaning inside double quotes in any of the
+    // shells these commands are pasted into.
+    if (!string.IsNullOrWhiteSpace(_agentName) &&
+        TenantSettingDefinitions.GetAgentDisplayNameError(_agentName) is null)
+    {
+      args += $" -n \"{_agentName.Trim()}\"";
     }
 
     if (!_addTags || _selectedTags?.Any() != true)

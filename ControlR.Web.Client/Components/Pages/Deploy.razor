@@ -1,3 +1,4 @@
+@using ControlR.Libraries.Api.Contracts.Settings
 @using ControlR.Libraries.Api.Contracts.Dtos.ServerApi.V1.Customers
 @using ControlR.Libraries.Api.Contracts.Dtos.ServerApi.V1.InstallerKeys
 @using ControlR.Libraries.Api.Contracts.Dtos.ServerApi.V1.Tags
@@ -210,6 +211,20 @@ else
           }
         </MudSelect>
         }
+      </MudItem>
+    </MudGrid>
+
+    <MudGrid Class="mt-4">
+      <MudItem xs="12" sm="6">
+        <MudText Typo="Typo.subtitle2" Color="Color.Info">
+          Agent Name
+        </MudText>
+        <MudText Typo="Typo.body1" GutterBottom>
+          Optional. The name this install shows in Windows Services and Installed Apps, in place of the
+          Agent Name in Tenant Settings. It is added to the install commands above. Windows only.
+        </MudText>
+        <MudTextField T="string" @bind-Value="_agentName" Immediate="true" Label="Agent Name" MaxLength="60"
+                      Validation="@(new Func<string?, string?>(TenantSettingDefinitions.GetAgentDisplayNameError))" />
       </MudItem>
     </MudGrid>
 

@@ -2,6 +2,11 @@ namespace ControlR.Agent.Shared.Models;
 
 public sealed record AgentInstallRequest
 {
+  /// <summary>
+  /// The name this install shows in place of the tenant's. Null keeps whatever the install has.
+  /// </summary>
+  public string? AgentDisplayName { get; init; }
+
   public string? BundleSha256 { get; init; }
   public required string BundleZipPath { get; init; }
   public Guid? CustomerId { get; init; }

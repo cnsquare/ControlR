@@ -136,7 +136,7 @@ internal class AgentInstallerWindows(
         return Result.Fail<AgentInstallOutcome>("Unable to copy app to install directory.");
       }
 
-      await UpdateAppSettings(request.ServerUri, request.TenantId, request.DeviceId);
+      await UpdateAppSettings(request.ServerUri, request.TenantId, request.DeviceId, request.AgentDisplayName);
 
       var createResult = await CreateDeviceOnServer(request.InstallerKeyId, request.InstallerKeySecret, request.TagIds, request.CustomerId);
       if (!createResult.IsSuccess)

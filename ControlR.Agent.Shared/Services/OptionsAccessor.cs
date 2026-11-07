@@ -10,6 +10,7 @@ namespace ControlR.Agent.Shared.Services;
 
 public interface IOptionsAccessor
 {
+  string? AgentDisplayName { get; }
   Guid DeviceId { get; }
   bool DisableAutoUpdate { get; }
   string InstanceId { get; }
@@ -51,6 +52,7 @@ internal class OptionsAccessor(
   private readonly ILogger<OptionsAccessor> _logger = logger;
   private readonly SemaphoreSlim _updateLock = new(1, 1);
 
+  public string? AgentDisplayName => _appOptions.CurrentValue.AgentDisplayName;
   public Guid DeviceId => _appOptions.CurrentValue.DeviceId;
   public bool DisableAutoUpdate => _developerOptions.CurrentValue.DisableAutoUpdate;
   public string InstanceId => _instanceOptions.Value.InstanceId ?? string.Empty;

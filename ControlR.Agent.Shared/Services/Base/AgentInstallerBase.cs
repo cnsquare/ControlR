@@ -287,7 +287,11 @@ internal abstract class AgentInstallerBase(
   }
 
 
-  protected async Task UpdateAppSettings(Uri? serverUri, Guid? tenantId, Guid? deviceId)
+  protected async Task UpdateAppSettings(
+    Uri? serverUri,
+    Guid? tenantId,
+    Guid? deviceId,
+    string? agentDisplayName = null)
   {
     using var _ = Logger.BeginMemberScope();
     var currentOptions = AppOptions.CurrentValue;
@@ -321,6 +325,12 @@ internal abstract class AgentInstallerBase(
     {
       Logger.LogInformation("Setting device ID to {DeviceId}.", updatedDeviceId);
       currentOptions.DeviceId = updatedDeviceId;
+    }
+
+    // An update runs without this, and must not lose the name the install was given.
+    if (!string.IsNullOrWhiteSpace(agentDisplayName))
+    {
+      currentOptions.AgentDisplayName = agentDisplayName.Trim();
     }
 
     Logger.LogInformation("Writing results to disk.");

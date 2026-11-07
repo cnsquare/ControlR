@@ -1,3 +1,4 @@
+using ControlR.Libraries.Api.Contracts.Settings;
 using ControlR.Agent.Installer.Services;
 using ControlR.Agent.Shared.Interfaces;
 using ControlR.Agent.Shared.Models;
@@ -52,6 +53,9 @@ const string DeviceIdShortAlias = "-d";
 const string DeviceIdLongAlias = "--device-id";
 const string CustomerIdShortAlias = "-c";
 const string CustomerIdLongAlias = "--customer";
+const string AgentNameShortAlias = "-n";
+const string AgentNameLongAlias = "--agent-name";
+const string AgentNameDescription = "The name this agent shows in Windows Services and Installed Apps, in place of the tenant's agent name.";
 const string CustomerIdDescription = "An optional customer ID to assign the device to upon installation.";
 const string PreviousBrandNameDescription = "Brand name of the agent install being replaced. Set only during a cross-brand migration. That install is removed once this brand is installed and running. The server is what authorizes the migration.";
 const string PreviousBrandNameLongAlias = "--previous-brand-name";
@@ -139,6 +143,12 @@ static Command GetInstallCommand()
     Description = CustomerIdDescription
   };
 
+  var agentNameOption = new Option<string?>(AgentNameShortAlias, AgentNameLongAlias)
+  {
+    Required = false,
+    Description = AgentNameDescription
+  };
+
   var previousBrandNameOption = new Option<string?>(PreviousBrandNameLongAlias)
   {
     Required = false,
@@ -167,6 +177,7 @@ static Command GetInstallCommand()
     installerKeyIdOption,
     deviceIdOption,
     customerIdOption,
+    agentNameOption,
     previousBrandNameOption,
     previousInstanceIdOption,
     previousPublisherOption,
@@ -174,8 +185,16 @@ static Command GetInstallCommand()
 
   installCommand.SetAction(async parseResult =>
   {
+    var agentName = parseResult.GetValue(agentNameOption);
+    if (TenantSettingDefinitions.GetAgentDisplayNameError(agentName) is { } agentNameError)
+    {
+      Console.Error.WriteLine(agentNameError);
+      return 1;
+    }
+
     var installRequest = new AgentInstallRequest
     {
+      AgentDisplayName = agentName,
       BundleZipPath = string.Empty,
       ServerUri = parseResult.GetRequiredValue(serverUriOption),
       TenantId = parseResult.GetRequiredValue(tenantIdOption)!.Value,

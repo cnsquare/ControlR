@@ -6,6 +6,7 @@ public class AgentAppOptions
 {
   public const string SectionKey = "AppOptions";
 
+  public string? AgentDisplayName { get; set; }
   public Guid DeviceId { get; set; }
   
   [ProtectedDataClassification]

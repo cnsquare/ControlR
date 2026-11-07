@@ -94,7 +94,11 @@ internal class AgentHeartbeatTimer(
   {
     try
     {
-      var displayName = await _hubConnection.Server.GetAgentDisplayName();
+      // A name given to this install wins over the tenant's.
+      var displayName = string.IsNullOrWhiteSpace(_optionsAccessor.AgentDisplayName)
+        ? await _hubConnection.Server.GetAgentDisplayName()
+        : _optionsAccessor.AgentDisplayName;
+
       await _displayNameApplier.Apply(displayName, CancellationToken.None);
     }
     catch (Exception ex)
