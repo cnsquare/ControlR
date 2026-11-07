@@ -3,6 +3,7 @@ using System.Threading.Channels;
 using ControlR.Libraries.Api.Contracts.Dtos;
 using ControlR.Libraries.Api.Contracts.Dtos.HubDtos;
 using ControlR.Libraries.Api.Contracts.Hubs;
+using ControlR.Libraries.Shared.Constants;
 using ControlR.Libraries.Signalr.Client;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -271,8 +272,12 @@ public sealed class AssistSessionCoordinator : IAsyncDisposable
     var cancelled = false;
     try
     {
+      // The caller must target the hub path; passing the bare base URI negotiates against the site
+      // root and never reaches the assist hub. The base URI is still kept as _connectedServerUri for
+      // building relay/download URLs below.
+      var hubEndpoint = new Uri(serverUri, AppConstants.AssistHubPath);
       connected = await _hubConnection.Connect(
-        serverUri,
+        hubEndpoint,
         autoRetry: true,
         cancellationToken: cancellationToken).ConfigureAwait(false);
     }
