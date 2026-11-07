@@ -59,6 +59,22 @@
                    Text="{x:Static local:Localization.LanguageRestartNote}" />
       </StackPanel>
 
+      <StackPanel Spacing="8" IsVisible="{Binding Home.CanSetUpUnattendedAccess}">
+        <TextBlock Text="{x:Static local:Localization.UnattendedAccessButtonText}" FontWeight="SemiBold" />
+
+        <controls:ThemeButton HorizontalAlignment="Left"
+                              MinHeight="36"
+                              Padding="12,0"
+                              Variant="Outlined"
+                              Content="{x:Static local:Localization.UnattendedAccessButtonText}"
+                              Command="{Binding Home.SetUpUnattendedAccessCommand}" />
+
+        <TextBlock Classes="Small Secondary"
+                   TextWrapping="Wrap"
+                   IsVisible="{Binding Home.UnattendedAccessStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                   Text="{Binding Home.UnattendedAccessStatus}" />
+      </StackPanel>
+
       <StackPanel Spacing="8">
         <TextBlock Text="{x:Static local:Localization.LogsLabel}" FontWeight="SemiBold" />
 

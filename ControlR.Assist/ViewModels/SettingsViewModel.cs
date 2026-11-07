@@ -11,9 +11,16 @@ public sealed partial class SettingsViewModel(
   ILogger<SettingsViewModel> logger,
   IProcessManager processManager,
   INavigationService navigationService,
-  IThemeProvider themeProvider) : ViewModelBase
+  IThemeProvider themeProvider,
+  HomeViewModel homeViewModel) : ViewModelBase
 {
   private readonly ILogger<SettingsViewModel> _logger = logger;
+
+  /// <summary>
+  /// The shared home view model, so the "Allow Access" (unattended access) control can live in
+  /// Settings while its command and session state stay on the home view model.
+  /// </summary>
+  public HomeViewModel Home { get; } = homeViewModel;
   private readonly INavigationService _navigationService = navigationService;
   private readonly IProcessManager _processManager = processManager;
   private readonly IAssistSettingsService _settingsService = settingsService;
