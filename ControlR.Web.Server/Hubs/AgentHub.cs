@@ -4,6 +4,7 @@ using ControlR.Libraries.Api.Contracts.Dtos.HubDtos;
 using ControlR.Libraries.Api.Contracts.Hubs.Clients;
 using Microsoft.AspNetCore.SignalR;
 using ControlR.Web.Server.Services.DeviceManagement;
+using ControlR.Web.Server.Services.Settings;
 using ControlR.Libraries.Shared.Services.Encryption;
 using ControlR.Web.Server.Extensions.Dtos.Internal;
 
@@ -20,10 +21,12 @@ public class AgentHub(
   IOptions<DeveloperOptions> developerOptions,
   IOptions<ServerLifecycleOptions> serverOptions,
   IEd25519KeyProvider keyProvider,
+  IFleetSecretManager fleetSecretManager,
   ILogger<AgentHub> logger) : HubWithItems<IAgentHubClient>, IAgentHub
 {
   private readonly IAgentVersionProvider _agentVersionProvider = agentVersionProvider;
   private readonly AppDb _appDb = appDb;
+  private readonly IFleetSecretManager _fleetSecretManager = fleetSecretManager;
   private readonly IOptions<AppOptions> _appOptions = appOptions;
   private readonly IOptions<DeveloperOptions> _developerOptions = developerOptions;
   private readonly IDeviceManager _deviceManager = deviceManager;
@@ -238,6 +241,18 @@ public class AgentHub(
       .Where(x => x.TenantId == device.TenantId && x.Name == TenantSettingNames.AgentDisplayName)
       .Select(x => x.Value)
       .FirstOrDefaultAsync(Context.ConnectionAborted);
+  }
+
+  public async Task<string?> GetFleetEnrollmentSecret()
+  {
+    // Only a connection that has proven its device identity (via a signed heartbeat) reaches here
+    // with Device set, so the secret is handed out solely over authenticated agent connections.
+    if (Device is not { } device)
+    {
+      return null;
+    }
+
+    return await _fleetSecretManager.GetOrCreate(device.TenantId, Context.ConnectionAborted);
   }
 
   public async Task<HubResult> ReportScriptResult(ScriptExecutionResultDto resultDto)

@@ -1,3 +1,4 @@
+using ControlR.Web.Server.Services.Settings;
 using ControlR.Libraries.Api.Contracts.Dtos.Devices;
 using ControlR.Libraries.Api.Contracts.Dtos.HubDtos;
 using ControlR.Libraries.Api.Contracts.Hubs.Clients;
@@ -337,6 +338,7 @@ public class AgentHubDeviceUpdateSecurityTests(ITestOutputHelper testOutput)
         }),
         services.GetRequiredService<IOptions<ServerLifecycleOptions>>(),
         keyProvider,
+        services.GetRequiredService<IFleetSecretManager>(),
         services.GetRequiredService<ILogger<AgentHub>>());
       hub.Context = new TestHubCallerContext();
       hub.Clients = new Mock<IHubCallerClients<IAgentHubClient>>().Object;

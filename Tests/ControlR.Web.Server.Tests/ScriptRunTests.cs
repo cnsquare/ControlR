@@ -1,3 +1,4 @@
+using ControlR.Web.Server.Services.Settings;
 using System.Security.Claims;
 using ControlR.Libraries.Api.Contracts.Dtos.HubDtos;
 using ControlR.Libraries.Api.Contracts.Hubs.Clients;
@@ -673,6 +674,7 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
       Microsoft.Extensions.Options.Options.Create(new DeveloperOptions()),
       services.GetRequiredService<IOptions<ServerLifecycleOptions>>(),
       new Mock<IEd25519KeyProvider>().Object,
+      services.GetRequiredService<IFleetSecretManager>(),
       services.GetRequiredService<ILogger<AgentHub>>());
 
     var context = new TestHubCallerContext();

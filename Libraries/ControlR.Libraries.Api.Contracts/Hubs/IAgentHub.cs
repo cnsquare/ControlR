@@ -8,6 +8,7 @@ public interface IAgentHub
 {
   ChannelReader<byte[]> GetFileStreamFromViewer(FileUploadHubDto dto);
   Task<string?> GetAgentDisplayName();
+  Task<string?> GetFleetEnrollmentSecret();
   Task<HubResult> ReportScriptResult(ScriptExecutionResultDto resultDto);
   Task<bool> SendChatResponse(ChatResponseHubDto responseDto);
   Task SendDesktopPreviewStream(Guid streamId, ChannelReader<byte[]> jpegChunks);

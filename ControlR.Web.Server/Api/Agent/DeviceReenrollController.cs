@@ -4,6 +4,7 @@ using ControlR.Libraries.Branding;
 using ControlR.Libraries.Shared.Services.Encryption;
 using ControlR.Web.Server.Extensions.Dtos.Internal;
 using ControlR.Web.Server.Services.DeviceManagement;
+using ControlR.Web.Server.Services.Settings;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ControlR.Web.Server.Api.Agent;
@@ -24,6 +25,7 @@ public class DeviceReenrollController(
   IEd25519KeyProvider keyProvider,
   IDeviceManager deviceManager,
   IAgentVersionProvider agentVersionProvider,
+  IFleetSecretManager fleetSecretManager,
   ILogger<DeviceReenrollController> logger) : ControllerBase
 {
   private const int MinSecretLength = 16;
@@ -31,6 +33,7 @@ public class DeviceReenrollController(
   private readonly IAgentVersionProvider _agentVersionProvider = agentVersionProvider;
   private readonly IOptionsMonitor<AppOptions> _appOptions = appOptions;
   private readonly IDeviceManager _deviceManager = deviceManager;
+  private readonly IFleetSecretManager _fleetSecretManager = fleetSecretManager;
   private readonly IEd25519KeyProvider _keyProvider = keyProvider;
   private readonly ILogger<DeviceReenrollController> _logger = logger;
 
@@ -41,31 +44,18 @@ public class DeviceReenrollController(
   public async Task<ActionResult<InternalDtos.DeviceResponseDto>> Reenroll(
     [FromBody] InternalDtos.ReenrollDeviceRequestDto request)
   {
-    // Server config wins; otherwise the build's baked-in secret makes re-enrollment standard.
-    var configuredSecret = _appOptions.CurrentValue.FleetEnrollmentSecret;
-    if (string.IsNullOrWhiteSpace(configuredSecret))
-    {
-      configuredSecret = BrandingConstants.FleetEnrollmentSecret;
-    }
-
-    // Off only when no secret is set anywhere: then nothing can be created this way.
-    if (string.IsNullOrWhiteSpace(configuredSecret) || configuredSecret.Trim().Length < MinSecretLength)
-    {
-      _logger.LogWarning("Re-enrollment attempted but no fleet secret is configured.");
-      return Forbid();
-    }
-
-    if (!SecretsMatch(configuredSecret.Trim(), request.FleetSecret))
-    {
-      _logger.LogWarning(
-        "Re-enrollment refused for device {DeviceId}: the fleet secret did not match.",
-        request.Device.Id);
-      return Forbid();
-    }
-
     if (request.Device.Id == Guid.Empty || request.Device.TenantId == Guid.Empty)
     {
       return BadRequest();
+    }
+
+    if (!await IsAuthorized(request))
+    {
+      // The log line distinguishes "nothing to match against" from "a secret was offered but wrong".
+      _logger.LogWarning(
+        "Re-enrollment refused for device {DeviceId}: the fleet secret did not match any accepted secret.",
+        request.Device.Id);
+      return Forbid();
     }
 
     // The agent keeps its existing key, so the record it rebuilds trusts the same identity it had.
@@ -92,10 +82,29 @@ public class DeviceReenrollController(
     return entity.ToInternalResponseDto(isOutdated);
   }
 
-  private static bool SecretsMatch(string configured, string provided)
+  // A request is authorized if it matches any accepted secret: the tenant's server-generated active
+  // secret (strong, rotatable, not in any binary), the manual server-config secret, or the baked-in
+  // bootstrap secret (the recovery credential that survives a total database loss).
+  private async Task<bool> IsAuthorized(InternalDtos.ReenrollDeviceRequestDto request)
   {
+    if (await _fleetSecretManager.Matches(request.Device.TenantId, request.FleetSecret))
+    {
+      return true;
+    }
+
+    return MatchesStaticSecret(_appOptions.CurrentValue.FleetEnrollmentSecret, request.FleetSecret)
+      || MatchesStaticSecret(BrandingConstants.FleetEnrollmentSecret, request.FleetSecret);
+  }
+
+  private static bool MatchesStaticSecret(string? configured, string provided)
+  {
+    if (string.IsNullOrWhiteSpace(configured) || configured.Trim().Length < MinSecretLength)
+    {
+      return false;
+    }
+
     // Constant time, so a wrong secret cannot be found one character at a time by timing the reply.
-    var a = Encoding.UTF8.GetBytes(configured);
+    var a = Encoding.UTF8.GetBytes(configured.Trim());
     var b = Encoding.UTF8.GetBytes(provided);
     return CryptographicOperations.FixedTimeEquals(a, b);
   }

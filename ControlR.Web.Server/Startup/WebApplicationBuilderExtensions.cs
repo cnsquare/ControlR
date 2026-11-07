@@ -307,6 +307,7 @@ public static class WebApplicationBuilderExtensions
     builder.Services.AddScoped<IEffectiveUserPreferencesResolver, EffectiveUserPreferencesResolver>();
     builder.Services.AddScoped<IUserPreferencesManager, UserPreferencesManager>();
     builder.Services.AddScoped<ITenantSettingsManager, TenantSettingsManager>();
+    builder.Services.AddScoped<IFleetSecretManager, FleetSecretManager>();
     builder.Services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
     builder.Services.AddScoped<IUserPreferencesProvider>(services => services.GetRequiredService<IUserPreferencesManager>());
     builder.Services.AddScoped<IUserStorageManager, UserStorageManager>();

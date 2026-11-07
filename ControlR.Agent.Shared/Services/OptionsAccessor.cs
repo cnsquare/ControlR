@@ -28,6 +28,7 @@ public interface IOptionsAccessor
   void RestrictAccess(string path);
 
   Task UpdateAppOptions(AgentAppOptions options);
+  Task UpdateFleetEnrollmentSecret(string fleetEnrollmentSecret);
   Task UpdateId(Guid uid);
   Task UpdatePrivateKey(string privateKeyBase64);
 }
@@ -125,6 +126,12 @@ internal class OptionsAccessor(
     contents = JsonSerializer.Serialize(json, _jsonOptions);
     await _fileSystem.WriteAllTextAsync(path, contents);
     RestrictAccess(path);
+  }
+
+  public async Task UpdateFleetEnrollmentSecret(string fleetEnrollmentSecret)
+  {
+    _appOptions.CurrentValue.FleetEnrollmentSecret = fleetEnrollmentSecret;
+    await UpdateAppOptions(_appOptions.CurrentValue);
   }
 
   public async Task UpdateId(Guid uid)

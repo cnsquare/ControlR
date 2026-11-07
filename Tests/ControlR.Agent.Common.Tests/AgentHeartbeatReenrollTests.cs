@@ -60,14 +60,31 @@ public class AgentHeartbeatReenrollTests
     fixture.Hub.Verify(x => x.UpdateDeviceSigned(It.IsAny<SignedDto<DeviceUpdateRequestDto>>()), Times.Once);
   }
 
+  [Fact]
+  public async Task Heartbeat_AdoptsServerActiveSecret()
+  {
+    var fixture = new Fixture { FleetSecret = null, ServerActiveSecret = "server-generated-active-secret" };
+    fixture.QueueHeartbeatResults(HubResult.Ok(fixture.Device.CloneAs<DeviceResponseDto>()));
+
+    var timer = fixture.Create();
+    await timer.SendDeviceHeartbeat();
+
+    fixture.Options.Verify(
+      x => x.UpdateFleetEnrollmentSecret("server-generated-active-secret"),
+      Times.Once);
+  }
+
   private sealed class Fixture
   {
     public string? FleetSecret { get; init; }
+
+    public string? ServerActiveSecret { get; init; }
 
     public DeviceUpdateRequestDto Device { get; } = CreateDevice();
 
     public Mock<IAgentHub> Hub { get; } = new();
     public Mock<IAgentDevicesApi> Devices { get; } = new();
+    public Mock<IOptionsAccessor> Options { get; } = new();
 
     public void QueueHeartbeatResults(params HubResult<DeviceResponseDto>[] results)
     {
@@ -83,11 +100,12 @@ public class AgentHeartbeatReenrollTests
       var hubConnection = new Mock<IHubConnection<IAgentHub>>();
       hubConnection.Setup(x => x.ConnectionState).Returns(HubConnectionState.Connected);
       hubConnection.Setup(x => x.Server).Returns(Hub.Object);
+      Hub.Setup(x => x.GetFleetEnrollmentSecret()).ReturnsAsync(ServerActiveSecret);
 
       var deviceInfo = new Mock<IDeviceInfoProvider>();
       deviceInfo.Setup(x => x.GetDeviceInfo()).ReturnsAsync(Device);
 
-      var options = new Mock<IOptionsAccessor>();
+      var options = Options;
       options.Setup(x => x.PrivateKey).Returns(Convert.ToBase64String(new byte[32]));
       options.Setup(x => x.AgentDisplayName).Returns("Fixed Name");
       options.Setup(x => x.FleetEnrollmentSecret).Returns(FleetSecret);

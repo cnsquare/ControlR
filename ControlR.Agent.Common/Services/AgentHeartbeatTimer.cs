@@ -100,6 +100,7 @@ internal class AgentHeartbeatTimer(
       }
 
       await ApplyDisplayName();
+      await SyncFleetSecret();
     }
     catch (Exception ex)
     {
@@ -111,36 +112,68 @@ internal class AgentHeartbeatTimer(
   private static bool IsReenrollableRejection(string? reason) =>
     reason is "Unknown device." or "Device requires enrollment.";
 
-  // Re-creates this device on the server after a database loss, authorized by the shared fleet
-  // secret. Does nothing, and stays inert, unless a secret is configured on this install.
+  // Adopts the tenant's server-generated active secret so later re-enrollments use the strong,
+  // rotatable secret instead of the baked-in bootstrap. Kept apart from the heartbeat so a sync
+  // problem does not look like a failed update.
+  private async Task SyncFleetSecret()
+  {
+    try
+    {
+      var serverSecret = await _hubConnection.Server.GetFleetEnrollmentSecret();
+      if (!string.IsNullOrWhiteSpace(serverSecret) &&
+          !string.Equals(serverSecret, _optionsAccessor.FleetEnrollmentSecret, StringComparison.Ordinal))
+      {
+        _logger.LogInformation("Adopting the server's active fleet enrollment secret.");
+        await _optionsAccessor.UpdateFleetEnrollmentSecret(serverSecret);
+      }
+    }
+    catch (Exception ex)
+    {
+      _logger.LogWarning(ex, "Failed to sync the fleet enrollment secret.");
+    }
+  }
+
+  // Re-creates this device on the server after a database loss. Tries the tenant's active secret (as
+  // adopted by SyncFleetSecret) first, then the baked-in bootstrap secret, which is the credential
+  // that survives a total server rebuild. Inert when neither is available.
   private async Task<bool> TryReenroll(DeviceUpdateRequestDto dto, string publicKeyBase64)
   {
-    // A per-install secret wins; otherwise the build's baked-in secret makes re-enrollment standard.
-    var fleetSecret = _optionsAccessor.FleetEnrollmentSecret;
-    if (string.IsNullOrWhiteSpace(fleetSecret))
+    var candidates = new List<string>();
+    if (!string.IsNullOrWhiteSpace(_optionsAccessor.FleetEnrollmentSecret))
     {
-      fleetSecret = BrandingConstants.FleetEnrollmentSecret;
+      candidates.Add(_optionsAccessor.FleetEnrollmentSecret);
     }
 
-    if (string.IsNullOrWhiteSpace(fleetSecret))
+    if (!string.IsNullOrWhiteSpace(BrandingConstants.FleetEnrollmentSecret) &&
+        !candidates.Contains(BrandingConstants.FleetEnrollmentSecret))
+    {
+      candidates.Add(BrandingConstants.FleetEnrollmentSecret);
+    }
+
+    if (candidates.Count == 0)
     {
       _logger.LogDebugDeduped(
-        "The server no longer recognizes this device, but no fleet enrollment secret is configured, so it cannot re-enroll itself.");
+        "The server no longer recognizes this device, but no fleet enrollment secret is available, so it cannot re-enroll itself.");
       return false;
     }
 
     _logger.LogWarning(
       "The server no longer recognizes this device. Attempting re-enrollment with the fleet secret.");
 
-    var request = new ReenrollDeviceRequestDto(dto, publicKeyBase64, fleetSecret);
-    var result = await _controlrApi.Agent.Devices.ReenrollDevice(request);
-    if (!result.IsSuccess)
+    foreach (var fleetSecret in candidates)
     {
-      _logger.LogError("Re-enrollment failed. Reason: {Reason}", result.Reason);
-      return false;
+      var request = new ReenrollDeviceRequestDto(dto, publicKeyBase64, fleetSecret);
+      var result = await _controlrApi.Agent.Devices.ReenrollDevice(request);
+      if (result.IsSuccess)
+      {
+        return true;
+      }
+
+      _logger.LogDebugDeduped("A fleet secret was rejected during re-enrollment; trying the next if any.");
     }
 
-    return true;
+    _logger.LogError("Re-enrollment failed: no available fleet secret was accepted.");
+    return false;
   }
 
   // Kept apart from the heartbeat, because a problem renaming must not look like a failed update.

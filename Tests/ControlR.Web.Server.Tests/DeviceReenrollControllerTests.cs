@@ -5,6 +5,7 @@ using ControlR.Libraries.Api.Contracts.Dtos.Devices;
 using ControlR.Libraries.Api.Contracts.Dtos.HubDtos;
 using ControlR.Libraries.Shared.Services.Encryption;
 using ControlR.Web.Server.Data;
+using ControlR.Web.Server.Services.Settings;
 using ControlR.Web.Server.Tests.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -93,6 +94,59 @@ public class DeviceReenrollControllerTests(ITestOutputHelper testOutput)
       .IgnoreQueryFilters()
       .FirstOrDefaultAsync(d => d.Id == deviceDto.Id, cancellationToken: TestContext.Current.CancellationToken);
     Assert.Null(dbDevice);
+  }
+
+  [Fact]
+  public async Task Reenroll_WithTenantActiveSecret_RecreatesDevice_WithoutConfigOrBootstrap()
+  {
+    // Default server: no config secret, no baked-in bootstrap. Only the tenant's server-generated
+    // active secret should authorize re-enrollment.
+    using var testServer = await TestWebServerBuilder.CreateTestServer(_testOutput);
+    using var httpClient = await testServer.GetHttpClient();
+    var services = testServer.Services;
+
+    var tenant = await services.CreateTestTenant();
+    var (deviceDto, publicKey) = CreateDeviceAndKey(services, tenant.Id);
+
+    using var scope = services.CreateScope();
+    var fleetSecretManager = scope.ServiceProvider.GetRequiredService<IFleetSecretManager>();
+    var activeSecret = await fleetSecretManager.GetOrCreate(tenant.Id, TestContext.Current.CancellationToken);
+
+    var request = new InternalDtos.ReenrollDeviceRequestDto(deviceDto, publicKey, activeSecret);
+    var response = await httpClient.PostAsJsonAsync(
+      HttpConstants.Agent.DeviceReenrollEndpoint, request, TestContext.Current.CancellationToken);
+
+    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+    await using var db = scope.ServiceProvider.GetRequiredService<AppDb>();
+    var dbDevice = await db.Devices
+      .IgnoreQueryFilters()
+      .FirstOrDefaultAsync(d => d.Id == deviceDto.Id, cancellationToken: TestContext.Current.CancellationToken);
+    Assert.NotNull(dbDevice);
+    Assert.Equal(tenant.Id, dbDevice.TenantId);
+  }
+
+  [Fact]
+  public async Task FleetSecretManager_GetOrCreate_IsStable_AndRotateChangesIt()
+  {
+    using var testServer = await TestWebServerBuilder.CreateTestServer(_testOutput);
+    var services = testServer.Services;
+    var tenant = await services.CreateTestTenant();
+
+    using var scope = services.CreateScope();
+    var manager = scope.ServiceProvider.GetRequiredService<IFleetSecretManager>();
+
+    var first = await manager.GetOrCreate(tenant.Id, TestContext.Current.CancellationToken);
+    var second = await manager.GetOrCreate(tenant.Id, TestContext.Current.CancellationToken);
+    Assert.False(string.IsNullOrWhiteSpace(first));
+    Assert.Equal(first, second);
+    Assert.True(await manager.Matches(tenant.Id, first, TestContext.Current.CancellationToken));
+    Assert.False(await manager.Matches(tenant.Id, "not-the-secret", TestContext.Current.CancellationToken));
+
+    var rotated = await manager.Rotate(tenant.Id, TestContext.Current.CancellationToken);
+    Assert.NotEqual(first, rotated);
+    Assert.False(await manager.Matches(tenant.Id, first, TestContext.Current.CancellationToken));
+    Assert.True(await manager.Matches(tenant.Id, rotated, TestContext.Current.CancellationToken));
   }
 
   [Fact]

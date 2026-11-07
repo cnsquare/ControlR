@@ -1,3 +1,4 @@
+using ControlR.Web.Server.Services.Settings;
 using ControlR.Libraries.Api.Contracts.Dtos.HubDtos;
 using ControlR.Libraries.Api.Contracts.Dtos.Devices;
 using ControlR.Libraries.Api.Contracts.Hubs.Clients;
@@ -137,6 +138,7 @@ public class DecommissionServerTests(ITestOutputHelper testOutput)
       Microsoft.Extensions.Options.Options.Create(new DeveloperOptions()),
       serverOptions,
       keyProvider,
+      new Mock<IFleetSecretManager>().Object,
       mockLogger.Object);
 
     hub.Clients = mockClients.Object;
@@ -239,6 +241,7 @@ public class DecommissionServerTests(ITestOutputHelper testOutput)
       Microsoft.Extensions.Options.Options.Create(new DeveloperOptions()),
       serverOptions,
       keyProvider,
+      new Mock<IFleetSecretManager>().Object,
       mockLogger.Object);
 
     hub.Clients = mockClients.Object;
