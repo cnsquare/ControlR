@@ -120,6 +120,7 @@
       <MudText>@_bulkSelection.Count selected</MudText>
       <MudButton Variant="Variant.Outlined" Disabled="_isBulkBusy" OnClick="BulkRunScript">Run Script</MudButton>
       <MudButton Variant="Variant.Outlined" Disabled="_isBulkBusy" OnClick="BulkWake">Wake Offline</MudButton>
+      <MudButton Variant="Variant.Outlined" Disabled="_isBulkBusy" OnClick="BulkUpdate">Update Agents</MudButton>
       <MudSelect T="Guid?" Label="Tag" @bind-Value="_bulkTagId" Dense Variant="Variant.Outlined" Margin="Margin.Dense"
                  Style="min-width: 180px; max-width: 240px;">
         @foreach (var tag in TagStore.Items)

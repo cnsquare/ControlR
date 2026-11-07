@@ -687,6 +687,15 @@ public partial class Dashboard : IAsyncDisposable
     NavMan.NavigateTo($"{ClientRoutes.ScriptLibrary}?devices={deviceIds}");
   }
 
+  private async Task BulkUpdate()
+  {
+    await RunBulk(async device =>
+    {
+      var result = await MainHub.Server.SendAgentUpdateTrigger2(new(device.Id));
+      return result.IsSuccess;
+    }, _bulkSelection, "Update requested for");
+  }
+
   private async Task BulkWake()
   {
     var targets = _bulkSelection

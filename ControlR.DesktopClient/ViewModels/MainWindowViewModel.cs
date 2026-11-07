@@ -36,7 +36,7 @@ public partial class MainWindowViewModel(
   {
     await base.OnInitializeAsync();
     await InitializeNavigationItems();
-    await _navigationProvider.NavigateTo<IConnectionsViewModel>();
+    await _navigationProvider.NavigateTo<ISettingsViewModel>();
   }
 
   private async Task InitializeNavigationItems()
