@@ -85,6 +85,9 @@ internal static class ServiceCollectionExtensions
       .AddTransient<ChatWindow>()
       .AddTransient<IChatWindowViewModel, ChatWindowViewModel>()
       .AddTransient<ToastWindow>()
+      .AddTransient<SessionIndicatorWindow>()
+      .AddSingleton<ISessionIndicator, SessionIndicator>()
+      .AddTransient<ISessionIndicatorWindowViewModel, SessionIndicatorWindowViewModel>()
       .AddTransient<IToastWindowViewModel, ToastWindowViewModel>()
       .AddHostedService(sp => sp.GetRequiredService<IpcClientManager>())
       .AddHostedService(sp => sp.GetRequiredService<DesktopApplicationLifetime>());

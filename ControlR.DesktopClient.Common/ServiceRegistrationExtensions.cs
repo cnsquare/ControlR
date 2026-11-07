@@ -34,6 +34,7 @@ public static class ServiceRegistrationExtensions
 
     // A platform with real capture registers its own. Everything else reports that audio is unavailable.
     builder.Services.TryAddSingleton<IAudioCapturer, UnsupportedAudioCapturer>();
+    builder.Services.TryAddSingleton<ISessionIndicator, NoOpSessionIndicator>();
 
     if (dependencies.Dispatcher is not null)
     {
@@ -43,6 +44,11 @@ public static class ServiceRegistrationExtensions
     if (dependencies.AsyncLock is not null)
     {
       builder.Services.AddSingleton(dependencies.AsyncLock);
+    }
+
+    if (dependencies.SessionIndicator is not null)
+    {
+      builder.Services.AddSingleton(dependencies.SessionIndicator);
     }
 
     if (dependencies.Consent is not null)

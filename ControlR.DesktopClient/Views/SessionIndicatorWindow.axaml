@@ -1,0 +1,42 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ControlR.DesktopClient.Views.SessionIndicatorWindow"
+        xmlns:vm="using:ControlR.DesktopClient.ViewModels"
+        xmlns:fakes="using:ControlR.DesktopClient.ViewModels.Fakes"
+        x:DataType="vm:ISessionIndicatorWindowViewModel"
+        Title="{Binding ProductName}"
+        Width="320"
+        WindowStartupLocation="Manual"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        Topmost="True"
+        CanResize="False"
+        WindowDecorations="None"
+        SystemDecorations="None"
+        SizeToContent="Height"
+        Background="#1E1E1E">
+
+  <Design.DataContext>
+    <fakes:SessionIndicatorWindowViewModelFake />
+  </Design.DataContext>
+
+  <Border BorderBrush="#E74C3C" BorderThickness="1" CornerRadius="4">
+    <Grid Margin="14,12" ColumnDefinitions="Auto,12,*,12,Auto" RowDefinitions="Auto,Auto">
+
+      <Ellipse Grid.Column="0" Grid.RowSpan="2" Width="14" Height="14"
+               VerticalAlignment="Center" Fill="#E74C3C" />
+
+      <TextBlock Grid.Column="2" Grid.Row="0" FontWeight="SemiBold" FontSize="14"
+                 Foreground="#F5F5F5" Text="Remote control active" />
+
+      <TextBlock Grid.Column="2" Grid.Row="1" FontSize="12" Margin="0,2,0,0"
+                 Foreground="#BDBDBD" TextTrimming="CharacterEllipsis"
+                 Text="{Binding ViewerName, StringFormat='Connected: {0}'}" />
+
+      <Button Grid.Column="4" Grid.RowSpan="2" VerticalAlignment="Center"
+              Command="{Binding EndSessionCommand}"
+              Background="#E74C3C" Foreground="White" Padding="12,6"
+              Content="End Session" />
+    </Grid>
+  </Border>
+</Window>

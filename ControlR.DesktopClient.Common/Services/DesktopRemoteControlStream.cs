@@ -30,6 +30,7 @@ internal sealed class DesktopRemoteControlStream(
   IHostApplicationLifetime appLifetime,
   IToaster toaster,
   ISessionConsentService sessionConsentService,
+  ISessionIndicator sessionIndicator,
   IDesktopCapturerFactory desktopCapturerFactory,
   IMemoryProvider memoryProvider,
   IDisplayManager displayManager,
@@ -47,6 +48,7 @@ internal sealed class DesktopRemoteControlStream(
   private readonly ILogger<DesktopRemoteControlStream> _logger = logger;
   private readonly TimeSpan _metricsWindow = TimeSpan.FromSeconds(3);
   private readonly ISessionConsentService _sessionConsentService = sessionConsentService;
+  private readonly ISessionIndicator _sessionIndicator = sessionIndicator;
   private readonly IOptions<RemoteControlSessionOptions> _startupOptions = startupOptions;
   private readonly IToaster _toaster = toaster;
   private readonly IRemoteControlViewerCommandHandler _viewerCommandHandler = viewerCommandHandler;
@@ -112,6 +114,10 @@ internal sealed class DesktopRemoteControlStream(
 
       await SendDisplayData();
 
+      // Always shown, whatever the notification setting, so the person at the device can see and
+      // end the session for its whole duration.
+      _sessionIndicator.Show(viewerName, RequestDisconnect);
+
       if (_startupOptions.Value.NotifyUser)
       {
         var message = string.Format(Localization.RemoteControlSessionStartToastMessage, viewerName);
@@ -132,6 +138,8 @@ internal sealed class DesktopRemoteControlStream(
     }
     finally
     {
+      _sessionIndicator.Hide();
+
       if (_startupOptions.Value.NotifyUser)
       {
         var message = string.Format(Localization.RemoteControlSessionEndToastMessage, viewerName);

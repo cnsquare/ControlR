@@ -26,4 +26,10 @@ public sealed record RemoteControlHostDependencies
   public IAsyncLock? AsyncLock { get; init; }
 
   public ISessionConsentService? Consent { get; init; }
+
+  /// <summary>
+  /// The device-side session indicator. Platforms with no desktop UI leave this null and a
+  /// do-nothing indicator is used instead.
+  /// </summary>
+  public ISessionIndicator? SessionIndicator { get; init; }
 }
