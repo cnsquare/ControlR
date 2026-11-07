@@ -251,6 +251,9 @@ export function playAudio(pcm, sampleRate, channels) {
 
 let recorder = null;
 let recordedChunks = [];
+// The mime type the current recording is using. MP4/H.264 plays natively on Windows and macOS;
+// WebM is the fallback for browsers (e.g. Firefox) that cannot record MP4.
+let recordingMimeType = "video/webm";
 
 const recordingFrameRate = 15;
 
@@ -260,13 +263,21 @@ export function startRecording(canvasId) {
     return false;
   }
 
-  const mimeType = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"]
-    .find(type => MediaRecorder.isTypeSupported(type));
+  // Prefer MP4/H.264 so the downloaded file plays natively on Windows and macOS without extra
+  // codecs. Fall back to WebM where MP4 recording is unavailable (e.g. Firefox).
+  const mimeType = [
+    "video/mp4;codecs=avc1.42E01E",
+    "video/mp4",
+    "video/webm;codecs=vp9",
+    "video/webm;codecs=vp8",
+    "video/webm"
+  ].find(type => MediaRecorder.isTypeSupported(type));
 
   if (!mimeType) {
     return false;
   }
 
+  recordingMimeType = mimeType;
   recordedChunks = [];
   recorder = new MediaRecorder(canvas.captureStream(recordingFrameRate), { mimeType });
   recorder.ondataavailable = event => {
@@ -289,10 +300,11 @@ export function stopRecording() {
     }
 
     active.onstop = () => {
-      const url = URL.createObjectURL(new Blob(recordedChunks, { type: "video/webm" }));
+      const extension = recordingMimeType.includes("mp4") ? "mp4" : "webm";
+      const url = URL.createObjectURL(new Blob(recordedChunks, { type: recordingMimeType }));
       const link = document.createElement("a");
       link.href = url;
-      link.download = `session-${new Date().toISOString().replaceAll(":", "-")}.webm`;
+      link.download = `session-${new Date().toISOString().replaceAll(":", "-")}.${extension}`;
       link.click();
 
       // Revoking now would cancel the download before the browser has read the data.
