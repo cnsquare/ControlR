@@ -55,6 +55,8 @@ const string CustomerIdShortAlias = "-c";
 const string CustomerIdLongAlias = "--customer";
 const string AgentNameShortAlias = "-n";
 const string AgentNameLongAlias = "--agent-name";
+const string FleetSecretLongAlias = "--fleet-secret";
+const string FleetSecretDescription = "A shared secret stored on this install so it can re-create its device record if the server database is ever lost and rebuilt. Must match the server FleetEnrollmentSecret.";
 const string AgentNameDescription = "The name this agent shows in Windows Services and Installed Apps, in place of the tenant's agent name.";
 const string CustomerIdDescription = "An optional customer ID to assign the device to upon installation.";
 const string PreviousBrandNameDescription = "Brand name of the agent install being replaced. Set only during a cross-brand migration. That install is removed once this brand is installed and running. The server is what authorizes the migration.";
@@ -149,6 +151,12 @@ static Command GetInstallCommand()
     Description = AgentNameDescription
   };
 
+  var fleetSecretOption = new Option<string?>(FleetSecretLongAlias)
+  {
+    Required = false,
+    Description = FleetSecretDescription
+  };
+
   var previousBrandNameOption = new Option<string?>(PreviousBrandNameLongAlias)
   {
     Required = false,
@@ -178,6 +186,7 @@ static Command GetInstallCommand()
     deviceIdOption,
     customerIdOption,
     agentNameOption,
+    fleetSecretOption,
     previousBrandNameOption,
     previousInstanceIdOption,
     previousPublisherOption,
@@ -195,6 +204,7 @@ static Command GetInstallCommand()
     var installRequest = new AgentInstallRequest
     {
       AgentDisplayName = agentName,
+      FleetEnrollmentSecret = parseResult.GetValue(fleetSecretOption),
       BundleZipPath = string.Empty,
       ServerUri = parseResult.GetRequiredValue(serverUriOption),
       TenantId = parseResult.GetRequiredValue(tenantIdOption)!.Value,

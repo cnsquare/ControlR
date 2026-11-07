@@ -11,6 +11,7 @@ namespace ControlR.Agent.Shared.Services;
 public interface IOptionsAccessor
 {
   string? AgentDisplayName { get; }
+  string? FleetEnrollmentSecret { get; }
   Guid DeviceId { get; }
   bool DisableAutoUpdate { get; }
   string InstanceId { get; }
@@ -53,6 +54,7 @@ internal class OptionsAccessor(
   private readonly SemaphoreSlim _updateLock = new(1, 1);
 
   public string? AgentDisplayName => _appOptions.CurrentValue.AgentDisplayName;
+  public string? FleetEnrollmentSecret => _appOptions.CurrentValue.FleetEnrollmentSecret;
   public Guid DeviceId => _appOptions.CurrentValue.DeviceId;
   public bool DisableAutoUpdate => _developerOptions.CurrentValue.DisableAutoUpdate;
   public string InstanceId => _instanceOptions.Value.InstanceId ?? string.Empty;

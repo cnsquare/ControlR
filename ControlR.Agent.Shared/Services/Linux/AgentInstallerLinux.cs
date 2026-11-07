@@ -142,7 +142,7 @@ internal class AgentInstallerLinux(
 
       await WriteFileIfChanged(serviceFilePath, serviceFile);
       await WriteFileIfChanged(desktopServiceFilePath, desktopServiceFile);
-      await UpdateAppSettings(request.ServerUri, request.TenantId, request.DeviceId, request.AgentDisplayName);
+      await UpdateAppSettings(request.ServerUri, request.TenantId, request.DeviceId, request.AgentDisplayName, request.FleetEnrollmentSecret);
 
       var createResult = await CreateDeviceOnServer(request.InstallerKeyId, request.InstallerKeySecret, request.TagIds, request.CustomerId);
       if (!createResult.IsSuccess)

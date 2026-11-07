@@ -5759,6 +5759,118 @@
         }
       }
     },
+    "/api/agent/devices/reenroll": {
+      "post": {
+        "tags": [
+          "DeviceReenroll"
+        ],
+        "parameters": [
+          {
+            "name": "api-version",
+            "in": "query",
+            "description": "The requested API version",
+            "schema": {
+              "enum": [
+                "1.0"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReenrollDeviceRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReenrollDeviceRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReenrollDeviceRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceResponseDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceResponseDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/agent/devices": {
       "post": {
         "tags": [
@@ -8277,6 +8389,26 @@
         },
         "description": "Server-side settings that are exposed to any caller (including unauthenticated clients)\nso the UI can adapt to server configuration without requiring a login."
       },
+      "ReenrollDeviceRequestDto": {
+        "required": [
+          "device",
+          "publicKey",
+          "fleetSecret"
+        ],
+        "type": "object",
+        "properties": {
+          "device": {
+            "$ref": "#/components/schemas/DeviceUpdateRequestDto"
+          },
+          "publicKey": {
+            "type": "string"
+          },
+          "fleetSecret": {
+            "type": "string"
+          }
+        },
+        "description": "Sent by an agent the server no longer knows, to re-create its device record after a database\nloss. The fleet secret is the only authorization: it lives in the server's configuration, not\nits database, so it survives a rebuild. The agent keeps its existing identity (device id and key)."
+      },
       "RefreshRequest": {
         "required": [
           "refreshToken"
@@ -9083,6 +9215,9 @@
     },
     {
       "name": "AgentUpdate"
+    },
+    {
+      "name": "DeviceReenroll"
     },
     {
       "name": "Account"

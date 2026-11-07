@@ -17,12 +17,14 @@ internal class AgentHeartbeatTimer(
   IDeviceInfoProvider deviceDataGenerator,
   IOptionsAccessor optionsAccessor,
   IEd25519KeyProvider keyProvider,
+  IControlrApi controlrApi,
   IAgentDisplayNameApplier displayNameApplier,
   ILogger<AgentHeartbeatTimer> logger) : BackgroundService, IAgentHeartbeatTimer
 {
   private readonly IAgentDisplayNameApplier _displayNameApplier = displayNameApplier;
   private readonly IDeviceInfoProvider _deviceDataGenerator = deviceDataGenerator;
   private readonly IHubConnection<IAgentHub> _hubConnection = hubConnection;
+  private readonly IControlrApi _controlrApi = controlrApi;
   private readonly IEd25519KeyProvider _keyProvider = keyProvider;
   private readonly ILogger<AgentHeartbeatTimer> _logger = logger;
   private readonly IOptionsAccessor _optionsAccessor = optionsAccessor;
@@ -72,7 +74,22 @@ internal class AgentHeartbeatTimer(
       if (!updateResult.IsSuccess)
       {
         _logger.LogResult(updateResult);
-        return;
+
+        // A rebuilt server no longer knows this device. If a fleet secret is configured, the agent
+        // re-creates its own record with the key it already holds, then retries the heartbeat once.
+        if (!IsReenrollableRejection(updateResult.Reason) ||
+            !await TryReenroll(dto, publicKeyBase64))
+        {
+          return;
+        }
+
+        _logger.LogInformation("Re-enrollment succeeded. Retrying the heartbeat.");
+        updateResult = await _hubConnection.Server.UpdateDeviceSigned(signedDto);
+        if (!updateResult.IsSuccess)
+        {
+          _logger.LogResult(updateResult);
+          return;
+        }
       }
 
       if (updateResult.Value.Id != device.Id)
@@ -87,6 +104,36 @@ internal class AgentHeartbeatTimer(
     {
       _logger.LogError(ex, "Error while sending device update.");
     }
+  }
+
+  // Matches the hub's rejection reasons for a device the rebuilt server has lost.
+  private static bool IsReenrollableRejection(string? reason) =>
+    reason is "Unknown device." or "Device requires enrollment.";
+
+  // Re-creates this device on the server after a database loss, authorized by the shared fleet
+  // secret. Does nothing, and stays inert, unless a secret is configured on this install.
+  private async Task<bool> TryReenroll(DeviceUpdateRequestDto dto, string publicKeyBase64)
+  {
+    var fleetSecret = _optionsAccessor.FleetEnrollmentSecret;
+    if (string.IsNullOrWhiteSpace(fleetSecret))
+    {
+      _logger.LogDebugDeduped(
+        "The server no longer recognizes this device, but no fleet enrollment secret is configured, so it cannot re-enroll itself.");
+      return false;
+    }
+
+    _logger.LogWarning(
+      "The server no longer recognizes this device. Attempting re-enrollment with the fleet secret.");
+
+    var request = new ReenrollDeviceRequestDto(dto, publicKeyBase64, fleetSecret);
+    var result = await _controlrApi.Agent.Devices.ReenrollDevice(request);
+    if (!result.IsSuccess)
+    {
+      _logger.LogError("Re-enrollment failed. Reason: {Reason}", result.Reason);
+      return false;
+    }
+
+    return true;
   }
 
   // Kept apart from the heartbeat, because a problem renaming must not look like a failed update.

@@ -291,7 +291,8 @@ internal abstract class AgentInstallerBase(
     Uri? serverUri,
     Guid? tenantId,
     Guid? deviceId,
-    string? agentDisplayName = null)
+    string? agentDisplayName = null,
+    string? fleetEnrollmentSecret = null)
   {
     using var _ = Logger.BeginMemberScope();
     var currentOptions = AppOptions.CurrentValue;
@@ -331,6 +332,11 @@ internal abstract class AgentInstallerBase(
     if (!string.IsNullOrWhiteSpace(agentDisplayName))
     {
       currentOptions.AgentDisplayName = agentDisplayName.Trim();
+    }
+
+    if (!string.IsNullOrWhiteSpace(fleetEnrollmentSecret))
+    {
+      currentOptions.FleetEnrollmentSecret = fleetEnrollmentSecret.Trim();
     }
 
     Logger.LogInformation("Writing results to disk.");

@@ -56,6 +56,15 @@ public class AppOptions
   public bool AllowPrivateWebhookTargets { get; init; }
 
   /// <summary>
+  /// A shared secret that lets an agent re-create its own device record after the database is lost
+  /// and rebuilt. It lives here in configuration, not the database, so it survives a rebuild. Leave
+  /// it empty (the default) to turn re-enrollment off: every re-enroll request is then refused. Set
+  /// it only to a long random value, and give the same value to agents with the installer's
+  /// --fleet-secret option. It is a fleet-wide credential, so protect it like one.
+  /// </summary>
+  public string? FleetEnrollmentSecret { get; init; }
+
+  /// <summary>
   /// The number of days to retain the remote control session history.
   /// Entries older than this are pruned by a background service.
   /// Set to 0 or less to disable pruning and retain entries indefinitely.

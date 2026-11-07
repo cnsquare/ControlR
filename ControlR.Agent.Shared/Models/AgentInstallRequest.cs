@@ -7,6 +7,11 @@ public sealed record AgentInstallRequest
   /// </summary>
   public string? AgentDisplayName { get; init; }
 
+  /// <summary>
+  /// The fleet re-enrollment secret to store on this install. Null leaves whatever the install has.
+  /// </summary>
+  public string? FleetEnrollmentSecret { get; init; }
+
   public string? BundleSha256 { get; init; }
   public required string BundleZipPath { get; init; }
   public Guid? CustomerId { get; init; }

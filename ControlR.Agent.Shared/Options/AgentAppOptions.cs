@@ -7,6 +7,13 @@ public class AgentAppOptions
   public const string SectionKey = "AppOptions";
 
   public string? AgentDisplayName { get; set; }
+
+  /// <summary>
+  /// The shared secret used to re-create this device on the server after a database loss. Empty
+  /// means re-enrollment is off for this agent.
+  /// </summary>
+  [ProtectedDataClassification]
+  public string? FleetEnrollmentSecret { get; set; }
   public Guid DeviceId { get; set; }
   
   [ProtectedDataClassification]
