@@ -1,4 +1,4 @@
-using Bitbound.SimpleMessenger;
+using ControlR.Libraries.Messenger.Extensions;
 using ControlR.Agent.Common.Interfaces;
 using ControlR.Agent.Common.Services;
 using ControlR.Agent.Common.Services.FileManager;

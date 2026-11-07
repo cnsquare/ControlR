@@ -20,7 +20,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Bitbound.SimpleMessenger" />
+    <ProjectReference Include="..\ControlR.Libraries.Messenger.Extensions\ControlR.Libraries.Messenger.Extensions.csproj" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ControlR.Libraries.Shared\ControlR.Libraries.Shared.csproj" />

@@ -1,5 +1,5 @@
 using System.Buffers.Binary;
-using Bitbound.SimpleMessenger;
+using ControlR.Libraries.Messenger.Extensions;
 using ControlR.DesktopClient.Common.Messages;
 using ControlR.DesktopClient.Common.ServiceInterfaces;
 using ControlR.DesktopClient.Common.Services;

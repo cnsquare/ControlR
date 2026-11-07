@@ -1,5 +1,5 @@
 using Avalonia.Controls.ApplicationLifetimes;
-using Bitbound.SimpleMessenger;
+using ControlR.Libraries.Messenger.Extensions;
 using ControlR.DesktopClient.Common.Options;
 using ControlR.DesktopClient.Services;
 using ControlR.Libraries.Ipc;

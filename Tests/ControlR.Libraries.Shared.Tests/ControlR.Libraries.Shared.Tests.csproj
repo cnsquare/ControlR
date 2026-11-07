@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference
       Include="..\..\Libraries\ControlR.Libraries.Shared\ControlR.Libraries.Shared.csproj" />
+    <ProjectReference Include="..\..\Libraries\ControlR.Libraries.Messenger.Extensions\ControlR.Libraries.Messenger.Extensions.csproj" />
     <ProjectReference Include="..\..\Libraries\ControlR.Libraries.TestingUtilities\ControlR.Libraries.TestingUtilities.csproj" />
   </ItemGroup>
   <ItemGroup>

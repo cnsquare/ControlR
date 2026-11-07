@@ -1,4 +1,4 @@
-﻿using Bitbound.SimpleMessenger;
+﻿using ControlR.Libraries.Messenger.Extensions;
 using ControlR.DesktopClient.Common.Messages;
 using ControlR.Libraries.Shared.Services.Processes;
 using Microsoft.Extensions.Hosting;

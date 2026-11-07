@@ -3,7 +3,6 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using ControlR.Libraries.Avalonia.Controls.Snackbar;
 using ControlR.Libraries.Avalonia.Services;
-using ControlR.Libraries.Messenger.Extensions;
 using System.ComponentModel;
 using Avalonia.Input.Platform;
 using ControlR.Libraries.Shared.Primitives;

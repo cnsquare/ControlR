@@ -113,7 +113,7 @@ The library is organized as follows:
 
 ## Integration with Messenger
 
-The library uses `Bitbound.SimpleMessenger` for messaging:
+The library uses `the messenger in ControlR.Libraries.Messenger.Extensions` for messaging:
 
 ```csharp
 // Register for device updates
@@ -140,7 +140,7 @@ This library depends on:
 - ControlR.Libraries.Messenger.Extensions
 - ControlR.Libraries.Shared
 - Microsoft.Extensions.Logging
-- Bitbound.SimpleMessenger
+- the messenger in ControlR.Libraries.Messenger.Extensions
 
 ## Use Cases
 

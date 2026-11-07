@@ -8,7 +8,6 @@ using ControlR.Libraries.Avalonia.Controls.Dialogs;
 using ControlR.Libraries.Avalonia.Controls.Snackbar;
 using ControlR.Viewer.Avalonia.ViewModels.Dialogs;
 using ControlR.Viewer.Avalonia.Views.Dialogs;
-using ControlR.Libraries.Messenger.Extensions;
 
 namespace ControlR.Viewer.Avalonia.ViewModels;
 

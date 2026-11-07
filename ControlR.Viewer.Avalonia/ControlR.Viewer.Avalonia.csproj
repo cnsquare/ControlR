@@ -20,7 +20,7 @@
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Controls.DataGrid" />
     <PackageReference Include="Avalonia.Skia" />
-    <PackageReference Include="Bitbound.SimpleMessenger" />
+    <ProjectReference Include="..\Libraries\ControlR.Libraries.Messenger.Extensions\ControlR.Libraries.Messenger.Extensions.csproj" />
     <PackageReference Include="CommunityToolkit.Diagnostics" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="System.Reactive" />

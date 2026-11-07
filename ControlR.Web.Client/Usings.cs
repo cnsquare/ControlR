@@ -1,5 +1,4 @@
 global using MudBlazor;
-global using Bitbound.SimpleMessenger;
 global using ControlR.Libraries.Shared.Collections;
 global using ControlR.Libraries.Api.Contracts.Enums;
 global using ControlR.Libraries.Shared.Helpers;

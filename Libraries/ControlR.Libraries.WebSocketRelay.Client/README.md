@@ -181,7 +181,7 @@ This library depends on:
 
 - ControlR.Libraries.Shared
 - ControlR.Libraries.Api.Contracts
-- Bitbound.SimpleMessenger
+- the messenger in ControlR.Libraries.Messenger.Extensions
 - Microsoft.Extensions.Logging
 - MessagePack
 - System.Net.WebSockets

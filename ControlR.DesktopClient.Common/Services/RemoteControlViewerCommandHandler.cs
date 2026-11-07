@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using Bitbound.SimpleMessenger;
+using ControlR.Libraries.Messenger.Extensions;
 using ControlR.DesktopClient.Common.Messages;
 using ControlR.DesktopClient.Common.Models;
 using ControlR.DesktopClient.Common.Options;

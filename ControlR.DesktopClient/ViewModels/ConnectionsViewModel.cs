@@ -1,4 +1,4 @@
-using Bitbound.SimpleMessenger;
+using ControlR.Libraries.Messenger.Extensions;
 using ControlR.DesktopClient.Common.Services;
 using ControlR.DesktopClient.Common.ViewModels;
 using ControlR.DesktopClient.Messages;

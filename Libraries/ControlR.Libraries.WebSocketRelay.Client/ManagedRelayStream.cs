@@ -1,5 +1,5 @@
 using System.Net.WebSockets;
-using Bitbound.SimpleMessenger;
+using ControlR.Libraries.Messenger.Extensions;
 using ControlR.Libraries.Shared.Collections;
 using ControlR.Libraries.Api.Contracts.Dtos.RemoteControlDtos;
 using ControlR.Libraries.Shared.Extensions;

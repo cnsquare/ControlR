@@ -1,6 +1,6 @@
 using ControlR.Libraries.Api.Contracts.Enums;
 using System.Net.WebSockets;
-using Bitbound.SimpleMessenger;
+using ControlR.Libraries.Messenger.Extensions;
 using ControlR.DesktopClient.Common.Messages;
 using ControlR.DesktopClient.Common.Options;
 using ControlR.DesktopClient.Common.ServiceInterfaces;

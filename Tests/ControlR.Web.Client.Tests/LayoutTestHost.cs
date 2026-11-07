@@ -1,4 +1,4 @@
-using Bitbound.SimpleMessenger;
+using ControlR.Libraries.Messenger.Extensions;
 using Bunit;
 using ControlR.Libraries.Shared.Services;
 using ControlR.Web.Client.Components.Layout;

@@ -610,6 +610,37 @@ else {
 
 #endregion
 
+#region Remove Upstream Links
+
+# These links are hidden in a build like this, but hidden text is still compiled into the output.
+if ($HideSponsorshipInfo) {
+  Write-Host "Removing upstream links" -ForegroundColor Yellow
+
+  $linkFiles = @(
+    "ControlR.Assist/Views/AboutView.axaml"
+    "ControlR.DesktopClient/Views/AboutView.axaml"
+    "ControlR.Web.Client/Components/Dialogs/WhatsNewDialog.razor"
+    "ControlR.Web.Client/Components/Layout/MainLayout.razor"
+    "ControlR.Web.Client/Components/Pages/About.razor"
+    "ControlR.Web.Client/Components/Welcome.razor"
+    "Libraries/ControlR.Libraries.Branding/BrandingConstants.cs"
+  )
+
+  foreach ($linkFile in $linkFiles) {
+    $linkPath = Join-Path $repoRoot $linkFile
+    $linkOriginal = Get-Content -LiteralPath $linkPath -Raw -Encoding UTF8
+    $linkNew = $linkOriginal -replace 'https://github\.com/(sponsors/)?bitbound[^"<\s]*', 'about:blank'
+    $linkNew = $linkNew -replace 'https://controlr\.app', 'about:blank'
+
+    if ($linkNew -ne $linkOriginal) {
+      Write-WhatIfDiff -OldContent $linkOriginal -NewContent $linkNew -FilePath $linkPath
+      Write-FileContent -Path $linkPath -Content $linkNew
+    }
+  }
+}
+
+#endregion
+
 #region Process Custom CSS
 
 Write-Host "Processing custom CSS" -ForegroundColor Yellow

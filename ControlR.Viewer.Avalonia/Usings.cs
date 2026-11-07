@@ -5,7 +5,7 @@ global using ControlR.Viewer.Avalonia.Services;
 global using ControlR.Viewer.Avalonia.ViewModels;
 global using ControlR.Viewer.Avalonia.ViewModels.Controls;
 global using ControlR.Viewer.Avalonia.Assets;
-global using Bitbound.SimpleMessenger;
+global using ControlR.Libraries.Messenger.Extensions;
 global using SkiaSharp;
 global using ControlR.Libraries.Viewer.Common;
 global using ControlR.Libraries.Viewer.Common.State;

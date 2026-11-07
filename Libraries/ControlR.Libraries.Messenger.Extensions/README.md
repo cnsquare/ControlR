@@ -1,6 +1,6 @@
 # ControlR.Libraries.Messenger.Extensions
 
-Extensions and message types for the Bitbound.SimpleMessenger library, providing enhanced messaging capabilities for ControlR applications.
+Extensions and message types for the the messenger in ControlR.Libraries.Messenger.Extensions library, providing enhanced messaging capabilities for ControlR applications.
 
 ## Features
 

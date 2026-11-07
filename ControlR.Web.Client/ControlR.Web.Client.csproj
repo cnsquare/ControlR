@@ -10,7 +10,6 @@
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" />
 		<PackageReference Include="MudBlazor" />
-		<PackageReference Include="Bitbound.SimpleMessenger" />
 		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
 		<PackageReference Update="Bitbound.Analyzers.MemberOrder">
 			<PrivateAssets>all</PrivateAssets>
