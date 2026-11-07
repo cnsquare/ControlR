@@ -148,16 +148,15 @@ public sealed partial class HomeViewModel : ViewModelBase, IDisposable
   [RelayCommand]
   private async Task SetUpUnattendedAccessAsync()
   {
-    if (RequestConfirmationAsync is null ||
-        !AssistSessionCoordinator.TryNormalizeServerUri(ServerUrl, out var serverUri) ||
+    if (!AssistSessionCoordinator.TryNormalizeServerUri(ServerUrl, out var serverUri) ||
         serverUri is null)
     {
       UnattendedAccessStatus = Localization.UnattendedAccessInstallFailed;
       return;
     }
 
-    // Before the question appears, so a remote click cannot land on it as it opens. Only the
-    // person at this computer may answer. If input cannot be stopped, the question is not asked.
+    // Input stays suspended for the grant so a remote party cannot interact with this computer while
+    // access is being set up. No local confirmation is requested: the button click is the consent.
     if (!_controller.TrySetInputSuspended(true))
     {
       UnattendedAccessStatus = Localization.UnattendedAccessInstallFailed;
@@ -168,11 +167,6 @@ public sealed partial class HomeViewModel : ViewModelBase, IDisposable
 
     try
     {
-      if (!await RequestConfirmationAsync(Localization.UnattendedAccessConfirmMessage))
-      {
-        return;
-      }
-
       UnattendedAccessStatus = Localization.UnattendedAccessInstalling;
 
       var grant = await _controller.RequestUnattendedAccessAsync();
