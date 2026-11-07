@@ -180,6 +180,7 @@ internal static class HostApplicationBuilderExtensions
       {
         services.AddSingleton<IDesktopClientLaunchTracker, DesktopClientLaunchTracker>();
         services.AddHostedService<DesktopClientWatcherWin>();
+        services.AddHostedService<ServiceRecoveryEnforcerWin>();
         services.AddHostedService<IpcServerInitializerWindows>();
       }
       else if (OperatingSystem.IsMacOS())
