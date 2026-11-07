@@ -1,0 +1,118 @@
+@using ControlR.Libraries.Api.Contracts.Authz
+@using ControlR.Libraries.Api.Contracts.Dtos.ServerApi.V1
+
+@inject IControlrApi ControlrApi
+@inject AuthenticationStateProvider AuthState
+@inject ISnackbar Snackbar
+@inject IJSRuntime Js
+
+<MudDialog>
+  <DialogContent>
+    <MudText Typo="Typo.body2" Class="mb-3">
+      Create a link that lets another technician join this device's session without logging in.
+      The link is single-use and expires.
+    </MudText>
+
+    @if (_url is null)
+    {
+      <MudSwitch @bind-Value="_allowControl" Color="Color.Primary" Label="Allow control (not just view)" Class="mb-2" />
+      <MudNumericField @bind-Value="_expirationMinutes" Label="Link expires in (minutes)" Min="1" Max="1440"
+                       Variant="Variant.Outlined" Class="mb-2" />
+    }
+    else
+    {
+      <MudTextField Value="_url" ReadOnly="true" Variant="Variant.Outlined" Label="Invite link"
+                    Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy"
+                    OnAdornmentClick="Copy" Lines="2" Class="mb-2" />
+      <MudText Typo="Typo.caption" Color="Color.Secondary">
+        Expires @(_expiresAt?.ToLocalTime().ToString("g")). Single use — share it with one technician.
+      </MudText>
+    }
+  </DialogContent>
+  <DialogActions>
+    @if (_url is null)
+    {
+      <MudButton OnClick="Cancel">Cancel</MudButton>
+      <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="_creating" OnClick="CreateLink">
+        @(_creating ? "Creating…" : "Create link")
+      </MudButton>
+    }
+    else
+    {
+      <MudButton Color="Color.Primary" OnClick="Copy" StartIcon="@Icons.Material.Filled.ContentCopy">Copy</MudButton>
+      <MudButton OnClick="Cancel">Close</MudButton>
+    }
+  </DialogActions>
+</MudDialog>
+
+@code {
+  [CascadingParameter]
+  private IMudDialogInstance MudDialog { get; set; } = default!;
+
+  [Parameter]
+  public Guid DeviceId { get; set; }
+
+  private bool _allowControl = true;
+  private int _expirationMinutes = 30;
+  private bool _creating;
+  private string? _url;
+  private DateTimeOffset? _expiresAt;
+
+  private async Task CreateLink()
+  {
+    _creating = true;
+    try
+    {
+      var state = await AuthState.GetAuthenticationStateAsync();
+      if (!state.User.TryGetTenantId(out var tenantId) || !state.User.TryGetUserId(out var userId))
+      {
+        Snackbar.Add("Could not resolve your account.", Severity.Error);
+        return;
+      }
+
+      var permissions = _allowControl
+        ? new[] { PermissionNames.DeviceRemoteControlConnect, PermissionNames.DeviceRemoteControlInteract }
+        : new[] { PermissionNames.DeviceRemoteControlConnect };
+
+      var request = new CreateLogonTokenForUserRequestDto(
+        DeviceId,
+        tenantId,
+        userId,
+        ExpirationMinutes: _expirationMinutes,
+        Permissions: permissions);
+
+      var result = await ControlrApi.V1.LogonTokens.CreateLogonTokenForUser(request);
+      if (!result.IsSuccess || result.Value is null)
+      {
+        Snackbar.Add(result.Reason ?? "Failed to create invite link.", Severity.Error);
+        return;
+      }
+
+      _url = result.Value.DeviceAccessUrl.ToString();
+      _expiresAt = result.Value.ExpiresAt;
+    }
+    finally
+    {
+      _creating = false;
+    }
+  }
+
+  private async Task Copy()
+  {
+    if (_url is null)
+    {
+      return;
+    }
+    try
+    {
+      await Js.InvokeVoidAsync("navigator.clipboard.writeText", _url);
+      Snackbar.Add("Invite link copied", Severity.Success);
+    }
+    catch
+    {
+      Snackbar.Add("Copy failed — select and copy the link manually.", Severity.Warning);
+    }
+  }
+
+  private void Cancel() => MudDialog.Close();
+}

@@ -17,6 +17,24 @@ public partial class ExtrasPopover : DisposableComponent
   [Inject]
   public required ISnackbar Snackbar { get; init; }
 
+  [Inject]
+  public required IDialogService DialogService { get; init; }
+
+  private async Task InviteTechnician()
+  {
+    if (!DeviceState.IsDeviceLoaded)
+    {
+      return;
+    }
+
+    var parameters = new DialogParameters
+    {
+      [nameof(Dialogs.InviteTechnicianDialog.DeviceId)] = DeviceState.CurrentDevice.Id
+    };
+    var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };
+    await DialogService.ShowAsync<Dialogs.InviteTechnicianDialog>("Invite technician", parameters, options);
+  }
+
   private bool IsWindows
   {
     get

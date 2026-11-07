@@ -15,7 +15,7 @@
   {
     <div>
       <MudTooltip Text="Use DirectX capture for better performance">
-        <MudSwitch T="bool" 
+        <MudSwitch T="bool"
                    Value="RemoteControlState.EnableDirectX"
                    ValueChanged="@(HandleDirectXChanged)"
                    Color="Color.Secondary"
@@ -24,4 +24,16 @@
       </MudTooltip>
     </div>
   }
+
+  <MudDivider />
+  <div>
+    <MudTooltip Text="Create a no-login link to invite another technician to this device">
+      <MudButton Variant="Variant.Outlined"
+                 Color="Color.Primary"
+                 StartIcon="@Icons.Material.Filled.PersonAdd"
+                 OnClick="InviteTechnician">
+        Invite technician
+      </MudButton>
+    </MudTooltip>
+  </div>
 </div>
