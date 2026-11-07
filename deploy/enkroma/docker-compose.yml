@@ -1,0 +1,125 @@
+name: enkroma
+
+# EnkrOma deployment compose.
+#
+# This runs the EnkrOma-branded server image you build with ./build-image.sh, plus Postgres and
+# the Aspire telemetry dashboard. Secrets and the public URL come from a .env file in this folder
+# (copy .env.example to .env and fill it in).
+#
+# The server listens on plain HTTP (:8080 in the container, :5120 on the host). Put a TLS-terminating
+# reverse proxy (Caddy / nginx / Cloudflare) in front of it at your public URL.
+#
+# The full list of available ControlR_* settings lives in ../../docker-compose/docker-compose.yml.
+# Only the high-value ones are surfaced here; add others from that file as needed.
+
+services:
+  enkroma:
+    # Built locally by ./build-image.sh. Override the tag in .env (ENKROMA_IMAGE).
+    image: ${ENKROMA_IMAGE:-enkroma/controlr:latest}
+    container_name: enkroma
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - aspire
+    ports:
+      - "5120:8080"
+    networks:
+      - enkroma-network
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: 8080
+
+      # --- Database ---
+      ControlR_POSTGRES_HOST: "postgres"
+      ControlR_POSTGRES_PORT: 5432
+      ControlR_POSTGRES_DB: "enkroma"
+      ControlR_POSTGRES_USER: ${ControlR_POSTGRES_USER:?set ControlR_POSTGRES_USER in .env}
+      ControlR_POSTGRES_PASSWORD: ${ControlR_POSTGRES_PASSWORD:?set ControlR_POSTGRES_PASSWORD in .env}
+
+      # --- Public URL (REQUIRED) ---
+      # The address this server is reached at. Used to build outbound links (email, device access,
+      # invites) AND it is the host agents dial, so devices must be able to reach it too.
+      # Include scheme and, if non-standard, port. No path/query/fragment.
+      ControlR_AppOptions__PublicBaseUrl: ${ControlR_AppOptions__PublicBaseUrl:?set ControlR_AppOptions__PublicBaseUrl in .env}
+
+      # Hostnames this server answers to (semicolon-separated, no ports). "*" accepts all.
+      ControlR_AllowedHosts: ${ControlR_AllowedHosts:-*}
+
+      # --- Reverse proxy / TLS ---
+      # If you terminate TLS at Cloudflare, set this true to trust Cloudflare's forwarded IPs.
+      ControlR_AppOptions__EnableCloudflareProxySupport: ${ControlR_AppOptions__EnableCloudflareProxySupport:-false}
+      # For a non-Cloudflare proxy, trust it explicitly instead (uncomment and set the proxy IP):
+      #ControlR_AppOptions__KnownProxies__0: "172.29.0.1"
+
+      # --- First admin (bootstrap on first startup, only when no users exist) ---
+      # Uncomment these to create an admin automatically, or leave commented and register the first
+      # user through the UI (the first registered user is promoted to admin).
+      #ControlR_Bootstrap__AdminEmail: ${ControlR_Bootstrap__AdminEmail:-}
+      #ControlR_Bootstrap__AdminPassword: ${ControlR_Bootstrap__AdminPassword:-}
+
+      # --- Email ---
+      # Email confirmation is ON by default; either configure SMTP below, or turn it off.
+      ControlR_AppOptions__RequireUserEmailConfirmation: ${ControlR_AppOptions__RequireUserEmailConfirmation:-true}
+      ControlR_AppOptions__DisableEmailSending: ${ControlR_AppOptions__DisableEmailSending:-false}
+      ControlR_AppOptions__SmtpDisplayName: ${ControlR_AppOptions__SmtpDisplayName:-EnkrOma}
+      ControlR_AppOptions__SmtpEmail: ${ControlR_AppOptions__SmtpEmail:-}
+      ControlR_AppOptions__SmtpHost: ${ControlR_AppOptions__SmtpHost:-}
+      ControlR_AppOptions__SmtpPort: ${ControlR_AppOptions__SmtpPort:-587}
+      ControlR_AppOptions__SmtpUserName: ${ControlR_AppOptions__SmtpUserName:-}
+      ControlR_AppOptions__SmtpPassword: ${ControlR_AppOptions__SmtpPassword:-}
+
+      # --- TOTP issuer name shown in authenticator apps ---
+      ControlR_AppOptions__AuthenticatorIssuerName: ${ControlR_AppOptions__AuthenticatorIssuerName:-EnkrOma}
+
+      # --- Telemetry / dashboard ---
+      ControlR_OTLP_ENDPOINT_URL: "http://aspire:18889"
+      ControlR_AspireDashboard__PublicWebUrl: ${ControlR_AspireDashboard__PublicWebUrl:-http://localhost:18888}
+      ControlR_Logging__LogLevel__Default: ${ControlR_Logging__LogLevel__Default:-Information}
+      ControlR_Logging__LogLevel__Microsoft.AspNetCore: Warning
+
+      # Docker gateway IP must match the network gateway defined below.
+      ControlR_AppOptions__DockerGatewayIp: "::ffff:172.29.0.1"
+
+      # Keep the database as the source of truth; do not use the in-memory DB in production.
+      ControlR_AppOptions__UseInMemoryDatabase: false
+
+  postgres:
+    image: postgres:18
+    container_name: enkroma-postgres
+    restart: unless-stopped
+    expose:
+      - "5432"
+    networks:
+      - enkroma-network
+    volumes:
+      - enkroma-data:/var/lib/postgresql
+    environment:
+      POSTGRES_DB: "enkroma"
+      POSTGRES_USER: ${ControlR_POSTGRES_USER:?set ControlR_POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${ControlR_POSTGRES_PASSWORD:?set ControlR_POSTGRES_PASSWORD in .env}
+
+  aspire:
+    image: mcr.microsoft.com/aspire/dashboard:latest
+    container_name: enkroma-aspire
+    restart: unless-stopped
+    ports:
+      - "18888:18888"
+    expose:
+      - "18889"
+    networks:
+      - enkroma-network
+    environment:
+      Dashboard__Frontend__BrowserToken: ${ControlR_ASPIRE_BROWSER_TOKEN:?set ControlR_ASPIRE_BROWSER_TOKEN in .env}
+      Dashboard__Frontend__PublicUrl: ${ControlR_AspireDashboard__PublicWebUrl:-http://localhost:18888}
+
+volumes:
+  enkroma-data:
+    name: "enkroma-data"
+
+networks:
+  enkroma-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.29.0.0/16
+          gateway: 172.29.0.1
