@@ -1,18 +1,22 @@
 using System.Net.WebSockets;
 using ControlR.Libraries.Api.Contracts.Dtos.Devices;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.JSInterop;
 
 namespace ControlR.Web.Client.Components.Pages.DeviceAccess;
 
 // ReSharper disable once ClassNeverInstantiated.Global
 public partial class RemoteControl : ViewportAwareComponent
 {
+  private const string UseVp9StorageKey = "remote-control-use-vp9";
+
   private readonly uint _commandTimeoutSeconds = 30;
 
   private string? _alertMessage;
   private Severity _alertSeverity;
   private bool _isDesktopPreviewDisabled;
   private bool _isReconnecting;
+  private bool _isVp9Supported;
   private string? _loadingMessage = "Connecting";
   private Guid _previousDeviceId;
   private IReadOnlyList<DesktopSession>? _systemSessions;
@@ -21,6 +25,10 @@ public partial class RemoteControl : ViewportAwareComponent
   public required Guid DeviceId { get; init; }
   [Inject]
   public required IDeviceState DeviceState { get; init; }
+  [Inject]
+  public required IJSRuntime JsRuntime { get; init; }
+  [Inject]
+  public required ILocalStorageAccessor LocalStorage { get; init; }
   [Inject]
   public required IDialogService DialogService { get; init; }
   [Inject]
@@ -121,6 +129,9 @@ public partial class RemoteControl : ViewportAwareComponent
       var serverSettings = await PublicServerSettings.GetPublicServerSettings();
       _isDesktopPreviewDisabled = serverSettings.DisableDesktopPreview;
 
+      _isVp9Supported = await JsRuntime.InvokeAsync<bool>("isVp9DecoderSupported");
+      RemoteControlState.UseVp9Video = _isVp9Supported && await LocalStorage.GetItem(UseVp9StorageKey) == bool.TrueString;
+
       if (WebAssemblyEnv.IsDevelopment())
       {
         // Automatically enable view-only mode in development.
@@ -138,6 +149,12 @@ public partial class RemoteControl : ViewportAwareComponent
     {
       _loadingMessage = null;
     }
+  }
+
+  private async Task HandleUseVp9Changed(bool value)
+  {
+    RemoteControlState.UseVp9Video = value;
+    await LocalStorage.SetItem(UseVp9StorageKey, value.ToString());
   }
 
   protected override async Task OnParametersSetAsync()
@@ -441,7 +458,12 @@ public partial class RemoteControl : ViewportAwareComponent
         session.TargetProcessId,
         session.Device.Id,
         notifyUserPreference.Value,
-        RequireConsent: false);
+        RequireConsent: false)
+      {
+        VideoEncoder = RemoteControlState.UseVp9Video && _isVp9Supported
+          ? CaptureEncoderType.Vpx
+          : CaptureEncoderType.Image,
+      };
 
       var remoteControlSessionResult = await ViewerHub.Server.RequestRemoteControlSession3(requestDto);
 

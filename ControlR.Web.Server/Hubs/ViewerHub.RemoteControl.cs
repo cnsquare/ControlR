@@ -226,6 +226,9 @@ public partial class ViewerHub
             !_appOptions.CurrentValue.DisableSessionRecording)
         ],
         NotifyUserOnSessionStart = notifyUser,
+        VideoEncoder = Enum.IsDefined(sessionRequestDto.VideoEncoder)
+          ? sessionRequestDto.VideoEncoder
+          : CaptureEncoderType.Image,
         ViewerConnectionId = Context.ConnectionId,
         ViewerName = displayName
       };

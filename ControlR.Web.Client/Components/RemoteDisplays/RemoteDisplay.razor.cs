@@ -216,6 +216,7 @@ public partial class RemoteDisplay : JsInteropableComponent
       Disposer.DisposeAll(_componentRef);
       await TryStopAudio();
       await TryStopRecording();
+      await TryCloseVideoDecoder();
     }
     await base.DisposeAsync(disposing);
   }
@@ -292,6 +293,21 @@ public partial class RemoteDisplay : JsInteropableComponent
     catch (Exception ex)
     {
       Logger.LogError(ex, "Error while drawing frame.");
+    }
+  }
+
+  private async Task DrawVideoPacket(VideoStreamPacketDto dto)
+  {
+    var isDecoderReady = await JsModule.InvokeAsync<bool>(
+      "drawVideoPacket",
+      _canvasId,
+      dto.PacketData,
+      dto.Timestamp,
+      dto.IsKeyFrame);
+
+    if (!isDecoderReady)
+    {
+      await RemoteControlStream.RequestKeyFrame(ComponentClosing);
     }
   }
 
@@ -462,6 +478,18 @@ public partial class RemoteDisplay : JsInteropableComponent
     }
   }
 
+  private async Task TryCloseVideoDecoder()
+  {
+    try
+    {
+      await JsModule.InvokeVoidAsync("closeVideoDecoder", _canvasId);
+    }
+    catch (Exception ex)
+    {
+      Logger.LogDebug(ex, "The video decoder was not closed because the page is already closing.");
+    }
+  }
+
   private async Task TryStopRecording()
   {
     if (!_isRecordingActive)
@@ -509,6 +537,11 @@ public partial class RemoteDisplay : JsInteropableComponent
           {
             var dto = wrapper.GetPayload<ScreenRegionDto>();
             await DrawRegion(dto);
+            break;
+          }
+        case RemoteControlDtoType.VideoStreamPacket:
+          {
+            await DrawVideoPacket(wrapper.GetPayload<VideoStreamPacketDto>());
             break;
           }
         case RemoteControlDtoType.ScreenRegions:

@@ -287,3 +287,12 @@ window.downloadCsvFile = (fileName, content) => {
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 };
+
+window.isVp9DecoderSupported = async () => {
+  if (typeof VideoDecoder === "undefined") {
+    return false;
+  }
+
+  const support = await VideoDecoder.isConfigSupported({ codec: "vp09.00.51.08" });
+  return support.supported === true;
+};

@@ -24,6 +24,7 @@ public interface IRemoteControlState : IStateBase
   bool IsPrivacyScreenEnabled { get; set; }
   bool IsScrollModeToggled { get; set; }
   bool IsViewOnlyEnabled { get; set; }
+  bool UseVp9Video { get; set; }
   bool IsVirtualKeyboardToggled { get; set; }
   KeyboardInputMode KeyboardInputMode { get; set; }
   int ManualQuality { get; set; }
@@ -152,6 +153,12 @@ public class RemoteControlState(ILogger<ObservableState> logger) : ObservableSta
     get => Get<bool>();
     set => Set(value);
   }
+  public bool UseVp9Video
+  {
+    get => Get(defaultValue: false);
+    set => Set(value);
+  }
+
   public bool IsViewOnlyEnabled
   {
     get => Get<bool>();

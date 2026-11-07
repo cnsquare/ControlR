@@ -20,6 +20,11 @@ public record RemoteControlSessionRequestDto(
   /// </summary>
   public bool AllowAudio { get; init; }
   /// <summary>
+  /// The encoder the viewer can decode. The desktop client uses image frames instead if it
+  /// cannot provide this one, and a viewer draws whichever it receives.
+  /// </summary>
+  public CaptureEncoderType VideoEncoder { get; init; }
+  /// <summary>
   /// The permissions the desktop client enforces on every viewer command. Set by the server,
   /// and any value a viewer supplies is overwritten.
   /// </summary>

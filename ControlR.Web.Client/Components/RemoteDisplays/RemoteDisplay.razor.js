@@ -305,6 +305,65 @@ export function stopRecording() {
   });
 }
 
+/**
+ * Decodes one VP9 frame onto the canvas. Frames are drawn as the decoder finishes them.
+ * @returns {boolean} False if the decoder is waiting for a key frame and the caller should ask for one.
+ */
+export function drawVideoPacket(canvasId, packet, timestamp, isKeyFrame) {
+  const state = getState(canvasId);
+  if (!state.canvas2dContext) {
+    return true;
+  }
+
+  if (!state.videoDecoder || state.videoDecoder.state === "closed") {
+    state.videoDecoder = createVideoDecoder(state);
+    state.needsKeyFrame = true;
+  }
+
+  if (state.needsKeyFrame) {
+    if (!isKeyFrame) {
+      return false;
+    }
+
+    state.needsKeyFrame = false;
+  }
+
+  state.videoDecoder.decode(new EncodedVideoChunk({
+    type: isKeyFrame ? "key" : "delta",
+    timestamp: timestamp * 1000,
+    data: packet,
+  }));
+
+  return true;
+}
+
+export function closeVideoDecoder(canvasId) {
+  const state = getState(canvasId);
+  if (state.videoDecoder && state.videoDecoder.state !== "closed") {
+    state.videoDecoder.close();
+  }
+
+  state.videoDecoder = null;
+}
+
+function createVideoDecoder(state) {
+  const decoder = new VideoDecoder({
+    output: (frame) => {
+      const canvas = state.canvas2dContext.canvas;
+      state.canvas2dContext.drawImage(frame, 0, 0, canvas.width, canvas.height);
+      frame.close();
+    },
+    error: (error) => {
+      // The next packet builds a new decoder, which then waits for a key frame.
+      console.warn("VP9 decoder failed.", error);
+      state.videoDecoder = null;
+    },
+  });
+
+  decoder.configure({ codec: "vp09.00.51.08", optimizeForLatency: true });
+  return decoder;
+}
+
 export async function drawFrame(canvasId, x, y, width, height, imageFormat, encodedRegion) {
   try {
     const state = getState(canvasId);

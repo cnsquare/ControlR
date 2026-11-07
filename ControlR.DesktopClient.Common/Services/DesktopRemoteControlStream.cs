@@ -1,3 +1,4 @@
+using ControlR.Libraries.Api.Contracts.Enums;
 using System.Net.WebSockets;
 using Bitbound.SimpleMessenger;
 using ControlR.DesktopClient.Common.Messages;
@@ -41,6 +42,7 @@ internal sealed class DesktopRemoteControlStream(
   private readonly IHostApplicationLifetime _appLifetime = appLifetime;
   private readonly ICaptureMetrics _captureMetrics = captureMetrics;
   private readonly IDesktopCapturer _desktopCapturer = desktopCapturerFactory.GetOrCreate();
+  private readonly IDesktopCapturerFactory _desktopCapturerFactory = desktopCapturerFactory;
   private readonly IDisplayManager _displayManager = displayManager;
   private readonly ILogger<DesktopRemoteControlStream> _logger = logger;
   private readonly TimeSpan _metricsWindow = TimeSpan.FromSeconds(3);
@@ -329,6 +331,12 @@ internal sealed class DesktopRemoteControlStream(
 
   private async Task StreamScreenToViewer(CancellationToken cancellationToken)
   {
+    if (_desktopCapturerFactory.FallbackNotice is { } notice)
+    {
+      var toast = new ToastNotificationDto(notice, MessageSeverity.Warning);
+      await SendDto(RemoteControlDtoWrapper.Create(toast, RemoteControlDtoType.ToastNotification), cancellationToken);
+    }
+
     await _desktopCapturer.StartCapturingChanges(cancellationToken);
     while (State == WebSocketState.Open && !cancellationToken.IsCancellationRequested)
     {

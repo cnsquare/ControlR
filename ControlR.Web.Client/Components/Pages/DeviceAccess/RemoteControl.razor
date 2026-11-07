@@ -52,6 +52,10 @@
             <MudSwitch @bind-Value="RemoteControlState.IsViewOnlyEnabled" Color="Color.Secondary" Label="Start View Only"
               ThumbIcon="@(Icons.Material.Filled.RemoveRedEye)" />
           </MudTooltip>
+          <MudTooltip Text="@(_isVp9Supported ? "Smoother video for less bandwidth, using more CPU on the device. The device needs ffmpeg, and uses image frames if it has none." : "This browser cannot decode VP9.")">
+            <MudSwitch T="bool" Value="RemoteControlState.UseVp9Video" ValueChanged="HandleUseVp9Changed" Color="Color.Secondary"
+              Disabled="!_isVp9Supported" Label="VP9 Video" ThumbIcon="@(Icons.Material.Filled.Movie)" />
+          </MudTooltip>
         </div>
 
         @if (_systemSessions is null || _systemSessions.Count == 0)

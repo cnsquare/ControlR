@@ -35,6 +35,7 @@ public class MacRemoteControlHostBuilderFactory(
       {
         options.SessionId = requestDto.SessionId;
         options.AllowedPermissions = (requestDto.AllowedPermissions ?? []).ToHashSet(StringComparer.Ordinal);
+        options.EncoderType = requestDto.VideoEncoder;
         options.NotifyUser = requestDto.NotifyUserOnSessionStart;
         options.RequireConsent = requestDto.RequireConsent;
         options.ViewerName = requestDto.ViewerName;

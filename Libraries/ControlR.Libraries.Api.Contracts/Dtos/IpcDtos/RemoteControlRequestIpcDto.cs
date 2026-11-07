@@ -12,4 +12,5 @@ public record RemoteControlRequestIpcDto(
   string? ViewerConnectionId,
   string? ViewerName,
   bool AllowAudio = false,
-  string[]? AllowedPermissions = null);
+  string[]? AllowedPermissions = null,
+  CaptureEncoderType VideoEncoder = CaptureEncoderType.Image);

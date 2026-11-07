@@ -59,6 +59,7 @@ public static class ServiceRegistrationExtensions
       .AddSingleton<IFileSystem, FileSystem>()
       .AddSingleton<IImageUtility, ImageUtility>()
       .AddSingleton<IStreamMetrics, StreamMetrics>()
+      .AddSingleton<IFfmpegLocator, FfmpegLocator>()
       .AddSingleton<IStreamEncoder, Vp9Encoder>()
       .AddSingleton<IMemoryProvider, MemoryProvider>()
       .AddSingleton<ISystemEnvironment, SystemEnvironment>()

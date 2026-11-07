@@ -1,143 +1,215 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Threading.Channels;
 using ControlR.Libraries.Api.Contracts.Enums;
+using Microsoft.Extensions.Logging;
 using SkiaSharp;
 
 namespace ControlR.DesktopClient.Common.Services.Encoders;
 
-// TODO: Implementation stub.
-public class Vp9Encoder : IStreamEncoder
+/// <summary>
+/// Streams frames through ffmpeg. ffmpeg cannot be told to emit a key frame on demand through a
+/// pipe, so a key frame is made by starting it again, which costs well under a second.
+/// </summary>
+public sealed class Vp9Encoder(IFfmpegLocator ffmpegLocator, ILogger<Vp9Encoder> logger) : IStreamEncoder
 {
-    private const uint DefaultFrameRate = 30;
-    private readonly Channel<byte[]> _packetChannel = Channel.CreateUnbounded<byte[]>();
+  private const int BytesPerPixel = 4;
+  private const int MaxCrf = 63;
+  private const int MinCrf = 4;
 
-    private CancellationTokenSource? _cts;
-    private bool _disposed;
-    private Process? _ffmpegProcess;
-    private Stream? _inputStream;
-#pragma warning disable IDE0052 // The encoder is a stub. Nothing drains the pump task until Dispose learns to wait on it.
-    private Task? _readTask;
-#pragma warning restore IDE0052
+  private static readonly TimeSpan _stopTimeout = TimeSpan.FromSeconds(3);
 
-    public CaptureEncoderType Type => CaptureEncoderType.Vpx;
-
-    public void Dispose()
+  // Small, so a slow connection slows capture instead of building a backlog of old frames.
+  private readonly Channel<EncodedVideoFrame> _frames = Channel.CreateBounded<EncodedVideoFrame>(
+    new BoundedChannelOptions(capacity: 4)
     {
-        if (_disposed) return;
-        _disposed = true;
-        _cts?.Cancel();
-        
-        try
-        {
-            if (_ffmpegProcess != null && !_ffmpegProcess.HasExited)
-            {
-                _ffmpegProcess.Kill();
-            }
-        }
-        catch { }
-        
-        _ffmpegProcess?.Dispose();
-        _cts?.Dispose();
-    }
-    public void EncodeFrame(SKBitmap frame, bool forceKeyFrame = false)
+      FullMode = BoundedChannelFullMode.Wait,
+      SingleWriter = true,
+    });
+  private readonly IFfmpegLocator _ffmpegLocator = ffmpegLocator;
+  private readonly ILogger<Vp9Encoder> _logger = logger;
+
+  private Run? _run;
+  private byte[] _writeBuffer = [];
+
+  public ChannelReader<EncodedVideoFrame> Frames => _frames.Reader;
+
+  public bool IsRunning => _run is { Process.HasExited: false };
+
+  public CaptureEncoderType Type => CaptureEncoderType.Vpx;
+
+  public static IReadOnlyList<string> BuildArguments(StreamEncoderSettings settings)
+  {
+    var crf = Math.Clamp((int)Math.Round(MaxCrf - settings.Quality * 0.55), MinCrf, MaxCrf);
+    var bitrate = settings.MaxMbps is { } maxMbps
+      ? $"{(int)(maxMbps * 1000)}k"
+      : "0";
+
+    return
+    [
+      "-hide_banner", "-loglevel", "error",
+      "-f", "rawvideo",
+      "-pixel_format", settings.ColorType == SKColorType.Rgba8888 ? "rgba" : "bgra",
+      "-video_size", string.Create(CultureInfo.InvariantCulture, $"{settings.Width}x{settings.Height}"),
+      "-use_wallclock_as_timestamps", "1",
+      "-i", "pipe:0",
+      "-c:v", "libvpx-vp9",
+      "-deadline", "realtime",
+      "-cpu-used", "8",
+      "-row-mt", "1",
+      "-tile-columns", "2",
+      "-threads", "4",
+      // Without these two the encoder holds frames back to look ahead, which is added latency.
+      "-lag-in-frames", "0",
+      "-auto-alt-ref", "0",
+      "-g", "600",
+      "-crf", crf.ToString(CultureInfo.InvariantCulture),
+      "-b:v", bitrate,
+      "-pix_fmt", "yuv420p",
+      "-fps_mode", "passthrough",
+      "-flush_packets", "1",
+      "-f", "ivf",
+      "pipe:1",
+    ];
+  }
+
+  public void Dispose()
+  {
+    Stop();
+    _frames.Writer.TryComplete();
+  }
+
+  public async Task EncodeFrame(SKBitmap frame, CancellationToken cancellationToken)
+  {
+    if (_run is not { } run)
     {
-        if (_inputStream == null || _disposed) return;
-
-        try
-        {
-            var pixels = frame.GetPixels();
-            var length = frame.RowBytes * frame.Height;
-            
-            unsafe
-            {
-                using var unmanagedStream = new UnmanagedMemoryStream((byte*)pixels, length);
-                unmanagedStream.CopyTo(_inputStream);
-            }
-            _inputStream.Flush();
-        }
-        catch
-        {
-            // Ignore write errors (process might have died)
-        }
+      return;
     }
-    public byte[]? GetNextPacket()
+
+    var rowLength = frame.Width * BytesPerPixel;
+    var length = rowLength * frame.Height;
+    if (_writeBuffer.Length != length)
     {
-        if (_packetChannel.Reader.TryRead(out var packet))
-        {
-            return packet;
-        }
-        return null;
+      _writeBuffer = new byte[length];
     }
-    public void Start(int width, int height, int quality)
+
+    CopyPixels(frame, rowLength);
+
+    try
     {
-        if (_ffmpegProcess != null)
-        {
-            throw new InvalidOperationException("Encoder already started.");
-        }
-
-        _cts = new CancellationTokenSource();
-
-        var ffmpegArgs = $"-y -use_wallclock_as_timestamps 1 -f rawvideo -pixel_format bgra " +
-                    $"-video_size {width}x{height} -i pipe:0 " +
-                    $"-c:v libvpx-vp9 -deadline realtime -cpu-used 8 -row-mt 1 " +
-                    $"-vf \"format=yuv420p\" -g 60 -vsync vfr -f webm pipe:1";
-
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = "ffmpeg",
-            Arguments = ffmpegArgs,
-            UseShellExecute = false,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
-        };
-
-        _ffmpegProcess = Process.Start(startInfo);
-        if (_ffmpegProcess == null)
-        {
-            throw new InvalidOperationException("Failed to start ffmpeg.");
-        }
-
-        _inputStream = _ffmpegProcess.StandardInput.BaseStream;
-        
-        // Consume stderr
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                using var reader = _ffmpegProcess.StandardError;
-                while (await reader.ReadLineAsync(_cts.Token) != null)
-                {
-                    // Consume
-                }
-            }
-            catch { }
-        });
-
-        // Read stdout
-        _readTask = Task.Run(async () =>
-        {
-            try
-            {
-                using var stream = _ffmpegProcess.StandardOutput.BaseStream;
-                var buffer = new byte[4096 * 4]; // 16KB buffer
-                while (!_cts.Token.IsCancellationRequested)
-                {
-                    var bytesRead = await stream.ReadAsync(buffer, _cts.Token);
-                    if (bytesRead == 0) break;
-
-                    var packetData = new byte[bytesRead];
-                    Array.Copy(buffer, packetData, bytesRead);
-                    
-                    await _packetChannel.Writer.WriteAsync(packetData, _cts.Token);
-                }
-            }
-            catch { }
-            finally
-            {
-                _packetChannel.Writer.TryComplete();
-            }
-        });
+      await run.Input.WriteAsync(_writeBuffer, cancellationToken);
+      await run.Input.FlushAsync(cancellationToken);
     }
+    catch (IOException ex)
+    {
+      // The caller sees IsRunning go false and decides what happens next.
+      _logger.LogWarning(ex, "ffmpeg stopped accepting frames.");
+    }
+  }
+
+  public void Start(StreamEncoderSettings settings)
+  {
+    Stop();
+
+    var path = _ffmpegLocator.FindVp9Capable()
+      ?? throw new InvalidOperationException("No ffmpeg with VP9 support was found.");
+
+    var startInfo = new ProcessStartInfo
+    {
+      FileName = path,
+      CreateNoWindow = true,
+      RedirectStandardError = true,
+      RedirectStandardInput = true,
+      RedirectStandardOutput = true,
+      UseShellExecute = false,
+    };
+
+    foreach (var argument in BuildArguments(settings))
+    {
+      startInfo.ArgumentList.Add(argument);
+    }
+
+    var process = Process.Start(startInfo)
+      ?? throw new InvalidOperationException("Failed to start ffmpeg.");
+
+    process.ErrorDataReceived += (_, e) =>
+    {
+      if (!string.IsNullOrWhiteSpace(e.Data))
+      {
+        _logger.LogWarning("ffmpeg: {Message}", e.Data);
+      }
+    };
+    process.BeginErrorReadLine();
+
+    var cts = new CancellationTokenSource();
+    var pump = PumpFrames(process.StandardOutput.BaseStream, cts.Token);
+    _run = new Run(process, process.StandardInput.BaseStream, pump, cts);
+  }
+
+  private void CopyPixels(SKBitmap frame, int rowLength)
+  {
+    var source = frame.GetPixelSpan();
+    if (frame.RowBytes == rowLength)
+    {
+      source[.._writeBuffer.Length].CopyTo(_writeBuffer);
+      return;
+    }
+
+    for (var row = 0; row < frame.Height; row++)
+    {
+      source.Slice(row * frame.RowBytes, rowLength).CopyTo(_writeBuffer.AsSpan(row * rowLength));
+    }
+  }
+
+  private async Task PumpFrames(Stream output, CancellationToken cancellationToken)
+  {
+    try
+    {
+      await foreach (var frame in IvfReader.ReadFrames(output, cancellationToken))
+      {
+        await _frames.Writer.WriteAsync(
+          new EncodedVideoFrame(frame, Vp9Bitstream.IsKeyFrame(frame)),
+          cancellationToken);
+      }
+    }
+    catch (OperationCanceledException)
+    {
+      // Stopped on purpose.
+    }
+    catch (Exception ex) when (ex is IOException or ObjectDisposedException or InvalidDataException or ChannelClosedException)
+    {
+      _logger.LogWarning(ex, "Stopped reading from ffmpeg.");
+    }
+  }
+
+  private void Stop()
+  {
+    if (_run is not { } run)
+    {
+      return;
+    }
+
+    _run = null;
+    run.Cancellation.Cancel();
+
+    try
+    {
+      if (!run.Process.HasExited)
+      {
+        run.Process.Kill(entireProcessTree: true);
+      }
+
+      // Waited for so a stale frame from this run cannot follow the next run's key frame.
+      run.Pump.Wait(_stopTimeout);
+    }
+    catch (Exception ex)
+    {
+      _logger.LogWarning(ex, "Error while stopping ffmpeg.");
+    }
+
+    run.Process.Dispose();
+    run.Cancellation.Dispose();
+  }
+
+  private sealed record Run(Process Process, Stream Input, Task Pump, CancellationTokenSource Cancellation);
 }

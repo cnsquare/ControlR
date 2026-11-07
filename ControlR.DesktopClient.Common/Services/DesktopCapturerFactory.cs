@@ -1,13 +1,20 @@
 using ControlR.DesktopClient.Common.Options;
 using ControlR.DesktopClient.Common.ServiceInterfaces;
+using ControlR.DesktopClient.Common.Services.Encoders;
 using ControlR.Libraries.Api.Contracts.Enums;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace ControlR.DesktopClient.Common.Services;
 
 public interface IDesktopCapturerFactory
 {
+  /// <summary>
+  ///   Set when the viewer asked for an encoder this device cannot provide, for telling the viewer why.
+  /// </summary>
+  string? FallbackNotice { get; }
+
   /// <summary>
   ///   Creates a new instance of IDesktopCapturer, discarding any existing instance.
   /// </summary>
@@ -25,13 +32,21 @@ public interface IDesktopCapturerFactory
   IDesktopCapturer GetOrCreate();
 }
 
-public class DesktopCapturerFactory(IServiceProvider serviceProvider, IOptions<RemoteControlSessionOptions> options) : IDesktopCapturerFactory
+public class DesktopCapturerFactory(
+  IServiceProvider serviceProvider,
+  IFfmpegLocator ffmpegLocator,
+  IOptions<RemoteControlSessionOptions> options,
+  ILogger<DesktopCapturerFactory> logger) : IDesktopCapturerFactory
 {
   private readonly Lock _createLock = new();
+  private readonly IFfmpegLocator _ffmpegLocator = ffmpegLocator;
+  private readonly ILogger<DesktopCapturerFactory> _logger = logger;
   private readonly IOptions<RemoteControlSessionOptions> _options = options;
   private readonly IServiceProvider _serviceProvider = serviceProvider;
 
   private volatile IDesktopCapturer? _capturer;
+
+  public string? FallbackNotice { get; private set; }
 
   public IDesktopCapturer CreateNew()
   {
@@ -56,11 +71,21 @@ public class DesktopCapturerFactory(IServiceProvider serviceProvider, IOptions<R
     _capturer = _options.Value.EncoderType switch
     {
       CaptureEncoderType.Image => ActivatorUtilities.CreateInstance<FrameBasedCapturer>(_serviceProvider),
-      // Vpx frames have no viewer-side decoder, so selecting Vpx would only produce unsupported-DTO warnings in the viewer.
-      CaptureEncoderType.Vpx => throw new NotSupportedException(
-        "Encoder type Vpx is not supported. No viewer decodes VideoStreamPacket frames."),
+      CaptureEncoderType.Vpx => CreateVideoCapturer(),
       _ => throw new NotSupportedException($"Encoder type {_options.Value.EncoderType} is not supported.")
     };
     return _capturer;
+  }
+
+  private IDesktopCapturer CreateVideoCapturer()
+  {
+    if (_ffmpegLocator.FindVp9Capable() is not null)
+    {
+      return ActivatorUtilities.CreateInstance<StreamBasedCapturer>(_serviceProvider);
+    }
+
+    _logger.LogWarning("VP9 was requested, but no ffmpeg with VP9 support was found. Using image frames.");
+    FallbackNotice = "This device has no ffmpeg with VP9 support, so image frames are being used.";
+    return ActivatorUtilities.CreateInstance<FrameBasedCapturer>(_serviceProvider);
   }
 }
