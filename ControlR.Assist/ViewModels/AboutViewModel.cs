@@ -17,6 +17,7 @@ public sealed partial class AboutViewModel(
   public string? AppVersion { get; } = typeof(AboutViewModel).Assembly.GetName().Version?.ToString(3);
 
   public bool HideSponsorshipInfo => BrandingConstants.HideSponsorshipInfo;
+  public string LicenseUrl => BrandingConstants.LicenseUrl;
 
   public string? ServerUrl =>
     BrandingConstants.ControlrServerUrl?.ToString() ?? _settingsService.GetSettings().ServerUrl;

@@ -6,6 +6,9 @@ param(
   [Parameter(HelpMessage = "Publisher name for ARP entry, etc.")]
   [string] $Publisher = "Bitbound",
 
+  [Parameter(HelpMessage = "Product name shown in file properties and on the Task Manager process row")]
+  [string] $ProductDescription = "",
+
   [Parameter(HelpMessage = "Primary color hex for dark theme")]
   [string] $PrimaryColorDark = "#2196F3",
 
@@ -393,6 +396,24 @@ Write-Host "Updating BrandPrefix in Directory.Build.props" -ForegroundColor Yell
 $propsFile = Join-Path $repoRoot "Directory.Build.props"
 $propsContent = Get-Content -LiteralPath $propsFile -Raw -Encoding UTF8
 $propsNew = $propsContent -replace '<BrandPrefix>.*?</BrandPrefix>', "<BrandPrefix>$brandKey</BrandPrefix>"
+
+# Company, copyright and repository are written into every assembly, where file properties show them.
+if ($Publisher -ne "Bitbound") {
+  $copyrightYear = (Get-Date).Year
+  $propsNew = $propsNew -replace '<Company>.*?</Company>', "<Company>$Publisher</Company>"
+  $propsNew = $propsNew -replace '<Copyright>.*?</Copyright>', "<Copyright>Copyright $copyrightYear $Publisher</Copyright>"
+  $propsNew = $propsNew -replace '\s*<RepositoryUrl>.*?</RepositoryUrl>', ''
+  $propsNew = $propsNew -replace '\s*<PackageProjectUrl>.*?</PackageProjectUrl>', ''
+}
+
+if ($ProductDescription) {
+  if ($ProductDescription -notmatch "^[A-Za-z][A-Za-z0-9_ \-\.]*$") {
+    throw "ProductDescription must start with a letter and contain only letters, numbers, spaces, underscores, hyphens and periods."
+  }
+
+  $brandedDescription = "<Description>$ProductDescription</Description><AssemblyTitle>$ProductDescription</AssemblyTitle><Product>$ProductDescription</Product>"
+  $propsNew = $propsNew -replace '<Description>.*?</Description>', $brandedDescription
+}
 
 if ($propsNew -ne $propsContent) {
   Write-WhatIfDiff -OldContent $propsContent -NewContent $propsNew -FilePath $propsFile

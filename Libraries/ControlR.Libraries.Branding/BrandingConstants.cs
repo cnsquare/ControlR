@@ -35,6 +35,14 @@ public static class BrandingConstants
   public const string WarningColorLight = "ffc107";
   public const string ErrorColorLight = "dc3545";
 
+  /// <summary>
+  /// Where to read the upstream MIT license. A branded build serves its own copy.
+  /// </summary>
+  public static string LicenseUrl =>
+    ControlrServerUrl is { } serverUrl
+      ? new Uri(serverUrl, "static/ControlR-LICENSE.txt").ToString()
+      : "https://github.com/bitbound/ControlR/blob/main/LICENSE.txt";
+
   public static string BrandKey => BrandNames.Current.BrandKey;
   public static string UnixBrandKey => BrandNames.Current.UnixBrandKey;
 

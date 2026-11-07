@@ -53,7 +53,7 @@
 					<HyperlinkButton Grid.Row="0" Grid.Column="1" Margin="0" Padding="0"
 													 Content="{x:Static common:Localization.AboutLicenseLabel}"
 													 Command="{Binding OpenUrlCommand}"
-													 CommandParameter="https://github.com/bitbound/ControlR/blob/main/LICENSE.txt" />
+													 CommandParameter="{Binding LicenseUrl}" />
 
 					<TextBlock Grid.Row="1" Grid.Column="0" FontWeight="SemiBold">
 						<Run Text="{x:Static common:Localization.AboutProjectLabel}" />
@@ -138,12 +138,9 @@
 
 				<TextBlock Grid.Row="4" Grid.Column="0" Text="{x:Static common:Localization.AboutLibraryControlR}" IsVisible="{Binding HideSponsorshipInfo}" VerticalAlignment="Center" />
 				<StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Spacing="8" IsVisible="{Binding HideSponsorshipInfo}" VerticalAlignment="Center">
-					<HyperlinkButton Content="{x:Static common:Localization.AboutSourceText}"
-											 Command="{Binding OpenUrlCommand}"
-											 CommandParameter="https://github.com/bitbound/ControlR" />
 					<HyperlinkButton Content="{x:Static common:Localization.LinkLicenseText}"
 											 Command="{Binding OpenUrlCommand}"
-											 CommandParameter="https://github.com/bitbound/ControlR/blob/main/LICENSE.txt" />
+											 CommandParameter="{Binding LicenseUrl}" />
 				</StackPanel>
 
 			</Grid>

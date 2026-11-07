@@ -63,6 +63,11 @@ if ($ConfigPath -or $ConfigUrl) {
     $customizeParams.Publisher = $config.publisher
   }
 
+  $productDescriptionProp = $config.PSObject.Properties['productDescription']
+  if ($productDescriptionProp -and $productDescriptionProp.Value) {
+    $customizeParams.ProductDescription = [string]$productDescriptionProp.Value
+  }
+
   # Unwrap colors from nested JSON.
   if ($config.colors) {
     $dark = $config.colors.dark

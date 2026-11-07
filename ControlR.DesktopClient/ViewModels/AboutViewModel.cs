@@ -9,6 +9,7 @@ public interface IAboutViewModel : IViewModelBase
 {
   string? AppVersion { get; }
   bool HideSponsorshipInfo { get; }
+  string LicenseUrl { get; }
   string InstanceId { get; }
   IRelayCommand<string> OpenUrlCommand { get; }
 }
@@ -24,6 +25,7 @@ public partial class AboutViewModel(
   private string? _appVersion;
 
   public bool HideSponsorshipInfo => BrandingConstants.HideSponsorshipInfo;
+  public string LicenseUrl => BrandingConstants.LicenseUrl;
 
   public string InstanceId => string.IsNullOrWhiteSpace(_options.CurrentValue.InstanceId)
     ? $"({Localization.None.ToLower()})"
