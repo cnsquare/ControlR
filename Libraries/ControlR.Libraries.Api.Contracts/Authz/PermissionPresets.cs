@@ -78,6 +78,7 @@ public static class PermissionPresets
         PermissionNames.InstallerKeyOthersRead,
         PermissionNames.InstallerKeyOthersWrite,
         PermissionNames.AgentInstall,
+        PermissionNames.AssistSessionsConnect,
       ],
 
       [DeviceSuperUser] =

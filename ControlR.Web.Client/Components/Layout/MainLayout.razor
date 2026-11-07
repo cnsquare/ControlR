@@ -1,6 +1,5 @@
 @inherits BaseLayout
 @inject ILazyInjector<IHubConnector> HubConnector
-@inject ILazyInjector<IWhatsNewNotifier> WhatsNewNotifier
 
 <div class="@ThemeClass">
   <ControlRLayoutProvider CurrentPalette="@CurrentPalette" @bind-IsDarkMode="@IsDarkMode" CustomTheme="@CustomTheme">
@@ -120,7 +119,6 @@
       if (IsAuthenticated)
       {
         await HubConnector.Value.Connect<IViewerHub>(AppConstants.ViewerHubPath);
-        await MaybeShowWhatsNew();
       }
 
       _isServerDecommissioned = PersistentState.Value.IsDecommissioned;
@@ -149,29 +147,6 @@
     {
       Logger.LogError(ex, "Error while handling authentication state change.");
       Snackbar.Value.Add("Authentication state change error", Severity.Error);
-    }
-  }
-
-  private async Task MaybeShowWhatsNew()
-  {
-    if (!RendererInfo.IsInteractive || !IsAuthenticated || !WhatsNewNotifier.Exists)
-    {
-      return;
-    }
-    try
-    {
-      using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-      await WhatsNewNotifier.Value.CheckAndShowIfNeeded(requireExplicitDismissal: true, cts.Token);
-    }
-    catch (OperationCanceledException ex)
-    {
-      Logger.LogError(ex, "Timed out while checking release notes.");
-      Snackbar.Value.Add("Timed out while checking release notes.", Severity.Error);
-    }
-    catch (Exception ex)
-    {
-      Logger.LogError(ex, "Error while checking release notes.");
-      Snackbar.Value.Add("Error while checking release notes.", Severity.Error);
     }
   }
 
