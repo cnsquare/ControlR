@@ -55,4 +55,14 @@ internal partial class V1Api
       return await response.Content.ReadFromJsonAsync<TenantSettingsDto>(cancellationToken);
     });
   }
+
+  async Task<ApiResult> ITenantSettingsApi.RotateFleetSecret(Guid tenantId, CancellationToken cancellationToken)
+  {
+    return await _client.ExecuteApiCall(async () =>
+    {
+      using var response = await _client.HttpClient.PostAsync(
+        $"{HttpConstants.V1.TenantSettingsEndpoint}/rotate-fleet-secret?tenantId={tenantId}", content: null, cancellationToken);
+      await response.EnsureSuccessStatusCodeWithDetails();
+    });
+  }
 }

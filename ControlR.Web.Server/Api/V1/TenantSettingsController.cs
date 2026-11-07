@@ -149,6 +149,30 @@ public class TenantSettingsController : ControllerBase
       response);
   }
 
+  /// <summary>
+  /// Rotates the tenant's active fleet enrollment secret. Agents adopt the new secret on their next
+  /// heartbeat. The secret itself is never returned: it is delivered only to agents over their
+  /// authenticated connections.
+  /// </summary>
+  [HttpPost("rotate-fleet-secret")]
+  [Authorize(Policy = PolicyNames.RequireTenantSettingsWrite)]
+  [ProducesResponseType(StatusCodes.Status204NoContent)]
+  [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
+  [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden, "application/problem+json")]
+  public async Task<IActionResult> RotateFleetSecret(
+    [FromServices] IFleetSecretManager fleetSecretManager,
+    [FromQuery] Guid tenantId,
+    CancellationToken cancellationToken)
+  {
+    if (!User.TryResolveTenantId(tenantId, out var resolvedTenantId))
+    {
+      return Forbid();
+    }
+
+    await fleetSecretManager.Rotate(resolvedTenantId, cancellationToken);
+    return NoContent();
+  }
+
   [HttpPut]
   [Authorize(Policy = PolicyNames.RequireTenantSettingsWrite)]
   [ProducesResponseType<TenantSettingsDto>(StatusCodes.Status200OK)]

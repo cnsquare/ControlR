@@ -4,6 +4,7 @@
 
 @inject AuthenticationStateProvider AuthState
 @inject ITenantSettingsProvider TenantSettingsProvider
+@inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
 <PageTitle>
@@ -77,6 +78,25 @@
                   MaxLength="60"
                   Label="Agent Name" />
   </div>
+
+  <div class="mt-10">
+    <MudText Typo="Typo.h6" Color="Color.Primary" GutterBottom>
+      Fleet Enrollment Secret
+    </MudText>
+    <MudText Typo="Typo.body2" Class="mb-3">
+      Agents use this secret to re-create their own device records if this server's database is ever
+      lost and rebuilt. Rotating it issues a fresh secret; agents adopt the new one within a few
+      minutes, on their next heartbeat. Rotate it if you suspect the current secret has been exposed.
+    </MudText>
+
+    <MudButton Variant="Variant.Outlined"
+               Color="Color.Warning"
+               StartIcon="@Icons.Material.Filled.Autorenew"
+               Disabled="!_canWrite || _isRotatingSecret"
+               OnClick="RotateFleetSecret">
+      Rotate Fleet Secret
+    </MudButton>
+  </div>
 </div>
 
 @code {
@@ -84,6 +104,7 @@
   private bool _appendInstanceId = true;
   private bool _canWrite;
   private string? _instanceId;
+  private bool _isRotatingSecret;
   private bool? _notifyUser;
 
   protected override async Task OnInitializedAsync()
@@ -145,6 +166,34 @@
     if (await TenantSettingsProvider.SetAgentDisplayName(_agentDisplayName))
     {
       Snackbar.Add("Setting updated", Severity.Success);
+    }
+  }
+
+  private async Task RotateFleetSecret()
+  {
+    var result = await DialogService.ShowMessageBoxAsync(
+      "Rotate Fleet Secret",
+      "Issue a new fleet enrollment secret? Agents adopt it on their next heartbeat. " +
+      "The previous secret stops working once an agent has adopted the new one.",
+      yesText: "Rotate",
+      noText: "Cancel");
+
+    if (!result.HasValue || !result.Value)
+    {
+      return;
+    }
+
+    _isRotatingSecret = true;
+    try
+    {
+      if (await TenantSettingsProvider.RotateFleetSecret())
+      {
+        Snackbar.Add("Fleet secret rotated", Severity.Success);
+      }
+    }
+    finally
+    {
+      _isRotatingSecret = false;
     }
   }
 

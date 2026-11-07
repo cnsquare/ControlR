@@ -14624,6 +14624,92 @@
         ]
       }
     },
+    "/api/v1/tenant-settings/rotate-fleet-secret": {
+      "post": {
+        "tags": [
+          "TenantSettings"
+        ],
+        "summary": "Rotates the tenant's active fleet enrollment secret. Agents adopt the new secret on their next\nheartbeat. The secret itself is never returned: it is delivered only to agents over their\nauthenticated connections.",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "query",
+            "description": "Rotates the tenant's active fleet enrollment secret. Agents adopt the new secret on their next\nheartbeat. The secret itself is never returned: it is delivered only to agents over their\nauthenticated connections.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "api-version",
+            "in": "query",
+            "description": "The requested API version",
+            "schema": {
+              "enum": [
+                "1.0"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ServiceAccountCredential": [ ]
+          },
+          {
+            "Cookie": [ ]
+          },
+          {
+            "PersonalAccessToken": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/test-email": {
       "post": {
         "tags": [

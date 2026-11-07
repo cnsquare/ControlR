@@ -20,4 +20,7 @@ public interface ITenantSettingsApi
 
   [ApiRoute($"{HttpConstants.V1.TenantSettingsEndpoint}?tenantId={{tenantId}}", "PUT")]
   Task<ApiResult<TenantSettingsDto>> SetTenantSettings(Guid tenantId, TenantSettingsDto request, CancellationToken cancellationToken = default);
+
+  [ApiRoute($"{HttpConstants.V1.TenantSettingsEndpoint}/rotate-fleet-secret?tenantId={{tenantId}}", "POST")]
+  Task<ApiResult> RotateFleetSecret(Guid tenantId, CancellationToken cancellationToken = default);
 }

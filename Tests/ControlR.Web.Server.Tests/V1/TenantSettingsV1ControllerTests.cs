@@ -49,6 +49,46 @@ public class TenantSettingsV1ControllerTests(ITestOutputHelper testOutput)
   }
 
   [Fact]
+  public async Task RotateFleetSecret_WhenAuthorized_ReturnsNoContentAndChangesSecret()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    using var scope = testApp.CreateScope();
+    var services = scope.ServiceProvider;
+    var (controller, tenant, _) = await scope.CreateControllerWithTestData<TenantSettingsController>(
+      userEmail: "ts-rotate@test.local",
+      presets: PermissionPresets.TenantAdministrator);
+
+    var fleetSecretManager = services.GetRequiredService<IFleetSecretManager>();
+    var before = await fleetSecretManager.GetOrCreate(tenant.Id, CancellationToken.None);
+
+    var result = await controller.RotateFleetSecret(fleetSecretManager, tenant.Id, CancellationToken.None);
+    Assert.IsType<NoContentResult>(result);
+
+    var after = await fleetSecretManager.GetOrCreate(tenant.Id, CancellationToken.None);
+    Assert.NotEqual(before, after);
+  }
+
+  [Fact]
+  public async Task RotateFleetSecret_ForAnotherTenant_Forbids()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    using var scope = testApp.CreateScope();
+    var services = scope.ServiceProvider;
+    var (controller, _, _) = await scope.CreateControllerWithTestData<TenantSettingsController>(
+      userEmail: "ts-rotate-forbid@test.local",
+      presets: PermissionPresets.TenantAdministrator);
+
+    var foreignTenant = await services.CreateTestTenant("TS Rotate Foreign");
+
+    var result = await controller.RotateFleetSecret(
+      services.GetRequiredService<IFleetSecretManager>(),
+      foreignTenant.Id,
+      CancellationToken.None);
+
+    Assert.IsType<ForbidResult>(result);
+  }
+
+  [Fact]
   public async Task GetAll_WhenCallerRequestsAnotherTenant_Forbids()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);

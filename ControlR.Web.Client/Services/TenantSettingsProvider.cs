@@ -10,6 +10,7 @@ public interface ITenantSettingsProvider
   Task<string?> GetInstanceId();
   Task<bool?> GetNotifyUserOnSessionStart();
   Task<TenantSettingsDto> GetSettings();
+  Task<bool> RotateFleetSecret();
   Task<bool> SetAgentDisplayName(string? value);
   Task<bool> SetAppendInstanceId(bool value);
   Task<bool> SetInstanceId(string? value);
@@ -70,6 +71,36 @@ internal class TenantSettingsProvider(
 
     _settings = getResult.Value;
     return _settings ?? CreateDefaultSettings();
+  }
+
+  public async Task<bool> RotateFleetSecret()
+  {
+    try
+    {
+      if (await _authState.GetTenantId(_snackbar) is not { } tenantId)
+      {
+        return false;
+      }
+
+      var result = await _controlrApi.V1.TenantSettings.RotateFleetSecret(tenantId);
+      if (!result.IsSuccess)
+      {
+        _logger.LogError(
+          "Failed to rotate fleet secret. Reason: {Reason}, StatusCode: {StatusCode}",
+          result.Reason,
+          result.StatusCode);
+        _snackbar.Add(result.Reason, Severity.Error);
+        return false;
+      }
+
+      return true;
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error while rotating the fleet secret.");
+      _snackbar.Add("Error while rotating the fleet secret", Severity.Error);
+      return false;
+    }
   }
 
   public async Task<bool> SetAgentDisplayName(string? value)
