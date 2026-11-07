@@ -114,12 +114,12 @@ internal sealed class DesktopRemoteControlStream(
 
       await SendDisplayData();
 
-      // Always shown, whatever the notification setting, so the person at the device can see and
-      // end the session for its whole duration.
-      _sessionIndicator.Show(viewerName, RequestDisconnect);
-
       if (_startupOptions.Value.NotifyUser)
       {
+        // Tied to the notification setting, matching Remotely: an unattended session shows the
+        // indicator and the toast together, and both are off when notifications are turned off.
+        _sessionIndicator.Show(viewerName, RequestDisconnect);
+
         var message = string.Format(Localization.RemoteControlSessionStartToastMessage, viewerName);
         await _toaster.ShowToast(Localization.RemoteControlSessionToastTitle, message, ToastIcon.Info);
       }

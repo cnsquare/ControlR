@@ -1,10 +1,10 @@
 namespace ControlR.DesktopClient.Common.ServiceInterfaces;
 
 /// <summary>
-/// Shows a small, always-on-top window on the remote device for the whole time a remote control
-/// session is active, so the person at the device can always see that someone is connected. This
-/// is shown regardless of the notification setting, and the person cannot be connected to without
-/// it appearing.
+/// Shows a small, always-on-top window on the remote device while a remote control session is
+/// active, so the person at the device can see that someone is connected and end the session.
+/// It follows the user-notification setting, the same as Remotely: it appears for an unattended
+/// session when notifications are on, and is hidden when they are off.
 /// </summary>
 public interface ISessionIndicator
 {
