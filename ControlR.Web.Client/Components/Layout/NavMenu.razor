@@ -45,6 +45,12 @@
               Icon="@Icons.Material.Filled.Help">
     Get Support
   </MudNavLink>
+  <AuthorizeView Policy="@(PolicyNames.RequireRecordingsRead)">
+    <MudNavLink Disabled="!_isAuthenticated" Href="@(ClientRoutes.Recordings)" Match="NavLinkMatch.Prefix"
+                Icon="@Icons.Material.Filled.Videocam">
+      Recordings
+    </MudNavLink>
+  </AuthorizeView>
   <MudNavLink Disabled="!_isAuthenticated" Href="@(ClientRoutes.Settings)" Match="NavLinkMatch.Prefix"
               Icon="@Icons.Material.Filled.Settings">
     Settings
@@ -104,12 +110,6 @@
         <MudNavLink Href="@(ClientRoutes.SessionHistory)" Match="NavLinkMatch.Prefix"
                     Icon="@Icons.Material.Filled.ManageHistory">
           Session History
-        </MudNavLink>
-      </AuthorizeView>
-      <AuthorizeView Policy="@(PolicyNames.RequireRecordingsRead)">
-        <MudNavLink Href="@(ClientRoutes.Recordings)" Match="NavLinkMatch.Prefix"
-                    Icon="@Icons.Material.Filled.Videocam">
-          Recordings
         </MudNavLink>
       </AuthorizeView>
       <AuthorizeView Policy="@(PolicyNames.RequireTagsWrite)">
@@ -234,7 +234,6 @@
     PolicyNames.RequireServiceAccountRead,
     PolicyNames.RequireTenantSettingsRead,
     PolicyNames.RequireAuthorizationLogsRead,
-    PolicyNames.RequireRecordingsRead,
   ];
 
   private static readonly string[] ServerAdminSectionPolicies =
