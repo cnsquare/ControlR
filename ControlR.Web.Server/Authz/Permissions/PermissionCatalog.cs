@@ -123,6 +123,8 @@ public static class PermissionCatalog
     Add(PermissionNames.DeviceRemoteControlElevatedDesktop, PermissionCategories.Devices, "Elevated Desktop Access", "Access the elevated (system) desktop during remote control.", deviceResources);
     Add(PermissionNames.DeviceRemoteControlPrivacyScreen, PermissionCategories.Devices, "Toggle Privacy Screen", "Black out the physical display on the remote device during a remote control session. The viewer continues to see the desktop.", deviceResources);
     Add(PermissionNames.DeviceRemoteControlRecord, PermissionCategories.Devices, "Record Remote Sessions", "Save a video of a remote control session. The person at the device is told.", deviceResources);
+    Add(PermissionNames.RecordingsRead, PermissionCategories.Devices, "View Session Recordings", "List, watch, and download saved session recordings for the tenant.", tenant);
+    Add(PermissionNames.RecordingsDelete, PermissionCategories.Devices, "Delete Session Recordings", "Delete saved session recordings for the tenant.", tenant);
     Add(PermissionNames.DeviceRemoteControlAudio, PermissionCategories.Devices, "Listen to Remote Audio", "Hear the sound a remote device is playing during a remote control session.", deviceResources);
     Add(PermissionNames.DeviceCtrlAltDelSend, PermissionCategories.Devices, "Send Ctrl+Alt+Del", "Send Ctrl+Alt+Del to a remote device.", deviceResources);
     Add(PermissionNames.DeviceClipboardRead, PermissionCategories.Devices, "Read Device Clipboard", "Read the clipboard contents from a remote device.", deviceResources);

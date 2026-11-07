@@ -31,6 +31,7 @@ public static class ClientRoutes
   public const string PasswordChangeRequired = "/password-change-required";
   public const string Permissions = "/permissions";
   public const string PersonalAccessTokens = "/personal-access-tokens";
+  public const string Recordings = "/recordings";
   public const string ServerAuthorizationLogs = "/server-authorization-logs";
   public const string ServerLogs = "/server-logs";
   public const string ServerServiceAccounts = "/server-service-accounts";

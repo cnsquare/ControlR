@@ -1,0 +1,30 @@
+<MudDialog>
+  <DialogContent>
+    <video controls autoplay style="width:100%; max-height:70vh; background:#000;">
+      <source src="@ContentUrl" type="@ContentType" />
+      Your browser cannot play this recording.
+    </video>
+  </DialogContent>
+  <DialogActions>
+    <MudButton Href="@($"{ContentUrl}?download=true")" Target="_blank" StartIcon="@Icons.Material.Filled.Download">
+      Download
+    </MudButton>
+    <MudButton OnClick="Close">Close</MudButton>
+  </DialogActions>
+</MudDialog>
+
+@code {
+  [CascadingParameter]
+  private IMudDialogInstance MudDialog { get; set; } = default!;
+
+  [Parameter]
+  public string ContentUrl { get; set; } = string.Empty;
+
+  [Parameter]
+  public string ContentType { get; set; } = "video/mp4";
+
+  [Parameter]
+  public string Title { get; set; } = "Recording";
+
+  private void Close() => MudDialog.Close();
+}

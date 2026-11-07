@@ -9,6 +9,8 @@ public static class PolicyNames
   public const string RequireAssistSessionsConnect = "RequireAssistSessionsConnect";
   public const string RequireAuthorizationLogsRead = "RequireAuthorizationLogsRead";
   public const string RequireCustomersRead = "RequireCustomersRead";
+  public const string RequireRecordingsDelete = "RequireRecordingsDelete";
+  public const string RequireRecordingsRead = "RequireRecordingsRead";
   public const string RequireScriptsRead = "RequireScriptsRead";
   public const string RequireScriptsWrite = "RequireScriptsWrite";
   public const string RequireCustomersWrite = "RequireCustomersWrite";

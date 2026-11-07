@@ -34,6 +34,7 @@ internal partial class V1Api(ControlrApi client) :
   ITagsApi,
   ITenantServiceAccountsApi,
   ITenantsApi,
+  IRecordingsApi,
   ITenantSettingsApi,
   ITestEmailApi,
   IUserGroupsApi,
@@ -64,6 +65,7 @@ internal partial class V1Api(ControlrApi client) :
   public IPermissionAssignmentsApi PermissionAssignments => this;
   public IPersonalAccessTokensApi PersonalAccessTokens => this;
   public IPublicServerSettingsApi PublicServerSettings => this;
+  public IRecordingsApi Recordings => this;
   public ISavedScriptsApi SavedScripts => this;
   public IScriptAlertsApi ScriptAlerts => this;
   public IScriptRunsApi ScriptRuns => this;

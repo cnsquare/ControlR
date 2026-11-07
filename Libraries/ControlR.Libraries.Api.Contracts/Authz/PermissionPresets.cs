@@ -79,6 +79,8 @@ public static class PermissionPresets
         PermissionNames.InstallerKeyOthersWrite,
         PermissionNames.AgentInstall,
         PermissionNames.AssistSessionsConnect,
+        PermissionNames.RecordingsRead,
+        PermissionNames.RecordingsDelete,
       ],
 
       [DeviceSuperUser] =
@@ -98,6 +100,7 @@ public static class PermissionPresets
         PermissionNames.DeviceRemoteControlPrivacyScreen,
         PermissionNames.DeviceRemoteControlAudio,
         PermissionNames.DeviceRemoteControlRecord,
+        PermissionNames.RecordingsRead,
         PermissionNames.DeviceCtrlAltDelSend,
         PermissionNames.DeviceClipboardRead,
         PermissionNames.DeviceClipboardWrite,

@@ -254,10 +254,16 @@ let recordedChunks = [];
 // The mime type the current recording is using. MP4/H.264 plays natively on Windows and macOS;
 // WebM is the fallback for browsers (e.g. Firefox) that cannot record MP4.
 let recordingMimeType = "video/webm";
+let recordingDeviceId = null;
+let recordingDeviceName = null;
+let recordingStartMs = 0;
 
 const recordingFrameRate = 15;
 
-export function startRecording(canvasId) {
+export function startRecording(canvasId, deviceId, deviceName) {
+  recordingDeviceId = deviceId ?? null;
+  recordingDeviceName = deviceName ?? null;
+  recordingStartMs = Date.now();
   const canvas = document.getElementById(canvasId);
   if (!canvas?.captureStream || typeof MediaRecorder === "undefined") {
     return false;
@@ -299,17 +305,40 @@ export function stopRecording() {
       return;
     }
 
-    active.onstop = () => {
+    active.onstop = async () => {
       const extension = recordingMimeType.includes("mp4") ? "mp4" : "webm";
-      const url = URL.createObjectURL(new Blob(recordedChunks, { type: recordingMimeType }));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `session-${new Date().toISOString().replaceAll(":", "-")}.${extension}`;
-      link.click();
-
-      // Revoking now would cancel the download before the browser has read the data.
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      const blob = new Blob(recordedChunks, { type: recordingMimeType });
       recordedChunks = [];
+
+      // Upload to the server so the recording can be watched, downloaded, and deleted from the
+      // Recordings page. Same-origin request carries the auth cookie. Fall back to a local download
+      // if the upload fails, so a recording is never silently lost.
+      try {
+        const durationSeconds = Math.max(0, Math.round((Date.now() - recordingStartMs) / 1000));
+        const form = new FormData();
+        form.append("file", blob, `session.${extension}`);
+        if (recordingDeviceId) form.append("deviceId", recordingDeviceId);
+        if (recordingDeviceName) form.append("deviceName", recordingDeviceName);
+        form.append("durationSeconds", String(durationSeconds));
+
+        const response = await fetch("/api/v1/recordings", {
+          method: "POST",
+          body: form,
+          credentials: "include"
+        });
+        if (!response.ok) {
+          throw new Error(`Upload failed with status ${response.status}`);
+        }
+      } catch (err) {
+        console.error("Failed to upload recording; downloading locally instead.", err);
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `session-${new Date().toISOString().replaceAll(":", "-")}.${extension}`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      }
+
       resolve();
     };
 

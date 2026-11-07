@@ -25,7 +25,13 @@ services:
       - "5120:8080"
     networks:
       - enkroma-network
+    volumes:
+      # Session recordings are stored here. Back this volume up with your data.
+      - enkroma-recordings:/app/recordings
     environment:
+      # Where session recording video files are written (must match the volume mount above).
+      ControlR_AppOptions__RecordingsStoragePath: "/app/recordings"
+
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_HTTP_PORTS: 8080
 
@@ -115,6 +121,8 @@ services:
 volumes:
   enkroma-data:
     name: "enkroma-data"
+  enkroma-recordings:
+    name: "enkroma-recordings"
 
 networks:
   enkroma-network:

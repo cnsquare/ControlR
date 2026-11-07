@@ -1,0 +1,146 @@
+@attribute [Route(ClientRoutes.Recordings)]
+@attribute [Authorize(Policy = PolicyNames.RequireRecordingsRead)]
+@using ControlR.Libraries.Api.Contracts.Dtos.ServerApi.V1.Recordings
+
+@inject AuthenticationStateProvider AuthState
+@inject IControlrApi ControlrApi
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Recordings</PageTitle>
+
+<PrimaryTitle>Session Recordings</PrimaryTitle>
+
+<MudText Typo="Typo.body2" Class="mb-4">
+  Recordings of remote control sessions. Watch, download, or delete them here.
+</MudText>
+
+@if (_loading)
+{
+  <MudProgressCircular Indeterminate Size="Size.Small" />
+}
+else if (_recordings.Count == 0)
+{
+  <MudAlert Severity="Severity.Info">No recordings yet.</MudAlert>
+}
+else
+{
+  <MudTable Items="_recordings" Hover="true" Dense="true" Breakpoint="Breakpoint.Sm">
+    <HeaderContent>
+      <MudTh>Device</MudTh>
+      <MudTh>Recorded</MudTh>
+      <MudTh>By</MudTh>
+      <MudTh>Length</MudTh>
+      <MudTh>Size</MudTh>
+      <MudTh Style="text-align:right">Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+      <MudTd DataLabel="Device">@(string.IsNullOrWhiteSpace(context.DeviceName) ? "—" : context.DeviceName)</MudTd>
+      <MudTd DataLabel="Recorded">@context.CreatedAt.ToLocalTime().ToString("g")</MudTd>
+      <MudTd DataLabel="By">@(string.IsNullOrWhiteSpace(context.CreatedByUserName) ? "—" : context.CreatedByUserName)</MudTd>
+      <MudTd DataLabel="Length">@FormatDuration(context.DurationSeconds)</MudTd>
+      <MudTd DataLabel="Size">@FormatSize(context.SizeBytes)</MudTd>
+      <MudTd Style="text-align:right">
+        <MudTooltip Text="Watch">
+          <MudIconButton Icon="@Icons.Material.Filled.PlayCircle" Color="Color.Primary"
+                         OnClick="@(() => Watch(context))" />
+        </MudTooltip>
+        <MudTooltip Text="Download">
+          <MudIconButton Icon="@Icons.Material.Filled.Download"
+                         Href="@ContentUrl(context.Id, true)" Target="_blank" />
+        </MudTooltip>
+        <MudTooltip Text="Delete">
+          <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                         OnClick="@(() => Delete(context))" />
+        </MudTooltip>
+      </MudTd>
+    </RowTemplate>
+  </MudTable>
+}
+
+@code {
+  private readonly List<RecordingResponseDto> _recordings = [];
+  private bool _loading = true;
+
+  protected override async Task OnInitializedAsync()
+  {
+    await Load();
+  }
+
+  private async Task Load()
+  {
+    _loading = true;
+    var result = await ControlrApi.V1.Recordings.GetRecordings();
+    _recordings.Clear();
+    if (result.IsSuccess && result.Value is not null)
+    {
+      _recordings.AddRange(result.Value);
+    }
+    else if (!result.IsSuccess)
+    {
+      Snackbar.Add(result.Reason, Severity.Error);
+    }
+    _loading = false;
+  }
+
+  private static string ContentUrl(Guid id, bool download) =>
+    $"{HttpConstants.V1.RecordingsEndpoint}/{id}/content{(download ? "?download=true" : string.Empty)}";
+
+  private async Task Watch(RecordingResponseDto recording)
+  {
+    var parameters = new DialogParameters
+    {
+      [nameof(RecordingPlayerDialog.ContentUrl)] = ContentUrl(recording.Id, false),
+      [nameof(RecordingPlayerDialog.ContentType)] = recording.ContentType,
+      [nameof(RecordingPlayerDialog.Title)] = string.IsNullOrWhiteSpace(recording.DeviceName)
+        ? "Recording" : recording.DeviceName
+    };
+    var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseButton = true };
+    await DialogService.ShowAsync<RecordingPlayerDialog>("Recording", parameters, options);
+  }
+
+  private async Task Delete(RecordingResponseDto recording)
+  {
+    var confirm = await DialogService.ShowMessageBoxAsync(
+      "Delete recording",
+      "Delete this recording permanently? This cannot be undone.",
+      yesText: "Delete", noText: "Cancel");
+    if (confirm != true)
+    {
+      return;
+    }
+
+    var result = await ControlrApi.V1.Recordings.DeleteRecording(recording.Id);
+    if (result.IsSuccess)
+    {
+      _recordings.Remove(recording);
+      Snackbar.Add("Recording deleted", Severity.Success);
+    }
+    else
+    {
+      Snackbar.Add(result.Reason, Severity.Error);
+    }
+  }
+
+  private static string FormatDuration(int? seconds)
+  {
+    if (seconds is not { } s)
+    {
+      return "—";
+    }
+    return TimeSpan.FromSeconds(s).ToString(s >= 3600 ? @"h\:mm\:ss" : @"m\:ss");
+  }
+
+  private static string FormatSize(long bytes)
+  {
+    string[] units = ["B", "KB", "MB", "GB"];
+    double size = bytes;
+    var unit = 0;
+    while (size >= 1024 && unit < units.Length - 1)
+    {
+      size /= 1024;
+      unit++;
+    }
+    return $"{size:0.#} {units[unit]}";
+  }
+}

@@ -39,6 +39,7 @@ public class AppDb : IdentityUserContext<AppUser, Guid>, IDataProtectionKeyConte
   public DbSet<LogonToken> LogonTokens { get; init; }
   public DbSet<PermissionAssignment> PermissionAssignments { get; init; }
   public DbSet<PersonalAccessToken> PersonalAccessTokens { get; init; }
+  public DbSet<Recording> Recordings { get; init; }
   public DbSet<SavedScript> SavedScripts { get; init; }
   public DbSet<AlertSettings> AlertSettings { get; init; }
   public DbSet<DeviceAlert> DeviceAlerts { get; init; }
@@ -80,6 +81,7 @@ public class AppDb : IdentityUserContext<AppUser, Guid>, IDataProtectionKeyConte
     ConfigureScriptLibrary(builder);
     ConfigureScriptRuns(builder);
     ConfigureTenant(builder);
+    ConfigureRecordings(builder);
     ConfigureDevices(builder);
     ConfigureTags(builder);
     ConfigureTenantSettings(builder);
@@ -684,6 +686,27 @@ public class AppDb : IdentityUserContext<AppUser, Guid>, IDataProtectionKeyConte
       .WithOne(lt => lt.Tenant)
       .HasForeignKey(lt => lt.TenantId)
       .OnDelete(DeleteBehavior.Cascade);
+  }
+
+  private void ConfigureRecordings(ModelBuilder builder)
+  {
+    builder
+      .Entity<Recording>()
+      .HasOne(x => x.Tenant)
+      .WithMany()
+      .HasForeignKey(x => x.TenantId)
+      .OnDelete(DeleteBehavior.Cascade);
+
+    builder
+      .Entity<Recording>()
+      .HasIndex(x => new { x.TenantId, x.CreatedAt });
+
+    if (_tenantId is not null)
+    {
+      builder
+        .Entity<Recording>()
+        .HasQueryFilter(x => x.TenantId == _tenantId);
+    }
   }
 
   private void ConfigureTenantInvites(ModelBuilder builder)

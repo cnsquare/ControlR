@@ -44,6 +44,8 @@ public static class PermissionNames
   public const string PersonalAccessTokenOthersWrite = "personal-access-token.others.write";
   public const string PersonalAccessTokenSelfRead = "personal-access-token.self.read";
   public const string PersonalAccessTokenSelfWrite = "personal-access-token.self.write";
+  public const string RecordingsDelete = "recordings.delete";
+  public const string RecordingsRead = "recordings.read";
   public const string ServerAuthorizationLogsRead = "server.authorization-logs.read";
   public const string ServerPermissionsRead = "server.permissions.read";
   public const string ServerPermissionsWrite = "server.permissions.write";

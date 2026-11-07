@@ -470,7 +470,8 @@ public partial class RemoteDisplay : JsInteropableComponent
       return;
     }
 
-    _isRecordingActive = await JsModule.InvokeAsync<bool>("startRecording", _canvasId);
+    var device = DeviceState.TryGetCurrentDevice();
+    _isRecordingActive = await JsModule.InvokeAsync<bool>("startRecording", _canvasId, device?.Id, device?.Name);
     if (!_isRecordingActive)
     {
       RemoteControlState.IsRecording = false;

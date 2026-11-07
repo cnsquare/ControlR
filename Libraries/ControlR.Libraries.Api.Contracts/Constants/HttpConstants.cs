@@ -68,6 +68,7 @@ public static class HttpConstants
     public const string TagsEndpoint = "/api/v1/tags";
     public const string TenantsEndpoint = "/api/v1/tenants";
     public const string TenantServiceAccountsEndpoint = "/api/v1/tenant-service-accounts";
+    public const string RecordingsEndpoint = "/api/v1/recordings";
     public const string TenantSettingsEndpoint = "/api/v1/tenant-settings";
     public const string TestEmailEndpoint = "/api/v1/test-email";
     public const string UserGroupsEndpoint = "/api/v1/user-groups";

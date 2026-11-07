@@ -21,6 +21,7 @@ public interface IControlrV1Api
   IPermissionAssignmentsApi PermissionAssignments { get; }
   IPersonalAccessTokensApi PersonalAccessTokens { get; }
   IPublicServerSettingsApi PublicServerSettings { get; }
+  IRecordingsApi Recordings { get; }
   ISavedScriptsApi SavedScripts { get; }
   IScriptAlertsApi ScriptAlerts { get; }
   IScriptRunsApi ScriptRuns { get; }

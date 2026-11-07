@@ -374,6 +374,12 @@ public class AppOptions
   public string? SmtpUserName { get; init; }
 
   /// <summary>
+  /// Directory where session recording video files are stored. Mount a persistent volume here.
+  /// Defaults to "/app/recordings" in the container.
+  /// </summary>
+  public string RecordingsStoragePath { get; init; } = "/app/recordings";
+
+  /// <summary>
   /// When enabled, extra logs will be written for all HTTP requests and responses.
   /// This is useful for debugging but should be disabled in production for performance.
   /// See https://learn.microsoft.com/en-us/aspnet/core/fundamentals/http-logging for details.
