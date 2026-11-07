@@ -1108,7 +1108,16 @@ if (-not $assistExe) { throw "Assist executable not found after publish." }
 Copy-Item $assistExe.FullName (Join-Path $downloadsBase "win-x64/$brandKey.Assist.exe") -Force
 
 Write-Host "Creating Version.txt" -ForegroundColor Cyan
-Set-Content -LiteralPath "$downloadsBase/Version.txt" -Value $Version -Encoding UTF8 -Force
+# Normalize to four parts so it matches what an agent reports (Assembly.GetName().Version is always
+# four-part, e.g. "1.0.0.0"). A three-part Version.txt like "1.0.0" would never string-equal the
+# agent's "1.0.0.0", leaving every agent permanently flagged as outdated.
+$parsedVersion = [version]$Version
+$fourPartVersion = '{0}.{1}.{2}.{3}' -f `
+  $parsedVersion.Major, `
+  [Math]::Max($parsedVersion.Minor, 0), `
+  [Math]::Max($parsedVersion.Build, 0), `
+  [Math]::Max($parsedVersion.Revision, 0)
+Set-Content -LiteralPath "$downloadsBase/Version.txt" -Value $fourPartVersion -Encoding UTF8 -Force
 
 Write-Host "Publishing Web Server..." -ForegroundColor Cyan
 New-Item -ItemType Directory -Path "ControlR.Web.Server/bin/publish" -Force | Out-Null

@@ -23,8 +23,24 @@ public class AgentVersionProvider(
     }
 
     var agentVersionResult = await TryGetAgentVersion(cancellationToken);
-    return agentVersionResult.IsSuccess && deviceAgentVersion != agentVersionResult.Value.ToString();
+    if (!agentVersionResult.IsSuccess)
+    {
+      return false;
+    }
+
+    // Compare as normalized versions so a format difference alone does not flag an up-to-date agent.
+    // An agent reports Assembly.GetName().Version (always four-part, e.g. "1.0.0.0"); a Version.txt
+    // written as "1.0.0" would never string-equal that and would mark every agent outdated.
+    if (Version.TryParse(deviceAgentVersion, out var deviceVersion))
+    {
+      return Normalize(deviceVersion) != Normalize(agentVersionResult.Value);
+    }
+
+    return deviceAgentVersion != agentVersionResult.Value.ToString();
   }
+
+  private static Version Normalize(Version version) =>
+    new(version.Major, version.Minor, Math.Max(version.Build, 0), Math.Max(version.Revision, 0));
 
   public async Task<HttpResult<Version>> TryGetAgentVersion(CancellationToken cancellationToken = default)
   {
