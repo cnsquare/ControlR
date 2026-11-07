@@ -286,6 +286,13 @@ internal sealed class RemoteControlViewerCommandHandler(
 
   private async Task ShowRecordingToast(bool isRecording)
   {
+    // Follow the session's notification setting, so recording notices behave the same as the
+    // session start/end notices instead of always showing.
+    if (!_startupOptions.NotifyUser)
+    {
+      return;
+    }
+
     var viewerName = _startupOptions.ViewerName is { Length: > 0 } name
       ? name
       : Localization.ADeviceAdministrator;
@@ -316,9 +323,9 @@ internal sealed class RemoteControlViewerCommandHandler(
     var state = new AudioStateDto(result.IsSuccess, _audioStreamer.IsEnabled, result.Reason);
     await SendDtoToViewer(RemoteControlDtoWrapper.Create(state, RemoteControlDtoType.AudioState));
 
-    // Shown whatever the notification preference says. Being listened to is not something
-    // the person at the device should be able to miss.
-    if (!wasEnabled && _audioStreamer.IsEnabled)
+    // Follow the session's notification setting, so the audio notice aligns with the session
+    // start/end and recording notices.
+    if (!wasEnabled && _audioStreamer.IsEnabled && _startupOptions.NotifyUser)
     {
       var viewerName = _startupOptions.ViewerName is { Length: > 0 } name
         ? name
