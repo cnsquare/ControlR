@@ -66,6 +66,9 @@ param(
   [Parameter(HelpMessage = "Absolute http/https URL of the ControlR server to bake into the build (empty for none)")]
   [string] $ControlrServerUrl = "",
 
+  [Parameter(HelpMessage = "Fleet-wide secret baked into the build so agents can re-enroll after a server database loss (empty for none, otherwise at least 16 chars)")]
+  [string] $FleetEnrollmentSecret = "",
+
   [Parameter(HelpMessage = "Hide the Project, Website, and Sponsor links in the app UI and add a ControlR entry to the third-party licenses")]
   [switch] $HideSponsorshipInfo,
 
@@ -379,6 +382,13 @@ if ($ControlrServerUrl) {
   $ControlrServerUrl = $parsedServerUrl.ToString()
 }
 
+if ($FleetEnrollmentSecret) {
+  $FleetEnrollmentSecret = $FleetEnrollmentSecret.Trim()
+  if ($FleetEnrollmentSecret.Length -lt 16) {
+    throw "FleetEnrollmentSecret must be at least 16 characters. Got a value of length $($FleetEnrollmentSecret.Length)."
+  }
+}
+
 #endregion
 
 Write-Host ""
@@ -466,6 +476,21 @@ if ($ControlrServerUrl) {
   $content = $content.Replace(
     $urlDeclaration,
     "public static Uri? ControlrServerUrl { get; } = ParseControlrServerUrl(`"$escapedServerUrl`");")
+}
+
+if ($FleetEnrollmentSecret) {
+  Write-Host "Baking fleet enrollment secret (length $($FleetEnrollmentSecret.Length))" -ForegroundColor Yellow
+
+  $secretDeclaration = 'public static string? FleetEnrollmentSecret { get; } = ParseFleetEnrollmentSecret(null);'
+  if (-not $content.Contains($secretDeclaration)) {
+    throw "Could not find the FleetEnrollmentSecret declaration in $brandingFile. The source ref predates fleet-secret branding."
+  }
+
+  # Use .NET string.Replace, as above, so a secret containing $-sequences is not reinterpreted.
+  $escapedSecret = $FleetEnrollmentSecret.Replace('\', '\\').Replace('"', '\"')
+  $content = $content.Replace(
+    $secretDeclaration,
+    "public static string? FleetEnrollmentSecret { get; } = ParseFleetEnrollmentSecret(`"$escapedSecret`");")
 }
 
 if ($content -ne $original) {

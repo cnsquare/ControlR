@@ -1,3 +1,4 @@
+using ControlR.Libraries.Branding;
 using ControlR.Libraries.Shared.Logging;
 using ControlR.Libraries.Shared.Services.Encryption;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -114,7 +115,13 @@ internal class AgentHeartbeatTimer(
   // secret. Does nothing, and stays inert, unless a secret is configured on this install.
   private async Task<bool> TryReenroll(DeviceUpdateRequestDto dto, string publicKeyBase64)
   {
+    // A per-install secret wins; otherwise the build's baked-in secret makes re-enrollment standard.
     var fleetSecret = _optionsAccessor.FleetEnrollmentSecret;
+    if (string.IsNullOrWhiteSpace(fleetSecret))
+    {
+      fleetSecret = BrandingConstants.FleetEnrollmentSecret;
+    }
+
     if (string.IsNullOrWhiteSpace(fleetSecret))
     {
       _logger.LogDebugDeduped(

@@ -113,6 +113,13 @@ if ($ConfigPath -or $ConfigUrl) {
     $customizeParams.ControlrServerUrl = [string]$serverUrlProp.Value
   }
 
+  # Same PSObject property check, for payloads produced before the fleet enrollment
+  # secret moved into the customization config.
+  $fleetSecretProp = $config.PSObject.Properties['fleetEnrollmentSecret']
+  if ($fleetSecretProp -and $fleetSecretProp.Value) {
+    $customizeParams.FleetEnrollmentSecret = [string]$fleetSecretProp.Value
+  }
+
   # Same PSObject property check as customCss, for payloads produced before the
   # sponsorship flag existed.
   $hideSponsorshipProp = $config.PSObject.Properties['hideSponsorshipInfo']

@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using ControlR.Libraries.Branding;
 using ControlR.Libraries.Shared.Services.Encryption;
 using ControlR.Web.Server.Extensions.Dtos.Internal;
 using ControlR.Web.Server.Services.DeviceManagement;
@@ -9,9 +10,10 @@ namespace ControlR.Web.Server.Api.Agent;
 
 /// <summary>
 /// Re-creates a device record for an agent the server no longer knows, authorized only by the
-/// configured fleet secret. This exists so a fleet survives a lost-and-rebuilt database. It is off
-/// until <see cref="AppOptions.FleetEnrollmentSecret"/> is set, and then refuses any request whose
-/// secret does not match.
+/// fleet secret. This exists so a fleet survives a lost-and-rebuilt database. The effective secret
+/// is <see cref="AppOptions.FleetEnrollmentSecret"/> if set, otherwise the one baked into the build
+/// (<see cref="BrandingConstants.FleetEnrollmentSecret"/>). It is off only when neither is set, and
+/// then refuses any request; otherwise it refuses any request whose secret does not match.
 /// </summary>
 [Route(HttpConstants.Agent.DeviceReenrollEndpoint)]
 [ApiController]
@@ -39,9 +41,14 @@ public class DeviceReenrollController(
   public async Task<ActionResult<InternalDtos.DeviceResponseDto>> Reenroll(
     [FromBody] InternalDtos.ReenrollDeviceRequestDto request)
   {
+    // Server config wins; otherwise the build's baked-in secret makes re-enrollment standard.
     var configuredSecret = _appOptions.CurrentValue.FleetEnrollmentSecret;
+    if (string.IsNullOrWhiteSpace(configuredSecret))
+    {
+      configuredSecret = BrandingConstants.FleetEnrollmentSecret;
+    }
 
-    // Off by configuration: no secret means no re-enrollment, so nothing can be created this way.
+    // Off only when no secret is set anywhere: then nothing can be created this way.
     if (string.IsNullOrWhiteSpace(configuredSecret) || configuredSecret.Trim().Length < MinSecretLength)
     {
       _logger.LogWarning("Re-enrollment attempted but no fleet secret is configured.");

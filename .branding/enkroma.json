@@ -28,5 +28,6 @@
     "companyLogoUri": ".branding/enkroma-logo.png"
   },
   "controlrServerUrl": "https://control.enkroma.com",
+  "fleetEnrollmentSecret": "1DzDQZUL3yoPNf2CiaxPzMNP7Spl45oOY-TaQyLTiKEf7xft1fEt4XtpKs1XgkiA",
   "hideSponsorshipInfo": true
 }

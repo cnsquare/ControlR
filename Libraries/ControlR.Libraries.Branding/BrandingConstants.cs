@@ -69,6 +69,39 @@ public static class BrandingConstants
   public static Uri? ControlrServerUrl { get; } = ParseControlrServerUrl(null);
 
   /// <summary>
+  /// Shortest fleet secret a build is allowed to bake in. Matches the server's own minimum so a
+  /// too-short brand secret fails the build rather than quietly weakening re-enrollment.
+  /// </summary>
+  public const int MinFleetEnrollmentSecretLength = 16;
+
+  private static string? ParseFleetEnrollmentSecret(string? value)
+  {
+    if (string.IsNullOrWhiteSpace(value))
+    {
+      return null;
+    }
+
+    var trimmed = value.Trim();
+    if (trimmed.Length < MinFleetEnrollmentSecretLength)
+    {
+      throw new InvalidOperationException(
+        $"The baked-in fleet enrollment secret must be at least {MinFleetEnrollmentSecretLength} characters.");
+    }
+
+    return trimmed;
+  }
+
+  /// <summary>
+  /// A fleet-wide secret baked into a customized build. When set, agents of this build re-create
+  /// their own device records on a server of the same build after its database is lost and rebuilt,
+  /// with no per-install configuration. Null in the default build, which leaves re-enrollment off
+  /// unless a secret is supplied by server config and the installer's --fleet-secret option. A
+  /// per-install or server-config secret always overrides this baked-in default. Treat it as a
+  /// fleet-wide credential: anyone holding it and an agent config could re-create a device.
+  /// </summary>
+  public static string? FleetEnrollmentSecret { get; } = ParseFleetEnrollmentSecret(null);
+
+  /// <summary>
   /// Hides the Project, Website, and Sponsor links in the built app UI. False in the default build.
   /// </summary>
   public static bool HideSponsorshipInfo { get; } = false;
