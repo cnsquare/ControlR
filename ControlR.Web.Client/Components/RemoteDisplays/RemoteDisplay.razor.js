@@ -199,10 +199,11 @@ export async function applyPinchZoom(contentDiv, canvasRef, canvasCssWidth, canv
 let audioContext = null;
 let nextAudioTime = 0;
 
-// How far ahead audio is scheduled, which absorbs uneven delivery.
-const audioLeadSeconds = 0.15;
+// How far ahead audio is scheduled, which absorbs uneven delivery (the jitter buffer). A larger
+// cushion trades a little latency for far fewer underruns, which are heard as choppy audio.
+const audioLeadSeconds = 0.4;
 // Past this the viewer has fallen behind, so audio is dropped to catch up.
-const maxAudioLagSeconds = 1;
+const maxAudioLagSeconds = 1.5;
 
 export async function startAudio() {
   audioContext ??= new AudioContext();
