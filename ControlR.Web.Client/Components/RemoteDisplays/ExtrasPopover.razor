@@ -25,15 +25,21 @@
     </div>
   }
 
-  <MudDivider />
-  <div>
-    <MudTooltip Text="Create a no-login link to invite another technician to this device">
-      <MudButton Variant="Variant.Outlined"
-                 Color="Color.Primary"
-                 StartIcon="@Icons.Material.Filled.PersonAdd"
-                 OnClick="InviteTechnician">
-        Invite technician
-      </MudButton>
-    </MudTooltip>
-  </div>
+  @* The invite creates a no-login link to a device. A Flash Assist session has no device record
+     (and the relay is single-viewer), so the button cannot work there — show it only for a loaded
+     device session. *@
+  @if (DeviceState.IsDeviceLoaded)
+  {
+    <MudDivider />
+    <div>
+      <MudTooltip Text="Create a no-login link to invite another technician to this device">
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.PersonAdd"
+                   OnClick="InviteTechnician">
+          Invite technician
+        </MudButton>
+      </MudTooltip>
+    </div>
+  }
 </div>
