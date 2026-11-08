@@ -25,24 +25,10 @@ public static class PermissionPresets
   {
     return new Dictionary<string, IReadOnlyList<string>>
     {
-      [ServerAdministrator] =
-      [
-        PermissionNames.ServerAuthorizationLogsRead,
-        PermissionNames.ServerTenantsDelete,
-        PermissionNames.ServerTenantsRead,
-        PermissionNames.ServerTenantsWrite,
-        PermissionNames.ServerSettingsWrite,
-        PermissionNames.ServerTelemetryRead,
-        PermissionNames.ServerServiceAccountsRead,
-        PermissionNames.ServerServiceAccountsWrite,
-        PermissionNames.ServerServiceAccountsRotateCredentials,
-        PermissionNames.ServerPermissionsRead,
-        PermissionNames.ServerPermissionsWrite,
-        PermissionNames.TenantPermissionsRead,
-        PermissionNames.TenantPermissionsDeny,
-        PermissionNames.TenantAuthorizationLogsRead,
-        PermissionNames.AssistSessionsConnect,
-      ],
+      // The server administrator is the top-level owner and holds every permission. Built by
+      // reflection so any newly added permission is included automatically; admins never silently
+      // lack a new capability.
+      [ServerAdministrator] = GetAllPermissionNames(),
 
       [TenantAdministrator] =
       [
@@ -152,5 +138,13 @@ public static class PermissionPresets
         PermissionNames.PersonalAccessTokenSelfWrite,
       ],
     };
+  }
+  private static IReadOnlyList<string> GetAllPermissionNames()
+  {
+    return typeof(PermissionNames)
+      .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+      .Where(f => f.IsLiteral && !f.IsInitOnly && f.FieldType == typeof(string))
+      .Select(f => (string)f.GetRawConstantValue()!)
+      .ToArray();
   }
 }
