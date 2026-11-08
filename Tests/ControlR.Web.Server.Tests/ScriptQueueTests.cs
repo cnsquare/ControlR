@@ -27,6 +27,7 @@ public class ScriptQueueTests(ITestOutputHelper testOutput)
   public async Task CancelQueuedScriptRun_StopsItRunning()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp, isOnline: true);
     var (resultId, runId) = await SeedQueued(testApp, fixture);
 
@@ -49,6 +50,7 @@ public class ScriptQueueTests(ITestOutputHelper testOutput)
   public async Task CancelQueuedScriptRun_WithoutDeviceAccess_LeavesItQueued()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp, isOnline: false);
     var (resultId, runId) = await SeedQueued(testApp, fixture);
     var other = await testApp.Services.CreateTestUser(fixture.TenantId, email: $"o-{Guid.NewGuid():N}@t.local");
@@ -66,6 +68,7 @@ public class ScriptQueueTests(ITestOutputHelper testOutput)
   public async Task CreateScriptRun_OfflineDevice_WithFlag_IsQueuedNotFailed()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp, isOnline: false);
 
     using var scope = testApp.Services.CreateScope();
@@ -85,6 +88,7 @@ public class ScriptQueueTests(ITestOutputHelper testOutput)
   public async Task CreateScriptRun_OfflineDevice_WithoutFlag_StillFails()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp, isOnline: false);
 
     using var scope = testApp.Services.CreateScope();
@@ -101,6 +105,7 @@ public class ScriptQueueTests(ITestOutputHelper testOutput)
   public async Task DispatchQueued_AgentDeclines_GoesBackInTheQueue()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp, isOnline: true);
     var (resultId, _) = await SeedQueued(testApp, fixture);
     var agent = Agent(HubResult.Fail("Busy."));
@@ -116,6 +121,7 @@ public class ScriptQueueTests(ITestOutputHelper testOutput)
   public async Task DispatchQueued_AgentTimesOut_IsNotRetriedBecauseItMayHaveRun()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp, isOnline: true);
     var (resultId, _) = await SeedQueued(testApp, fixture);
     var agent = new Mock<IAgentHubClient>();
@@ -132,6 +138,7 @@ public class ScriptQueueTests(ITestOutputHelper testOutput)
   public async Task DispatchQueued_DeviceOnline_SendsItOnce()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp, isOnline: true);
     var (resultId, _) = await SeedQueued(testApp, fixture);
     var agent = Agent(HubResult.Ok());
@@ -149,6 +156,7 @@ public class ScriptQueueTests(ITestOutputHelper testOutput)
   public async Task DispatchQueued_DeviceStillOffline_KeepsWaiting()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp, isOnline: false);
     var (resultId, _) = await SeedQueued(testApp, fixture);
     var agent = new Mock<IAgentHubClient>(MockBehavior.Strict);
@@ -162,6 +170,7 @@ public class ScriptQueueTests(ITestOutputHelper testOutput)
   public async Task DispatchQueued_PastTheLifetime_FailsWithoutRunning()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp, isOnline: true);
     var now = testApp.Services.GetRequiredService<TimeProvider>().GetUtcNow();
     var (resultId, _) = await SeedQueued(testApp, fixture, createdAt: now - ScriptRunManager.QueueLifetime - TimeSpan.FromMinutes(1));
@@ -178,6 +187,7 @@ public class ScriptQueueTests(ITestOutputHelper testOutput)
   public async Task DispatchQueued_RequesterLostPermission_FailsWithoutRunning()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp, isOnline: true, grant: false);
     var (resultId, _) = await SeedQueued(testApp, fixture);
     var agent = new Mock<IAgentHubClient>(MockBehavior.Strict);
@@ -193,6 +203,7 @@ public class ScriptQueueTests(ITestOutputHelper testOutput)
   public async Task DispatchQueued_ScheduleDeleted_FailsWithoutRunning()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp, isOnline: true);
     var (resultId, _) = await SeedQueued(testApp, fixture, scheduleId: Guid.NewGuid());
     var agent = new Mock<IAgentHubClient>(MockBehavior.Strict);
@@ -208,6 +219,7 @@ public class ScriptQueueTests(ITestOutputHelper testOutput)
   public async Task ExpireStaleResults_RecentlyDispatchedFromAnOldRun_IsLeftAlone()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp, isOnline: true);
     var now = testApp.Services.GetRequiredService<TimeProvider>().GetUtcNow();
     var (resultId, _) = await SeedQueued(testApp, fixture, createdAt: now.AddDays(-3));
@@ -246,6 +258,7 @@ public class ScriptQueueTests(ITestOutputHelper testOutput)
   public async Task Schedule_OfflineDeviceAcrossManyRuns_QueuesOnlyOneCopy()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp, isOnline: false);
     var scheduleId = Guid.NewGuid();
     var now = testApp.Services.GetRequiredService<TimeProvider>().GetUtcNow();

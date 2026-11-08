@@ -35,6 +35,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task AddViewerActivity2_Invoked_ReturnsHubResult()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -51,6 +52,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task CloseTerminalSession2_AllowedDevice_ReturnsSuccess()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -70,6 +72,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task GetActiveDesktopSessions2_UnauthorizedDevice_ReturnsFailure()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -87,6 +90,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task GetDeviceAccessPermissions2_DeviceReadDenied_ReturnsFailure()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -104,6 +108,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task GetDeviceAccessPermissions2_ProjectsPrivacyScreenPermission_IndependentlyOfInteract()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -128,6 +133,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task GetDeviceAccessPermissions2_ProjectsScriptPermission_IndependentlyOfTerminal()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -170,6 +176,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task GetDeviceAccessPermissions2_ProjectsAudioPermission_IndependentlyOfConnect()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -194,6 +201,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task RequestRemoteControlSession_ForgedPermissions_AreReplacedWithRealOnes()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -229,6 +237,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task RequestRemoteControlSession_ForgedAllowAudio_IsOverwrittenWithoutPermission()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -254,6 +263,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task RequestRemoteControlSession_WithAudioPermission_AllowsAudio()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -267,6 +277,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task RequestRemoteControlSession_AllowedDevice_ForwardsDtoDeviceIdentity()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -298,6 +309,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task RequestRemoteControlSession_AgentAccepts_LogsTheSessionBeforeTheAgentIsCalled()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -330,6 +342,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task RequestRemoteControlSession_AgentRefuses_LogsTheFailure()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -352,6 +365,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task RequestRemoteControlSession_AgentUnreachable_LogsTheFailure()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -373,6 +387,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task CreateTerminalSession_ThenClose_LogsStartAndEnd()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -400,6 +415,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task ViewerDisconnects_WithATerminalOpen_EndsItsLog()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -421,6 +437,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task RequestRemoteControlSession_Unauthorized_NothingIsLogged()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -437,6 +454,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task RequestRemoteControlSession_CompatibilityOverload_ForwardsDtoDeviceIdentity()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -468,6 +486,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task RequestRemoteControlSession_GrantForDifferentDevice_DoesNotForward()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var allowedDevice = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -496,6 +515,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task RequestVncSession_AllowedDevice_ForwardsDtoDeviceIdentity()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -526,6 +546,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task RequestVncSession_CompatibilityOverload_ForwardsDtoDeviceIdentity()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -556,6 +577,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task SendChatMessage2_AllowedDevice_ForwardsMessage()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -589,6 +611,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task SubscribeToDeviceHeartbeats2_OverBatchLimit_ReturnsFailure()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
 
@@ -605,6 +628,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task TestVncConnection2_UnauthorizedDevice_ReturnsFailure()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -625,6 +649,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task UploadFile_DeviceGrantIsTransferUpload_ForwardsUpload()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -651,6 +676,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   public async Task UploadFile_DeviceGrantIsWriteOnly_ReturnsFailure()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);

@@ -438,6 +438,8 @@ public class PermissionManagementIntegrationTests(ITestOutputHelper testOutput)
     using var testServer = await TestWebServerBuilder.CreateTestServer(testOutput);
     using var httpClient = await testServer.GetHttpClient();
     var services = testServer.Services;
+    // Consume the first-user slot so targetUser is a plain user without the permission under test.
+    await services.SeedServerAdminAsync();
 
     var tenant = await services.CreateTestTenant();
     var targetUser = await services.CreateTestUser(tenant.Id, $"target-{Guid.NewGuid():N}@t.local");
@@ -672,6 +674,8 @@ public class PermissionManagementIntegrationTests(ITestOutputHelper testOutput)
   {
     using var testServer = await TestWebServerBuilder.CreateTestServer(testOutput, useInMemoryDatabase: false);
     var services = testServer.Services;
+    // Consume the first-user slot so the user below is a plain user, not the all-permissions admin.
+    await services.SeedServerAdminAsync();
 
     var tenant = await services.CreateTestTenant();
     var user = await services.CreateTestUser(
@@ -1014,6 +1018,11 @@ public class PermissionManagementIntegrationTests(ITestOutputHelper testOutput)
   {
     var testServer = await TestWebServerBuilder.CreateTestServer(testOutput, useInMemoryDatabase: useInMemoryDatabase);
     var httpClient = testServer.Factory.CreateClient();
+
+    // Consume the first-user slot so the authenticated user below is a plain tenant admin and not
+    // also the all-permissions first-user server administrator (which would already hold every
+    // permission these tests try to create, turning Created into Conflict).
+    await testServer.Services.SeedServerAdminAsync();
 
     var tenant = await testServer.Services.CreateTestTenant();
     var user = await testServer.Services.CreateTestUser(

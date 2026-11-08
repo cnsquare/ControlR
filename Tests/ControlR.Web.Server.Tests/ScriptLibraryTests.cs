@@ -39,6 +39,7 @@ public class ScriptLibraryTests(ITestOutputHelper testOutput)
   public async Task CreateSavedScript_DuplicateName_IsAConflict()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     using var scope = testApp.Services.CreateScope();
@@ -54,6 +55,7 @@ public class ScriptLibraryTests(ITestOutputHelper testOutput)
   public async Task CreateScriptSchedule_DeviceWithoutRunPermission_IsForbidden()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var permitted = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -75,6 +77,7 @@ public class ScriptLibraryTests(ITestOutputHelper testOutput)
   public async Task CreateScriptSchedule_ScriptInAnotherTenant_IsNotFound()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var otherTenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
@@ -119,6 +122,7 @@ public class ScriptLibraryTests(ITestOutputHelper testOutput)
   public async Task GetSavedScripts_OnlyReturnsThisTenant()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var otherTenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
@@ -159,6 +163,7 @@ public class ScriptLibraryTests(ITestOutputHelper testOutput)
   public async Task RunDueSchedules_CreatorLostPermission_RunsNothing()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -176,6 +181,7 @@ public class ScriptLibraryTests(ITestOutputHelper testOutput)
   public async Task RunDueSchedules_CreatorLostSomeDevices_RunsOnlyTheRest()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var kept = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -198,6 +204,7 @@ public class ScriptLibraryTests(ITestOutputHelper testOutput)
   public async Task RunDueSchedules_CreatorMovedToAnotherTenant_DisablesTheSchedule()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var otherTenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(otherTenant.Id);
@@ -216,6 +223,7 @@ public class ScriptLibraryTests(ITestOutputHelper testOutput)
   public async Task RunDueSchedules_DeviceInAnotherTenant_IsNeverRun()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var otherTenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
@@ -231,6 +239,7 @@ public class ScriptLibraryTests(ITestOutputHelper testOutput)
   public async Task RunDueSchedules_Disabled_DoesNotRun()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -246,6 +255,7 @@ public class ScriptLibraryTests(ITestOutputHelper testOutput)
   public async Task RunDueSchedules_Due_RunsOnceAndMovesToTheNextSlot()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -268,6 +278,7 @@ public class ScriptLibraryTests(ITestOutputHelper testOutput)
   public async Task RunDueSchedules_NotDue_DoesNotRun()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -284,6 +295,7 @@ public class ScriptLibraryTests(ITestOutputHelper testOutput)
   public async Task Schedule_KeepsItsCopyWhenTheLibraryScriptIsEdited()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -312,6 +324,7 @@ public class ScriptLibraryTests(ITestOutputHelper testOutput)
   public async Task SetScriptScheduleEnabled_ResumingWithoutDeviceAccess_IsForbiddenButPausingIsNot()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var creator = await testApp.Services.CreateTestUser(tenant.Id, email: $"c-{Guid.NewGuid():N}@t.local");
     var other = await testApp.Services.CreateTestUser(tenant.Id, email: $"o-{Guid.NewGuid():N}@t.local");

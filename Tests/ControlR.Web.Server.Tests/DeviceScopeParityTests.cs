@@ -27,6 +27,7 @@ public class DeviceScopeParityTests(ITestOutputHelper testOutput)
   public async Task Parity_CustomerScopedAssignment()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var deviceA = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -69,6 +70,7 @@ public class DeviceScopeParityTests(ITestOutputHelper testOutput)
   public async Task Parity_DeviceGroupScopedAssignment()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var deviceA = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -108,6 +110,7 @@ public class DeviceScopeParityTests(ITestOutputHelper testOutput)
   public async Task Parity_DeviceScopedAssignment()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var deviceA = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -138,6 +141,7 @@ public class DeviceScopeParityTests(ITestOutputHelper testOutput)
   public async Task Parity_DisabledAllowAssignment_DoesNotGrant()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var deviceA = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -168,6 +172,7 @@ public class DeviceScopeParityTests(ITestOutputHelper testOutput)
   public async Task Parity_MultiCategoryAllows_EnumeratesAllCategories()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var deviceA = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -227,6 +232,7 @@ public class DeviceScopeParityTests(ITestOutputHelper testOutput)
   public async Task Parity_PatWithExplicitDeviceScope_EnumeratesOnlyBoundedDevice()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var deviceA = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -267,6 +273,7 @@ public class DeviceScopeParityTests(ITestOutputHelper testOutput)
   public async Task Parity_RestrictedPatWithoutRows_EnumeratesNothing()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var deviceA = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -298,6 +305,7 @@ public class DeviceScopeParityTests(ITestOutputHelper testOutput)
   public async Task Parity_ServerServiceAccountWithDeviceScope_EnumeratesAcrossTenantsOnlyMatchingDevice()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenantA = await testApp.App.Services.CreateTestTenant("Tenant A");
     var tenantB = await testApp.App.Services.CreateTestTenant("Tenant B");
     var deviceA = await testApp.App.Services.CreateTestDevice(tenantA.Id);
@@ -349,6 +357,7 @@ public class DeviceScopeParityTests(ITestOutputHelper testOutput)
   public async Task Parity_TenantAllowWithDeviceDeny_ExcludesDeniedDevice()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var deviceA = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -391,6 +400,7 @@ public class DeviceScopeParityTests(ITestOutputHelper testOutput)
   public async Task Parity_TenantScopedAssignment()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var deviceA = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -421,6 +431,7 @@ public class DeviceScopeParityTests(ITestOutputHelper testOutput)
   public async Task Parity_UnrestrictedServerServiceAccount_EnumeratesAllDevices()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenantA = await testApp.App.Services.CreateTestTenant("Tenant A");
     var tenantB = await testApp.App.Services.CreateTestTenant("Tenant B");
     var deviceA = await testApp.App.Services.CreateTestDevice(tenantA.Id);

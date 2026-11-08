@@ -26,6 +26,7 @@ public class ScriptAlertTests(ITestOutputHelper testOutput)
   public async Task DismissScriptAlert_InAnotherTenant_IsNotFound()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp);
     var otherTenant = await testApp.Services.CreateTestTenant();
     var outsider = await testApp.Services.CreateTestUser(otherTenant.Id, email: $"o-{Guid.NewGuid():N}@t.local");
@@ -46,6 +47,7 @@ public class ScriptAlertTests(ITestOutputHelper testOutput)
   public async Task Email_LeavesOutScriptOutputAndEncodesNames()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp, deviceName: "<img src=x onerror=alert(1)>");
     await SeedResult(testApp, fixture, ScriptResultStatus.Failed);
     var email = EmailMock();
@@ -65,6 +67,7 @@ public class ScriptAlertTests(ITestOutputHelper testOutput)
   public async Task FailedScheduledResult_RaisesAnAlert()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp);
     await SeedResult(testApp, fixture, ScriptResultStatus.Failed);
 
@@ -80,6 +83,7 @@ public class ScriptAlertTests(ITestOutputHelper testOutput)
   public async Task GetScriptAlerts_HidesDismissedAndOtherTenants()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp);
     var other = await CreateFixture(testApp);
     await SeedResult(testApp, fixture, ScriptResultStatus.Failed);
@@ -119,6 +123,7 @@ public class ScriptAlertTests(ITestOutputHelper testOutput)
   public async Task RepeatFailures_UpdateOneAlertAndEmailOnce()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp);
     var email = EmailMock();
 
@@ -136,6 +141,7 @@ public class ScriptAlertTests(ITestOutputHelper testOutput)
   public async Task AfterDismissing_TheNextFailureRaisesAndEmailsAgain()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp);
     var email = EmailMock();
     await SeedResult(testApp, fixture, ScriptResultStatus.Failed);
@@ -157,6 +163,7 @@ public class ScriptAlertTests(ITestOutputHelper testOutput)
   public async Task ScheduleLostAccess_RaisesAnAlertFromTheSchedulerItself()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp, nextRun: DateTimeOffset.MinValue.AddYears(2000));
 
     await testApp.Services.GetRequiredService<ScriptScheduleBackgroundService>().RunDueSchedules(Ct);
@@ -173,6 +180,7 @@ public class ScriptAlertTests(ITestOutputHelper testOutput)
   public async Task UnfinishedOrSuccessfulResults_RaiseNothing(ScriptResultStatus status)
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp);
     await SeedResult(testApp, fixture, status);
 
@@ -185,6 +193,7 @@ public class ScriptAlertTests(ITestOutputHelper testOutput)
   public async Task OneOffRuns_RaiseNothing()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp);
     await SeedResult(testApp, fixture, ScriptResultStatus.Failed, scheduled: false);
 
@@ -197,6 +206,7 @@ public class ScriptAlertTests(ITestOutputHelper testOutput)
   public async Task PausedSchedule_RaisesNothing()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp, isEnabled: false);
     await SeedResult(testApp, fixture, ScriptResultStatus.Failed);
 
@@ -267,6 +277,7 @@ public class ScriptAlertTests(ITestOutputHelper testOutput)
   public async Task RaiseForFailedResults_TenantHasAWebhook_SendsItWithoutScriptOutput()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var fixture = await CreateFixture(testApp);
     await SeedResult(testApp, fixture, ScriptResultStatus.Failed);
     using (var scope = testApp.Services.CreateScope())

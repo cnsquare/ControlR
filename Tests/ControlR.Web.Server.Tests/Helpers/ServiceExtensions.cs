@@ -256,6 +256,17 @@ internal static class ServiceExtensions
     return user;
   }
 
+  /// <summary>
+  /// Seeds a throwaway first-user server administrator so later <see cref="CreateTestUser(IServiceProvider, Guid, string, string[])"/>
+  /// calls create ordinary, non-admin users. In a fresh test app the very first user self-registers as
+  /// the server administrator and (by design) holds every permission; call this right after
+  /// <c>CreateTestApp</c> when the test's subject must be a limited user.
+  /// </summary>
+  public static async Task SeedServerAdminAsync(this IServiceProvider services)
+  {
+    _ = await services.CreateTestUser(email: $"seed-admin-{Guid.NewGuid():N}@test.local");
+  }
+
   private static async Task SeedPresetAssignmentsAsync(
     IServiceProvider provider,
     AppUser user,

@@ -999,6 +999,10 @@ public class DevicesControllerCreateDeviceTests(ITestOutputHelper testOutput)
     using var httpClient = await testServer.GetHttpClient();
     var services = testServer.Services;
 
+    // Consume the first-user slot so the user below is a plain user without tag permission, not the
+    // all-permissions first-user server administrator (which would hold it and skip the rejection).
+    await services.SeedServerAdminAsync();
+
     var tenant = await services.CreateTestTenant();
     var user = await services.CreateTestUser(
       tenantId: tenant.Id,

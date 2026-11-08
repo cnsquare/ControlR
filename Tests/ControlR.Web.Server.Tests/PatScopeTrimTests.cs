@@ -22,6 +22,10 @@ public class PatScopeTrimTests(ITestOutputHelper testOutput)
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput,
       testDatabaseName: $"{Guid.NewGuid()}");
 
+    // Consume the first-user slot so the owner below is a plain user, not the all-permissions
+    // first-user server administrator (which could cover every allow row and defeat the trim).
+    await testApp.Services.SeedServerAdminAsync();
+
     var tenant = await testApp.Services.CreateTestTenant();
     var userId = (await testApp.Services.CreateTestUser(tenant.Id, $"owner-{Guid.NewGuid():N}@t.local")).Id;
     var tokenId = Guid.NewGuid();

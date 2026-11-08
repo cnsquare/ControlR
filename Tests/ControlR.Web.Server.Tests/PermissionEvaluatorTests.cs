@@ -17,6 +17,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task CustomerScopeAssignment_CoversDeviceInCustomer()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -47,6 +48,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task CustomerScopeAssignment_DeniesDeviceInOtherCustomer()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -78,6 +80,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task CustomerScopeAssignment_DeniesUnassignedDevice()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -108,6 +111,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task CustomerScopeDeny_OverridesTenantAllow()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -151,6 +155,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task DefaultDeny_WhenNoRules_Denies()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -169,6 +174,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task DenyOverridesAllow_WhenBothExist_Denies()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -211,6 +217,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task DenyViaUserGroup_OverridesDirectAllow()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -256,6 +263,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task DeviceGroupScopeAssignment_CoversDevice()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -287,6 +295,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task DeviceGroupScopeAssignment_DeniesDeviceNotInGroup()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -318,6 +327,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task DeviceGroupScopeAssignment_DeniesDeviceWithUnknownMembership()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -349,6 +359,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task DeviceGroupScopeDeny_OverridesTenantAllow()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -392,6 +403,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task DirectAllow_WhenAssignmentExists_Allows()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -422,6 +434,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task DisabledAssignment_IsIgnored()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -452,6 +465,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task EvaluateBatch_PreservesOrderAndCardinalityAcrossResources()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var deviceA = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -495,6 +509,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task EvaluateMany_MatchesRepeatedPointChecksAndDeduplicatesNames()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -555,6 +570,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
     // even though it bypasses manager write validation (e.g. direct DB writes). The evaluator
     // checks the catalog's allowed scope kinds as defense-in-depth.
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -587,6 +603,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
     // the device itself, one scoped to its tenant. The tie-break must pick the narrower grant so
     // the result reports the device scope rather than the tenant scope.
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -633,6 +650,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
     // Tenant grant via the descriptor's tenant id, the UserGroup grant via scope id equality), so
     // the narrower UserGroup grant must win the tie-break.
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var userGroupId = Guid.NewGuid();
@@ -678,6 +696,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
     // Same shape as the allow case with denies instead: the device-scoped deny must be the rule
     // the result reports, not the tenant-scoped one.
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -727,6 +746,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
     // the breadth function regressed to throwing on the unknown kind, the ordering would throw and
     // this test would fail.
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var poisonScopeId = Guid.NewGuid();
@@ -770,6 +790,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task Evaluate_UnknownPermissionWithStaleAllow_Denies()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     const string unknownPermission = "device.stale.unknown";
@@ -799,6 +820,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
     // The recipient (e.g., an external/transient user) has no permissions of their own.
     // The logon token's device grants are authoritative and still allow access.
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -833,6 +855,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task LogonTokenGrants_WhenDeviceScopeMismatch_Denies()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var deviceA = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -880,6 +903,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task LogonTokenGrants_WhenMatchingAllow_Allows()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -929,6 +953,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
     // the recipient's permissions (the recipient may be an external user with none). The
     // grants are set by the device.logon-token.create holder at creation time.
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -977,6 +1002,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
     // The logon-token path rebuilds rules solely from the token's grants; a deny among those
     // grants must still override allows (deny-overrides-allow applies to every source).
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -1035,6 +1061,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   {
     // A credential with no scope rows grants nothing.
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -1072,6 +1099,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
     // yields null when the token row is missing, so it should be denied rather than
     // inheriting owner permissions.
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var (user, tenant, device, tokenId) = await SeedPatScenario(testApp, PersonalAccessTokenPermissionMode.InheritOwner);
 
     var evaluator = GetEvaluator(testApp);
@@ -1104,6 +1132,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task PatInheritOwner_NoRows_AllowsOwnerPermissions()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var (user, tenant, device, tokenId) = await SeedPatScenario(testApp, PersonalAccessTokenPermissionMode.InheritOwner);
 
     var evaluator = GetEvaluator(testApp);
@@ -1121,6 +1150,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
     // A restricted PAT whose rows are all removed (e.g., by scope trimming) must deny
     // rather than fall back to the owner's full permissions.
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var (user, tenant, device, tokenId) = await SeedPatScenario(testApp, PersonalAccessTokenPermissionMode.Restricted);
 
     await SeedAssignment(testApp, new PermissionAssignment
@@ -1161,6 +1191,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task PatRestricted_NoRows_DeniesAllIncludingOwnerPermissions()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var (user, tenant, device, tokenId) = await SeedPatScenario(testApp, PersonalAccessTokenPermissionMode.Restricted);
 
     var evaluator = GetEvaluator(testApp);
@@ -1178,6 +1209,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
     // A restricted PAT is granted DeviceRead via its own scope row. It must be allowed for
     // that permission but denied for one the owner holds and the PAT does not.
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var (user, tenant, device, tokenId) = await SeedPatScenario(testApp, PersonalAccessTokenPermissionMode.Restricted);
 
     // Owner additionally holds DeviceDelete; the restricted PAT should not.
@@ -1220,6 +1252,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task PatScopes_BoundedByUserGroupPermissions()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -1271,6 +1304,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
     // DeviceDelete, but the owner lacks any DeviceDelete assignment, must be denied by
     // the bounding check (not merely because PAT rules are empty).
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var (user, tenant, device, patId) = await SeedPatScenario(testApp, PersonalAccessTokenPermissionMode.Restricted);
 
     // Seed a PAT scope row granting DeviceDelete. The user holds NO DeviceDelete.
@@ -1300,6 +1334,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task PatScopes_WhenMatchingAllow_Allows()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -1345,6 +1380,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task PatScopes_WhenOutsideUserPermissions_Denies()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -1378,6 +1414,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task PatScopes_WhenRowScopeBeyondUserScope_Denies()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var deviceA = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -1423,6 +1460,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task PatScopes_WhenUserDeniedAtDeviceScope_DeniesDespiteMembershipCoverage()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -1479,6 +1517,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task PatScopes_WhenUserDeniedAtRowScope_Denies()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var deviceB = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -1535,6 +1574,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task PatScopes_WhenUserHasGroupAllow_CoversDeviceRowInGroup()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -1595,6 +1635,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
     // An inherit-owner PAT with no explicit scope rows acts as its owning user, so it inherits
     // the user's server-level permissions (including server topic subscriptions).
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var patId = Guid.NewGuid();
@@ -1630,6 +1671,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
     // An inherit-owner PAT with no explicit scope rows acts as its owning user, inheriting the
     // user's full effective permissions.
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -1667,6 +1709,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
     // device-scoped row. Evaluate (not the name-level projection) must refuse it, so the scoped
     // credential cannot read server telemetry.
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -1723,6 +1766,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task ServerScopedAssignment_CoversAnyTenantResource()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenantA = await testApp.App.Services.CreateTestTenant();
     var tenantB = await testApp.App.Services.CreateTestTenant();
     var deviceA = await testApp.App.Services.CreateTestDevice(tenantA.Id);
@@ -1762,6 +1806,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task ServerScopedDeviceAllow_OnTenantBoundUser_IsInert()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -1793,6 +1838,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task ServerScopeDeny_OverridesTenantScopeAllow()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -1834,6 +1880,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   {
     // Deleting the final row of a restricted account must not escalate it to bypass.
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
     var serviceAccountId = await SeedServerServiceAccount(testApp, ServiceAccountAccessMode.Restricted);
@@ -1879,6 +1926,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task ServerServiceAccount_RestrictedWithAllAssignmentsDisabled_DeniesInsteadOfBypass()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
     var serviceAccountId = await SeedServerServiceAccount(testApp, ServiceAccountAccessMode.Restricted);
@@ -1911,6 +1959,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task ServerServiceAccount_RestrictedWithAssignments_EvaluatesNormally()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
     var serviceAccountId = await SeedServerServiceAccount(testApp, ServiceAccountAccessMode.Restricted);
@@ -1947,6 +1996,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task ServerServiceAccount_RestrictedWithNoAssignments_Denies()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var serviceAccountId = await SeedServerServiceAccount(testApp, ServiceAccountAccessMode.Restricted);
 
     var evaluator = GetEvaluator(testApp);
@@ -1966,6 +2016,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task ServerServiceAccount_UnrestrictedWithNoAssignments_Bypasses()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var serviceAccountId = await SeedServerServiceAccount(testApp, ServiceAccountAccessMode.Unrestricted);
 
     var evaluator = GetEvaluator(testApp);
@@ -1986,6 +2037,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task TenantIsolation_WhenAssignmentInDifferentTenant_Denies()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenantA = await testApp.App.Services.CreateTestTenant("Tenant A");
     var tenantB = await testApp.App.Services.CreateTestTenant("Tenant B");
     var userA = await testApp.App.Services.CreateTestUser(tenantA.Id);
@@ -2020,6 +2072,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
     // the row from becoming a rule; scope matching alone would allow it. This isolates
     // that boundary from the scope-match path.
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenantA = await testApp.App.Services.CreateTestTenant("Tenant A");
     var tenantB = await testApp.App.Services.CreateTestTenant("Tenant B");
     var userB = await testApp.App.Services.CreateTestUser(tenantB.Id);
@@ -2051,6 +2104,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task TenantScopeAssignment_CoversDeviceInTenant()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -2082,6 +2136,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   {
     // A persisted Unrestricted mode must not grant bypass to a tenant-scoped account.
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var accountId = Guid.NewGuid();
 
@@ -2117,6 +2172,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task TenantServiceAccount_WithAssignment_Allows()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
     var serviceAccountId = Guid.NewGuid();
@@ -2151,6 +2207,7 @@ public class PermissionEvaluatorTests(ITestOutputHelper testOutput)
   public async Task UserGroupAllow_WhenGroupHasAssignment_Allows()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);

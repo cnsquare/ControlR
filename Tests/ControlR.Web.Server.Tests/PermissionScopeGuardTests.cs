@@ -366,6 +366,11 @@ public class PermissionScopeGuardTests(ITestOutputHelper testOutput)
     var testServer = await TestWebServerBuilder.CreateTestServer(testOutput);
     var httpClient = testServer.Factory.CreateClient();
 
+    // Consume the first-user slot so the authenticated user is a plain tenant admin, not also the
+    // all-permissions first-user server administrator (which would already hold the permission under
+    // test, turning Created into Conflict).
+    await testServer.Services.SeedServerAdminAsync();
+
     var tenant = await testServer.Services.CreateTestTenant();
     var user = await testServer.Services.CreateTestUser(
       tenant.Id,

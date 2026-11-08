@@ -24,6 +24,7 @@ public class PermissionPersistenceInvariantsTests(ITestOutputHelper testOutput)
   public async Task DbBoundary_DeviceScopeWithoutScopeId_Rejected()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput, useInMemoryDatabase: false);
+    await testApp.App.Services.SeedServerAdminAsync();
     using var scope = testApp.CreateScope();
     var services = scope.ServiceProvider;
     await using var appDb = services.GetRequiredService<AppDb>();
@@ -43,6 +44,7 @@ public class PermissionPersistenceInvariantsTests(ITestOutputHelper testOutput)
   public async Task DbBoundary_ServerScopeWithOwningTenantId_Rejected()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput, useInMemoryDatabase: false);
+    await testApp.App.Services.SeedServerAdminAsync();
     using var scope = testApp.CreateScope();
     var services = scope.ServiceProvider;
     await using var appDb = services.GetRequiredService<AppDb>();
@@ -64,6 +66,7 @@ public class PermissionPersistenceInvariantsTests(ITestOutputHelper testOutput)
   public async Task DbBoundary_ServerScopeWithScopeId_Rejected()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput, useInMemoryDatabase: false);
+    await testApp.App.Services.SeedServerAdminAsync();
     using var scope = testApp.CreateScope();
     var services = scope.ServiceProvider;
     await using var appDb = services.GetRequiredService<AppDb>();
@@ -83,6 +86,7 @@ public class PermissionPersistenceInvariantsTests(ITestOutputHelper testOutput)
   public async Task DbBoundary_TenantScopeWithoutOwningTenantId_Rejected()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput, useInMemoryDatabase: false);
+    await testApp.App.Services.SeedServerAdminAsync();
     using var scope = testApp.CreateScope();
     var services = scope.ServiceProvider;
     await using var appDb = services.GetRequiredService<AppDb>();
@@ -102,6 +106,7 @@ public class PermissionPersistenceInvariantsTests(ITestOutputHelper testOutput)
   public async Task DbBoundary_TenantScopeWithoutScopeId_Rejected()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput, useInMemoryDatabase: false);
+    await testApp.App.Services.SeedServerAdminAsync();
     using var scope = testApp.CreateScope();
     var services = scope.ServiceProvider;
     await using var appDb = services.GetRequiredService<AppDb>();
@@ -121,6 +126,7 @@ public class PermissionPersistenceInvariantsTests(ITestOutputHelper testOutput)
   public async Task DbBoundary_ValidServerScope_Accepted()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput, useInMemoryDatabase: false);
+    await testApp.App.Services.SeedServerAdminAsync();
     using var scope = testApp.CreateScope();
     var services = scope.ServiceProvider;
     await using var appDb = services.GetRequiredService<AppDb>();
@@ -145,6 +151,7 @@ public class PermissionPersistenceInvariantsTests(ITestOutputHelper testOutput)
   public async Task DbBoundary_ValidTenantScope_Accepted()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput, useInMemoryDatabase: false);
+    await testApp.App.Services.SeedServerAdminAsync();
     using var scope = testApp.CreateScope();
     var services = scope.ServiceProvider;
     await using var appDb = services.GetRequiredService<AppDb>();
@@ -174,6 +181,7 @@ public class PermissionPersistenceInvariantsTests(ITestOutputHelper testOutput)
     // The row is CHECK-constraint-valid (has ScopeId + OwningTenantId) but per-permission
     // scope legality is enforced at write time and in the evaluator, not at the DB boundary.
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -206,6 +214,7 @@ public class PermissionPersistenceInvariantsTests(ITestOutputHelper testOutput)
     // A deny at a scope the permission does not permit must still be honored (never dropped),
     // because dropping a deny would fail open.
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
     var device = await testApp.App.Services.CreateTestDevice(tenant.Id);
@@ -253,6 +262,7 @@ public class PermissionPersistenceInvariantsTests(ITestOutputHelper testOutput)
   public async Task Evaluator_UnknownPermission_FailsClosed()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.App.Services.SeedServerAdminAsync();
     var tenant = await testApp.App.Services.CreateTestTenant();
     var user = await testApp.App.Services.CreateTestUser(tenant.Id);
 

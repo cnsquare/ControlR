@@ -35,6 +35,7 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   public async Task CreateScriptRun_AllDevicesPermitted_RecordsOfflineDeviceAsFailed()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -63,6 +64,7 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   public async Task CreateScriptRun_DeviceInAnotherTenant_ReturnsNotFoundAndRunsNothing()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var otherTenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
@@ -81,6 +83,7 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   public async Task CreateScriptRun_OnePermittedOneNot_ForbidsAndRunsNothing()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var permitted = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -100,6 +103,7 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   public async Task CreateScriptRun_TerminalPermissionAlone_IsForbidden()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -118,6 +122,7 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   public async Task CleanExpiredRuns_DeletesOnlyRunsPastRetention()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
     var now = DateTimeOffset.UtcNow;
@@ -157,6 +162,7 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   public async Task ExpireStaleResults_FailsOnlyResultsPastTimeoutAndGrace()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
     var now = DateTimeOffset.UtcNow;
@@ -194,6 +200,7 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   public async Task GetScriptRunHistory_DeviceInAnotherTenant_ReturnsNotFound()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var otherTenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
@@ -212,6 +219,7 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   public async Task GetScriptRunHistory_ListsOnlyThisDeviceNewestFirstAndHonorsLimit()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -245,6 +253,7 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   public async Task GetScriptRunHistory_LongScript_ReturnsShortPreview()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -272,6 +281,7 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   public async Task GetScriptRunHistory_WithoutPermission_IsForbidden()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -290,6 +300,7 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   public async Task GetScriptRun_HidesResultsForDevicesWithoutPermission()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var reader = await testApp.Services.CreateTestUser(tenant.Id);
     var visible = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -310,6 +321,7 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   public async Task GetScriptRun_NoPermittedDevices_ReturnsNotFound()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var reader = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -327,6 +339,7 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   public async Task ManagerStart_AgentDeclines_RecordsReasonButAcceptsLateReport()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
     device.IsOnline = true;
@@ -382,6 +395,7 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   public async Task ReportScriptResult_FromAnotherDeviceInSameTenant_IsRejected()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var target = await testApp.Services.CreateTestDevice(tenant.Id);
     var attacker = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -403,6 +417,7 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   public async Task ReportScriptResult_FromDeviceInAnotherTenant_IsRejected()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var otherTenant = await testApp.Services.CreateTestTenant();
     var target = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -423,6 +438,7 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   public async Task ReportScriptResult_NoRegisteredDevice_IsRejected()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var target = await testApp.Services.CreateTestDevice(tenant.Id);
     var runId = await SeedRun(testApp, tenant.Id, target.Id);
@@ -445,6 +461,7 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   public async Task ReportScriptResult_OwnDevice_MapsStatus(int? exitCode, bool timedOut, ScriptResultStatus expected)
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
     var runId = await SeedRun(testApp, tenant.Id, device.Id);
@@ -463,6 +480,7 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   public async Task ReportScriptResult_Repeated_KeepsFirstResult()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
     var runId = await SeedRun(testApp, tenant.Id, device.Id);
@@ -487,6 +505,7 @@ public class ScriptRunTests(ITestOutputHelper testOutput)
   public async Task ReportScriptResult_StripsNulAndCapsOutput()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
     var runId = await SeedRun(testApp, tenant.Id, device.Id);
