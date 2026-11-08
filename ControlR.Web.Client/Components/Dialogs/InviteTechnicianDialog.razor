@@ -88,7 +88,15 @@
         return;
       }
 
-      _url = result.Value.DeviceAccessUrl.ToString();
+      // Land the invited technician directly in the live remote-control view, not the device-access
+      // Overview shell (which renders device hardware/software inventory). The token is already
+      // scoped to remote control only, so Remote Control is the only tab the nav shows — this keeps
+      // the invite confined to the remote session.
+      var remoteControlUrl = new UriBuilder(result.Value.DeviceAccessUrl)
+      {
+        Path = ClientRoutes.DeviceAccessRemoteControl
+      }.Uri;
+      _url = remoteControlUrl.ToString();
       _expiresAt = result.Value.ExpiresAt;
     }
     finally
