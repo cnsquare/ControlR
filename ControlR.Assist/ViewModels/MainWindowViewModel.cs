@@ -29,6 +29,12 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
   public Task<bool> ConfirmExitAsync() => ShowConfirmAsync(Localization.ConfirmExitMessage);
 
+  /// <summary>
+  /// Tears down any active session/hub connection before the window closes, so the technician's
+  /// viewer is dropped immediately rather than waiting for the hub keep-alive to time out.
+  /// </summary>
+  public Task ShutdownAsync() => Home.ShutdownAsync();
+
   [RelayCommand]
   private void AcceptConfirm() => ResolveConfirm(approved: true);
 

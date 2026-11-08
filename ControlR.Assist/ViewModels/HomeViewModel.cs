@@ -268,6 +268,14 @@ public sealed partial class HomeViewModel : ViewModelBase, IDisposable
     await _controller.DisconnectAsync();
   }
 
+  /// <summary>
+  /// Ends the current session and disconnects for app shutdown. Called when the customer closes the
+  /// Assist window so the server ends the session (and notifies the technician's viewer) immediately,
+  /// instead of the viewer lingering until the hub keep-alive times out. No confirmation prompt — the
+  /// window-close handler has already confirmed.
+  /// </summary>
+  public Task ShutdownAsync() => _controller.DisconnectAsync();
+
   [RelayCommand]
   private async Task EndSessionAsync()
   {

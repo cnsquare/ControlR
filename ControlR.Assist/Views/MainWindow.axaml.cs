@@ -39,22 +39,37 @@ public partial class MainWindow : Window
 
   protected override async void OnClosing(WindowClosingEventArgs e)
   {
-    var sessionInProgress = Home.IsConsentPending || Home.IsSessionActive;
-
-    if (sessionInProgress && !_exitConfirmed)
+    if (_exitConfirmed)
     {
-      e.Cancel = true;
-
-      if (await ViewModel.ConfirmExitAsync())
-      {
-        _exitConfirmed = true;
-        Close();
-      }
-
+      base.OnClosing(e);
       return;
     }
 
-    base.OnClosing(e);
+    // Cancel the default close so we can confirm (if a session is live) and, crucially, tear the
+    // session down gracefully before the process exits. Without this the technician's viewer stays
+    // connected until the hub keep-alive times out (~30s); ShutdownAsync sends EndAssistSession and
+    // stops the session host, dropping the viewer immediately.
+    e.Cancel = true;
+
+    var sessionInProgress = Home.IsConsentPending || Home.IsSessionActive;
+    if (sessionInProgress && !await ViewModel.ConfirmExitAsync())
+    {
+      return;
+    }
+
+    try
+    {
+      // Bounded so a slow or dead network can never prevent the window from closing.
+      await ViewModel.ShutdownAsync().WaitAsync(TimeSpan.FromSeconds(5));
+    }
+    catch (Exception ex)
+    {
+      // Best effort — never block the window from closing on a teardown error or timeout.
+      System.Diagnostics.Debug.WriteLine($"Error ending assist session during shutdown: {ex.Message}");
+    }
+
+    _exitConfirmed = true;
+    Close();
   }
 
   private void OnHomePropertyChanged(object? sender, PropertyChangedEventArgs e)
