@@ -60,6 +60,13 @@ public sealed class AssistSessionCoordinator : IAsyncDisposable
   public event Action? StateChanged;
 
   public string? Code { get; private set; }
+
+  /// <summary>
+  /// The server URI the active session is connected to, kept for building relay/download URLs. This is
+  /// the authoritative server address during a session — use it instead of any UI text field, which can
+  /// be empty (e.g. an unbranded build with no baked URL) or stale after a reconnect.
+  /// </summary>
+  public Uri? ConnectedServerUri => _connectedServerUri;
   public bool IsViewOnly => _sessionHost?.Services.GetService<AssistInputGate>()?.IsViewOnly ?? false;
   public string? PendingConsentEmail { get; private set; }
   public Guid? PendingConsentNonce { get; private set; }

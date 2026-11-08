@@ -51,7 +51,9 @@ public class AllowAccessButtonTests
       installer.Object,
       NullLogger<HomeViewModel>.Instance)
     {
-      ServerUrl = "server.example.com"
+      // Reproduces the real failure: the ServerUrl text field is empty (an unbranded build has no
+      // baked URL). The flow must fall back to the coordinator's connected URI instead of aborting.
+      ServerUrl = ""
     };
 
     var settings = new SettingsViewModel(

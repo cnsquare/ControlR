@@ -157,10 +157,16 @@ public sealed partial class HomeViewModel : ViewModelBase, IDisposable
   {
     _logger.LogInformation("Allow Access clicked; starting unattended-access setup.");
 
-    if (!AssistSessionCoordinator.TryNormalizeServerUri(ServerUrl, out var serverUri) ||
-        serverUri is null)
+    // Use the URI the session is actually connected to, not the ServerUrl text field. The field can be
+    // empty (an unbranded build has no baked URL) or stale after a reconnect, which aborted the setup
+    // with "server URL '' is not valid" even though the session was live.
+    var serverUri = _controller.ConnectedServerUri;
+    if (serverUri is null &&
+        (!AssistSessionCoordinator.TryNormalizeServerUri(ServerUrl, out serverUri) || serverUri is null))
     {
-      _logger.LogWarning("Unattended-access setup aborted: server URL '{ServerUrl}' is not valid.", ServerUrl);
+      _logger.LogWarning(
+        "Unattended-access setup aborted: no connected server URI and ServerUrl '{ServerUrl}' is not valid.",
+        ServerUrl);
       UnattendedAccessStatus = Localization.UnattendedAccessInstallFailed;
       return;
     }
