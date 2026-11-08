@@ -10,6 +10,7 @@ using ControlR.Web.Server.Constants;
 using ControlR.Libraries.WebSocketRelay.Common.Extensions;
 using ControlR.Libraries.WebSocketRelay.Common.Sessions;
 using ControlR.Web.Server.Services.Alerts;
+using ControlR.Web.Server.Services.RemoteControl;
 using ControlR.Web.Server.Services.RemoteSessions;
 using ControlR.Web.Server.Services.Scripting;
 using ControlR.Web.Server.Services.Users;
@@ -292,6 +293,7 @@ public static class WebApplicationBuilderExtensions
     builder.Services.AddSingleton<ServiceAccountCredentialCleanupBackgroundService>();
     builder.Services.AddHostedService(sp => sp.GetRequiredService<ServiceAccountCredentialCleanupBackgroundService>());
     builder.Services.AddSingleton<IAssistSessionCache, AssistSessionCache>();
+    builder.Services.AddSingleton<IRemoteControlFanoutRegistry, RemoteControlFanoutRegistry>();
     builder.Services.AddSingleton<AssistSessionCleanupBackgroundService>();
     builder.Services.AddHostedService(sp => sp.GetRequiredService<AssistSessionCleanupBackgroundService>());
     builder.Services.AddScoped<IAgentInstallerKeyManager, AgentInstallerKeyManager>();
