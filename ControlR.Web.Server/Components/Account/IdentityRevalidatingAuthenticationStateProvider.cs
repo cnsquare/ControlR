@@ -130,11 +130,20 @@ internal sealed class IdentityRevalidatingAuthenticationStateProvider : Revalida
       userInfo.Claims.AddRange(userClaims);
 
       var evaluator = scope.ServiceProvider.GetRequiredService<IPermissionEvaluator>();
-      var principalDescriptor = new PrincipalDescriptor(
-        PrincipalType.User,
-        user.Id,
-        user.TenantId,
-        principal.FindFirst(UserClaimTypes.AuthenticationMethod)?.Value ?? string.Empty);
+
+      // Use the full descriptor from the cookie's claims, NOT a bare User descriptor. A logon-token
+      // guest is signed in as the target user but is credential-scoped to a single device; building a
+      // plain User descriptor here drops that scope, so GetGrantedPolicies would return the user's full
+      // (e.g. admin) policy set and persist it to the WebAssembly client — letting the guest's UI act
+      // as that user. ToPrincipalDescriptor carries CredentialId/CredentialType/DeviceScope so the
+      // projection matches the server-rendered path (ProjectClientPoliciesAsync). Fall back to the bare
+      // descriptor only if the claims cannot be parsed (a normal user cookie still yields full policies).
+      var principalDescriptor = principal.ToPrincipalDescriptor()
+        ?? new PrincipalDescriptor(
+          PrincipalType.User,
+          user.Id,
+          user.TenantId,
+          principal.FindFirst(UserClaimTypes.AuthenticationMethod)?.Value ?? string.Empty);
 
       var grantedPolicies = await evaluator.GetGrantedPolicies(principalDescriptor, CancellationToken.None);
 
