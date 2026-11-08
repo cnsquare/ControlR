@@ -145,12 +145,22 @@ public sealed partial class HomeViewModel : ViewModelBase, IDisposable
       ? $"{formatted[..3]} {formatted[3..6]} {formatted[6..]}"
       : code;
 
-  [RelayCommand]
-  private async Task SetUpUnattendedAccessAsync()
+  /// <summary>
+  /// Runs the unattended-access ("Allow Access") setup flow. Public, and invoked directly, because
+  /// the control lives on the Settings view while the session state and installer live on this shared
+  /// view model. The button worked when it was on the Home view (bound straight to this view model),
+  /// and broke when moved to Settings behind a nested compiled binding to a source-generated command,
+  /// which never fired. Settings now calls this method directly, so there is no generated-command
+  /// indirection in the path.
+  /// </summary>
+  public async Task RunSetUpUnattendedAccessAsync()
   {
+    _logger.LogInformation("Allow Access clicked; starting unattended-access setup.");
+
     if (!AssistSessionCoordinator.TryNormalizeServerUri(ServerUrl, out var serverUri) ||
         serverUri is null)
     {
+      _logger.LogWarning("Unattended-access setup aborted: server URL '{ServerUrl}' is not valid.", ServerUrl);
       UnattendedAccessStatus = Localization.UnattendedAccessInstallFailed;
       return;
     }
@@ -159,6 +169,7 @@ public sealed partial class HomeViewModel : ViewModelBase, IDisposable
     // access is being set up. No local confirmation is requested: the button click is the consent.
     if (!_controller.TrySetInputSuspended(true))
     {
+      _logger.LogWarning("Unattended-access setup aborted: no active session host to suspend input.");
       UnattendedAccessStatus = Localization.UnattendedAccessInstallFailed;
       return;
     }
@@ -172,11 +183,14 @@ public sealed partial class HomeViewModel : ViewModelBase, IDisposable
       var grant = await _controller.RequestUnattendedAccessAsync();
       if (!grant.IsSuccess || grant.Value is null)
       {
+        _logger.LogWarning("Unattended-access grant was refused: {Reason}", grant.Reason);
         UnattendedAccessStatus = grant.Reason ?? Localization.UnattendedAccessInstallFailed;
         return;
       }
 
+      _logger.LogInformation("Unattended-access grant issued; launching the installer.");
       var result = await _unattendedAccessInstaller.Install(serverUri, grant.Value, CancellationToken.None);
+      _logger.LogInformation("Unattended-access install finished. Success: {Success}. {Reason}", result.IsSuccess, result.Reason);
       UnattendedAccessStatus = result.IsSuccess
         ? Localization.UnattendedAccessInstalled
         : result.Reason;

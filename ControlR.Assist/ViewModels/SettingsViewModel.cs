@@ -103,15 +103,15 @@ public sealed partial class SettingsViewModel(
 
   /// <summary>
   /// Runs the "Allow Access" (unattended access) setup. This is a direct command on the settings view
-  /// model rather than binding the button straight to <c>Home.SetUpUnattendedAccessCommand</c>: an
-  /// Avalonia compiled binding (x:DataType is set) to a source-generated command through a nested
-  /// property path resolves to null, which leaves the button clickable but inert (no command runs, no
-  /// status appears). Delegating from C# — where the generated command is non-null — restores it.
+  /// model (the page's own DataContext, like the working Open Log Folder button) that calls the shared
+  /// Home view model's public method directly. Binding the button straight to Home's source-generated
+  /// command through a nested path (<c>Home.SetUpUnattendedAccessCommand</c>) did not fire — that is why
+  /// it worked on the Home view and broke when moved to Settings.
   /// </summary>
   [RelayCommand]
   private async Task AllowAccess()
   {
-    await Home.SetUpUnattendedAccessCommand.ExecuteAsync(null);
+    await Home.RunSetUpUnattendedAccessAsync();
   }
 
   [RelayCommand]
