@@ -104,6 +104,32 @@ public class AssistHubTests(ITestOutputHelper testOutput)
   }
 
   [Fact]
+  public async Task RequestUnattendedAccess_TechnicianWithServerAdminPreset_IssuesKey()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    var tenant = await testApp.Services.CreateTestTenant();
+    // The admin is created with the default all-permissions preset and is given NO explicit
+    // AgentInstall grant. Escalating to permanent control must still work, so the preset must
+    // actually carry agent.install. If this fails, the preset — not the client — is the bug.
+    var technician = await testApp.Services.CreateTestUser(
+      tenant.Id,
+      presets: PermissionPresets.ServerAdministrator);
+    var session = await CreateActiveSessionAsync(testApp, technician);
+    var (hub, _) = await CreateHubAsync(testApp, user: null, connectionId: "assist-conn-1");
+
+    var result = await hub.RequestUnattendedAccess(new(session.SessionId));
+
+    Assert.True(result.IsSuccess, result.Reason);
+    Assert.NotNull(result.Value);
+    Assert.NotEqual(Guid.Empty, result.Value!.KeyId);
+    Assert.False(string.IsNullOrWhiteSpace(result.Value.KeySecret));
+
+    using var scope = testApp.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDb>();
+    Assert.Single(await db.AgentInstallerKeys.IgnoreQueryFilters().ToListAsync(TestContext.Current.CancellationToken));
+  }
+
+  [Fact]
   public async Task RespondToAssistConsent_Approved_LogsTheSessionUnderTheTechniciansTenant()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);

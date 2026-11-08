@@ -46,7 +46,17 @@ public sealed class UnattendedAccessInstaller(
       directory = Directory.CreateTempSubdirectory("controlr-install-").FullName;
       var installerPath = Path.Combine(directory, $"{BrandingConstants.InstallerBaseName}.exe");
 
-      await Download(serverUri, installerPath, cancellationToken);
+      try
+      {
+        await Download(serverUri, installerPath, cancellationToken);
+      }
+      catch (Exception ex)
+      {
+        // Surface the real reason instead of a generic failure, so a technician can tell whether the
+        // server is unreachable, the installer is missing (404), etc.
+        _logger.LogError(ex, "Failed to download the agent installer from {ServerUri}.", serverUri);
+        return Result.Fail($"Couldn't download the installer from the server. {ex.Message}");
+      }
 
       var startInfo = new ProcessStartInfo(installerPath, BuildInstallArguments(serverUri, grant))
       {
@@ -54,10 +64,24 @@ public sealed class UnattendedAccessInstaller(
         Verb = "runas",
       };
 
-      var exitCode = await _processManager.StartAndWaitForExit(startInfo, _installTimeout);
-      return exitCode == 0
-        ? Result.Ok()
-        : Result.Fail(Localization.UnattendedAccessInstallFailed);
+      try
+      {
+        // This overload throws ProcessStatusException on a non-zero exit, so reaching here means success.
+        await _processManager.StartAndWaitForExit(startInfo, _installTimeout);
+        return Result.Ok();
+      }
+      catch (ProcessStatusException ex)
+      {
+        _logger.LogError(ex, "The agent installer exited with a non-zero status code.");
+        return Result.Fail($"The installer ran but reported an error ({ex.Message}).");
+      }
+      catch (OperationCanceledException)
+      {
+        _logger.LogWarning(
+          "The agent installer did not finish within {Minutes} minutes.",
+          _installTimeout.TotalMinutes);
+        return Result.Fail("The installer did not finish in time. Please try again.");
+      }
     }
     catch (Win32Exception ex) when (ex.NativeErrorCode == ElevationCancelledError)
     {
@@ -67,7 +91,7 @@ public sealed class UnattendedAccessInstaller(
     catch (Exception ex)
     {
       _logger.LogError(ex, "Failed to set up unattended access.");
-      return Result.Fail(Localization.UnattendedAccessInstallFailed);
+      return Result.Fail($"{Localization.UnattendedAccessInstallFailed} ({ex.Message})");
     }
     finally
     {
