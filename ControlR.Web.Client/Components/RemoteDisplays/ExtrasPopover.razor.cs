@@ -20,7 +20,7 @@ public partial class ExtrasPopover : DisposableComponent
   [Inject]
   public required IDialogService DialogService { get; init; }
 
-  private async Task InviteTechnician()
+  private async Task ShareSession()
   {
     if (!DeviceState.IsDeviceLoaded)
     {
@@ -29,10 +29,10 @@ public partial class ExtrasPopover : DisposableComponent
 
     var parameters = new DialogParameters
     {
-      [nameof(Dialogs.InviteTechnicianDialog.DeviceId)] = DeviceState.CurrentDevice.Id
+      [nameof(Dialogs.ShareSessionDialog.DeviceId)] = DeviceState.CurrentDevice.Id
     };
     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };
-    await DialogService.ShowAsync<Dialogs.InviteTechnicianDialog>("Invite technician", parameters, options);
+    await DialogService.ShowAsync<Dialogs.ShareSessionDialog>("Share session", parameters, options);
   }
 
   private bool IsWindows

@@ -9,8 +9,8 @@
 <MudDialog>
   <DialogContent>
     <MudText Typo="Typo.body2" Class="mb-3">
-      Create a link that lets another technician join this device's session without logging in.
-      The link is single-use and expires.
+      Create a link that lets another technician open a live remote session to this device without
+      logging in. The link is single-use and expires.
     </MudText>
 
     @if (_url is null)
@@ -21,7 +21,7 @@
     }
     else
     {
-      <MudTextField Value="_url" ReadOnly="true" Variant="Variant.Outlined" Label="Invite link"
+      <MudTextField Value="_url" ReadOnly="true" Variant="Variant.Outlined" Label="Share link"
                     Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy"
                     OnAdornmentClick="Copy" Lines="2" Class="mb-2" />
       <MudText Typo="Typo.caption" Color="Color.Secondary">
@@ -84,14 +84,13 @@
       var result = await ControlrApi.V1.LogonTokens.CreateLogonTokenForUser(request);
       if (!result.IsSuccess || result.Value is null)
       {
-        Snackbar.Add(result.Reason ?? "Failed to create invite link.", Severity.Error);
+        Snackbar.Add(result.Reason ?? "Failed to create share link.", Severity.Error);
         return;
       }
 
-      // Land the invited technician directly in the live remote-control view, not the device-access
-      // Overview shell (which renders device hardware/software inventory). The token is already
-      // scoped to remote control only, so Remote Control is the only tab the nav shows — this keeps
-      // the invite confined to the remote session.
+      // Land the recipient directly in the live remote-control view, not the device-access Overview
+      // shell (which renders device hardware/software inventory). The token is scoped to remote control
+      // only, so Remote Control is the only tab the nav shows — this keeps the share to the session.
       var remoteControlUrl = new UriBuilder(result.Value.DeviceAccessUrl)
       {
         Path = ClientRoutes.DeviceAccessRemoteControl
@@ -114,7 +113,7 @@
     try
     {
       await Js.InvokeVoidAsync("navigator.clipboard.writeText", _url);
-      Snackbar.Add("Invite link copied", Severity.Success);
+      Snackbar.Add("Share link copied", Severity.Success);
     }
     catch
     {

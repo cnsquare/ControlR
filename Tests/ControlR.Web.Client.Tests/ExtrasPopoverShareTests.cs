@@ -15,27 +15,30 @@ using MudBlazor.Services;
 namespace ControlR.Web.Client.Tests;
 
 /// <summary>
-/// The "Invite technician" button mints a no-login link to a device. A Flash Assist session has no
-/// device record (and the relay is single-viewer), so the button must not appear there. It is gated
-/// on <see cref="IDeviceState.IsDeviceLoaded"/>, which is false in an assist session and true for a
-/// device remote-control session.
+/// The "Share" button mints a no-login link to a device. A Flash Assist session has no device record
+/// (and the relay is single-viewer), so the button must not appear there. It is gated on
+/// <see cref="IDeviceState.IsDeviceLoaded"/>, which is false in an assist session and true for a device
+/// remote-control session.
 /// </summary>
-public class ExtrasPopoverInviteTests
+public class ExtrasPopoverShareTests
 {
+  // The button's visible label. Metrics/DirectX are the only other controls and never contain it.
+  private const string ShareLabel = "Share";
+
   [Fact]
-  public async Task InviteButton_HiddenInAssistMode_NoDeviceLoaded()
+  public async Task ShareButton_HiddenInAssistMode_NoDeviceLoaded()
   {
     await using var ctx = CreateContext(deviceLoaded: false);
     var cut = ctx.Render<ExtrasPopover>();
-    Assert.DoesNotContain("Invite technician", cut.Markup);
+    Assert.DoesNotContain(ShareLabel, cut.Markup);
   }
 
   [Fact]
-  public async Task InviteButton_ShownForDeviceSession_DeviceLoaded()
+  public async Task ShareButton_ShownForDeviceSession_DeviceLoaded()
   {
     await using var ctx = CreateContext(deviceLoaded: true);
     var cut = ctx.Render<ExtrasPopover>();
-    Assert.Contains("Invite technician", cut.Markup);
+    Assert.Contains(ShareLabel, cut.Markup);
   }
 
   private static BunitContext CreateContext(bool deviceLoaded)
