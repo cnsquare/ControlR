@@ -67,7 +67,7 @@
                               Padding="12,0"
                               Variant="Outlined"
                               Content="{x:Static local:Localization.UnattendedAccessButtonText}"
-                              Command="{Binding Home.SetUpUnattendedAccessCommand}" />
+                              Command="{Binding AllowAccessCommand}" />
 
         <TextBlock Classes="Small Secondary"
                    TextWrapping="Wrap"

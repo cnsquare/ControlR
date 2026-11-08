@@ -101,6 +101,19 @@ public sealed partial class SettingsViewModel(
   [RelayCommand]
   private void Back() => _navigationService.NavigateTo<HomeViewModel>();
 
+  /// <summary>
+  /// Runs the "Allow Access" (unattended access) setup. This is a direct command on the settings view
+  /// model rather than binding the button straight to <c>Home.SetUpUnattendedAccessCommand</c>: an
+  /// Avalonia compiled binding (x:DataType is set) to a source-generated command through a nested
+  /// property path resolves to null, which leaves the button clickable but inert (no command runs, no
+  /// status appears). Delegating from C# — where the generated command is non-null — restores it.
+  /// </summary>
+  [RelayCommand]
+  private async Task AllowAccess()
+  {
+    await Home.SetUpUnattendedAccessCommand.ExecuteAsync(null);
+  }
+
   [RelayCommand]
   private void OpenLogFolder()
   {
