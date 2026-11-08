@@ -294,6 +294,7 @@ public static class WebApplicationBuilderExtensions
     builder.Services.AddHostedService(sp => sp.GetRequiredService<ServiceAccountCredentialCleanupBackgroundService>());
     builder.Services.AddSingleton<IAssistSessionCache, AssistSessionCache>();
     builder.Services.AddSingleton<IRemoteControlFanoutRegistry, RemoteControlFanoutRegistry>();
+    builder.Services.AddSingleton<IRemoteControlSharedSessionStore, RemoteControlSharedSessionStore>();
     builder.Services.AddSingleton<RemoteControlFanoutConnectionHandler>();
     builder.Services.AddSingleton<AssistSessionCleanupBackgroundService>();
     builder.Services.AddHostedService(sp => sp.GetRequiredService<AssistSessionCleanupBackgroundService>());

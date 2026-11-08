@@ -3,6 +3,7 @@ using ControlR.Web.Client.Components.Layout;
 using ControlR.Web.Server.Components;
 using ControlR.Web.Server.Components.Account;
 using ControlR.Web.Server.Middleware;
+using ControlR.Web.Server.Services.RemoteControl;
 using ControlR.Web.Server.Startup;
 using ControlR.Web.ServiceDefaults;
 using Microsoft.Extensions.FileProviders;
@@ -92,6 +93,16 @@ app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapWebSocketRelay();
+
+// Shared remote-control (multi-viewer) fan-out WebSocket endpoint. Authorized per-connection by the
+// session's producer/viewer token, independent of the app cookie.
+app.UseWhen(
+  ctx => ctx.Request.Path.StartsWithSegments(RemoteControlFanoutMiddleware.Path),
+  branch =>
+  {
+    branch.UseWebSockets();
+    branch.UseMiddleware<RemoteControlFanoutMiddleware>();
+  });
 
 // Configure output cache - must be before any middleware that generates response
 app.UseOutputCache();

@@ -67,10 +67,13 @@ public static class RemoteControlFanoutTransport
   public static async Task WriteFrameAsync(Stream stream, VideoStreamPacketDto packet, CancellationToken cancellationToken)
   {
     var payload = MessagePackSerializer.Serialize(packet, cancellationToken: cancellationToken);
-    var prefix = new byte[4];
-    BinaryPrimitives.WriteInt32LittleEndian(prefix, payload.Length);
-    await stream.WriteAsync(prefix, cancellationToken).ConfigureAwait(false);
-    await stream.WriteAsync(payload, cancellationToken).ConfigureAwait(false);
+
+    // Write the length prefix and payload as one buffer so a message-based transport (a WebSocket)
+    // carries exactly one frame per message.
+    var framed = new byte[4 + payload.Length];
+    BinaryPrimitives.WriteInt32LittleEndian(framed, payload.Length);
+    payload.CopyTo(framed, 4);
+    await stream.WriteAsync(framed, cancellationToken).ConfigureAwait(false);
   }
 
   /// <summary>
