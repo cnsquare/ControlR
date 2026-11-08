@@ -154,6 +154,17 @@ internal sealed class IdentityRevalidatingAuthenticationStateProvider : Revalida
       });
       
       userInfo.Claims.AddRange(policyClaims);
+
+      // Flow the device-session markers (set by the logon-token handler) to the WebAssembly client so
+      // the main layout can recognize a no-login device-access guest and keep them in the device-access
+      // area. These live on the cookie principal, not the user's stored claims, so add them explicitly.
+      foreach (var claimType in new[] { UserClaimTypes.AuthenticationMethod, UserClaimTypes.DeviceSessionScope })
+      {
+        if (principal.FindFirst(claimType)?.Value is { Length: > 0 } claimValue)
+        {
+          userInfo.Claims.Add(new UserClaim { Type = claimType, Value = claimValue });
+        }
+      }
     }
     else
     {

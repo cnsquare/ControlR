@@ -85,6 +85,9 @@ app.UseCors();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseMiddleware<RequirePasswordChangeMiddleware>();
+// Confine a no-login device-access guest (logon token) to the device-access area, so the invite
+// cannot reach the dashboard, Settings, or the inviting user's Account pages.
+app.UseMiddleware<DeviceSessionConfinementMiddleware>();
 app.UseAuthorization();
 app.UseAntiforgery();
 

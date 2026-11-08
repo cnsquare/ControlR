@@ -32,6 +32,30 @@ public static class ClaimsPrincipalExtensions
     return user.Identity?.IsAuthenticated ?? false;
   }
 
+  /// <summary>
+  /// The authentication-method value for a no-login device-access invite (logon token). Mirrors the
+  /// server's PrincipalClaimValues.LogonTokenMethod; kept here because the client cannot reference it.
+  /// </summary>
+  public const string LogonTokenAuthMethod = "logon-token";
+
+  /// <summary>
+  /// True when the current session is a no-login device-access guest (a logon-token invite). Such a
+  /// session is signed in as the inviting user but must be confined to the device-access area.
+  /// </summary>
+  public static bool IsDeviceSessionGuest(this ClaimsPrincipal user)
+  {
+    return user.IsAuthenticated() &&
+      user.FindFirst(Authz.UserClaimTypes.AuthenticationMethod)?.Value == LogonTokenAuthMethod;
+  }
+
+  /// <summary>
+  /// The device id a device-session guest is scoped to, or null when there is none.
+  /// </summary>
+  public static string? GetDeviceSessionScopeId(this ClaimsPrincipal user)
+  {
+    return user.FindFirst(Authz.UserClaimTypes.DeviceSessionScope)?.Value;
+  }
+
   public static bool TryGetTenantId(
     this ClaimsPrincipal user,
     out Guid tenantId)

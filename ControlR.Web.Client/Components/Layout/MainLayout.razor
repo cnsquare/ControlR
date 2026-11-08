@@ -114,6 +114,12 @@
 
     if (RendererInfo.IsInteractive)
     {
+      var authState = await AuthState.GetAuthenticationStateAsync();
+      if (TryConfineDeviceSessionGuest(authState.User))
+      {
+        return;
+      }
+
       AuthState.AuthenticationStateChanged += HandleAuthenticationStateChanged;
 
       if (IsAuthenticated)
@@ -123,6 +129,24 @@
 
       _isServerDecommissioned = PersistentState.Value.IsDecommissioned;
     }
+  }
+
+  // A no-login device-access guest (logon-token invite) must never sit on a main-app page. The server
+  // middleware blocks full loads; this catches client-side navigation (e.g. a "back to dashboard" link)
+  // and sends the guest to their device-access view. Normal users are unaffected.
+  private bool TryConfineDeviceSessionGuest(System.Security.Claims.ClaimsPrincipal user)
+  {
+    if (!user.IsDeviceSessionGuest())
+    {
+      return false;
+    }
+
+    var scope = user.GetDeviceSessionScopeId();
+    var target = Guid.TryParse(scope, out _)
+      ? $"/device-access/remote-control?deviceId={scope}"
+      : "/device-access";
+    NavManager.NavigateTo(target, replace: true);
+    return true;
   }
 
   private async void HandleAuthenticationStateChanged(Task<AuthenticationState> taskState)
@@ -135,6 +159,11 @@
       }
 
       var state = await taskState;
+      if (TryConfineDeviceSessionGuest(state.User))
+      {
+        return;
+      }
+
       IsAuthenticated = state.User.Identity?.IsAuthenticated ?? false;
       await InvokeAsync(StateHasChanged);
 
