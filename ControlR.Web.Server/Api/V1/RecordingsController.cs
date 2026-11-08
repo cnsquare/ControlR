@@ -20,7 +20,7 @@ public class RecordingsController : ControllerBase
   [RequestSizeLimit(2_147_483_648)]
   [RequestFormLimits(MultipartBodyLengthLimit = 2_147_483_648)]
   [ProducesResponseType<RecordingResponseDto>(StatusCodes.Status201Created)]
-  [ProducesResponseType(StatusCodes.Status400BadRequest)]
+  [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
   public async Task<ActionResult<RecordingResponseDto>> Upload(
     [FromServices] AppDb appDb,
     [FromServices] IRecordingStorage storage,
@@ -98,8 +98,9 @@ public class RecordingsController : ControllerBase
 
   [HttpGet("{id:guid}/content")]
   [Authorize(Policy = PolicyNames.RequireRecordingsRead)]
+  [BinaryResponse("application/octet-stream")]
   [ProducesResponseType(StatusCodes.Status200OK)]
-  [ProducesResponseType(StatusCodes.Status404NotFound)]
+  [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
   public async Task<IActionResult> GetContent(
     [FromServices] AppDb appDb,
     [FromServices] IRecordingStorage storage,
@@ -118,7 +119,7 @@ public class RecordingsController : ControllerBase
 
     if (recording is null || !storage.TryGetPath(tenantId, recording.FileName, out var path))
     {
-      return NotFound();
+      return Problem(detail: "Recording not found.", statusCode: StatusCodes.Status404NotFound);
     }
 
     // Serve a safe, server-derived content type (defends records stored before upload normalization)
@@ -136,7 +137,7 @@ public class RecordingsController : ControllerBase
   [HttpDelete("{id:guid}")]
   [Authorize(Policy = PolicyNames.RequireRecordingsDelete)]
   [ProducesResponseType(StatusCodes.Status204NoContent)]
-  [ProducesResponseType(StatusCodes.Status404NotFound)]
+  [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
   public async Task<IActionResult> Delete(
     [FromServices] AppDb appDb,
     [FromServices] IRecordingStorage storage,
@@ -153,7 +154,7 @@ public class RecordingsController : ControllerBase
 
     if (recording is null)
     {
-      return NotFound();
+      return Problem(detail: "Recording not found.", statusCode: StatusCodes.Status404NotFound);
     }
 
     storage.Delete(tenantId, recording.FileName);

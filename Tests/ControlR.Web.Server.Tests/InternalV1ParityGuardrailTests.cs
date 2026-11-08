@@ -19,6 +19,10 @@ public partial class InternalV1ParityGuardrailTests
   /// </summary>
   private static readonly Dictionary<string, string> _irregularShapeAllowList = new(StringComparer.Ordinal)
   {
+    // Agent-signed device re-enrollment. The caller is an installed agent authenticating with its
+    // device signature and fleet secret, not the versioned API client, so there is no V1 twin.
+    ["POST /api/agent/devices/reenroll"] = "Agent-signed device re-enrollment; the caller is an installed agent, not the versioned API client.",
+
     // MVC identity UI - HTML page flows. No API consumer wants the markup, and the API client
     // cannot read it.
     ["POST /Account/Logout"] = "ASP.NET Core Identity MVC HTML page flow, not a resource the API client can read.",

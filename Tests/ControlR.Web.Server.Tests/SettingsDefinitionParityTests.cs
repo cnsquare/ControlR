@@ -12,6 +12,14 @@ public class SettingsDefinitionParityTests
 {
   public static TheoryData<string> Families => ["UserPreferences", "TenantSettings"];
 
+  // Server-managed secret settings are stored as tenant setting rows but deliberately have no public
+  // TenantSettingDefinitions entry (so they never surface in the UI), per the comments on the name
+  // constants themselves. They are exempt from the "every name constant has a definition" parity.
+  private static readonly HashSet<string> _definitionlessByDesign = new(StringComparer.Ordinal)
+  {
+    TenantSettingNames.FleetEnrollmentSecret,
+  };
+
   [Theory]
   [MemberData(nameof(Families))]
   public void All_ContainsExactlyTheDeclaredDefinitions(string familyName)
@@ -82,7 +90,7 @@ public class SettingsDefinitionParityTests
 
     var definitionNames = family.All.Select(x => x.Name).ToHashSet(StringComparer.Ordinal);
 
-    var withoutDefinition = nameConstants.Except(definitionNames).ToArray();
+    var withoutDefinition = nameConstants.Except(definitionNames).Except(_definitionlessByDesign).ToArray();
     Assert.True(
       withoutDefinition.Length == 0,
       $"{family.Name}: name constants with no definition: {string.Join(", ", withoutDefinition)}.");

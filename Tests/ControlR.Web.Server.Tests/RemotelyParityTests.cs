@@ -19,6 +19,7 @@ public class RemotelyParityTests(ITestOutputHelper testOutput)
   public async Task DeviceNotes_DeviceInAnotherTenant_IsNotFound()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var otherTenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
@@ -36,6 +37,7 @@ public class RemotelyParityTests(ITestOutputHelper testOutput)
   public async Task DeviceNotes_ReadPermissionAlone_CanReadButNotWrite()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);
@@ -55,6 +57,7 @@ public class RemotelyParityTests(ITestOutputHelper testOutput)
   public async Task DeviceNotes_SurviveAnAgentHeartbeatUpdate()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
     var tenant = await testApp.Services.CreateTestTenant();
     var user = await testApp.Services.CreateTestUser(tenant.Id);
     var device = await testApp.Services.CreateTestDevice(tenant.Id);

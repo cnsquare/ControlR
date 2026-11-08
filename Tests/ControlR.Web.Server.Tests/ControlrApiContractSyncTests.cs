@@ -7,6 +7,13 @@ namespace ControlR.Web.Server.Tests;
 public partial class ControlrApiContractSyncTests
 {
 
+  // Endpoint routes that intentionally have no typed-client sub-interface: agent-signed endpoints the
+  // installed agent calls, not the API client. Excluded consistently from the map and its consumers.
+  private static readonly HashSet<string> _routesWithoutClientSubInterface = new(StringComparer.OrdinalIgnoreCase)
+  {
+    "/api/agent/devices/reenroll",
+  };
+
   private static readonly HashSet<string> _httpVerbs = new(StringComparer.OrdinalIgnoreCase)
   {
     "Get", "Post", "Put", "Delete", "Patch"
@@ -60,6 +67,11 @@ public partial class ControlrApiContractSyncTests
 
     foreach (var constantValue in constantValues)
     {
+      if (_routesWithoutClientSubInterface.Contains(constantValue))
+      {
+        continue;
+      }
+
       Assert.True(
         endpointPropertyMap.ContainsKey(constantValue),
         $"Missing endpoint-to-sub-client mapping for HttpConstants route '{constantValue}'.");
@@ -139,6 +151,11 @@ public partial class ControlrApiContractSyncTests
 
     foreach (var apiPath in apiData.NonLegacyPaths)
     {
+      if (_routesWithoutClientSubInterface.Contains(apiPath))
+      {
+        continue;
+      }
+
       var hasMatchingConstant = TryGetLongestMatchingConstant(apiPath, constantValues, out var matchedConstant);
 
       Assert.True(
@@ -194,6 +211,13 @@ public partial class ControlrApiContractSyncTests
 
       if (string.IsNullOrWhiteSpace(constantValue))
       {
+        continue;
+      }
+
+      if (_routesWithoutClientSubInterface.Contains(constantValue))
+      {
+        // Agent-signed endpoints are consumed by the installed agent, not the typed API client, so
+        // they have no sub-interface property.
         continue;
       }
 
