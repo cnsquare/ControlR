@@ -40,8 +40,11 @@ public class RecordingsController : ControllerBase
       return Problem(detail: "No file was provided.", statusCode: StatusCodes.Status400BadRequest);
     }
 
-    var contentType = string.IsNullOrWhiteSpace(file.ContentType) ? "video/webm" : file.ContentType;
-    var extension = contentType.Contains("mp4", StringComparison.OrdinalIgnoreCase) ? "mp4" : "webm";
+    // Never trust the client-supplied MIME type. Normalize to a safe video type derived from the
+    // client's hint, so a caller cannot store (and later be served) a type like "text/html".
+    var isMp4 = (file.ContentType ?? string.Empty).Contains("mp4", StringComparison.OrdinalIgnoreCase);
+    var contentType = isMp4 ? "video/mp4" : "video/webm";
+    var extension = isMp4 ? "mp4" : "webm";
     var storedName = $"{Guid.NewGuid():N}.{extension}";
 
     long size;
@@ -118,9 +121,16 @@ public class RecordingsController : ControllerBase
       return NotFound();
     }
 
+    // Serve a safe, server-derived content type (defends records stored before upload normalization)
+    // and stop MIME sniffing, so recording content can never be interpreted as HTML/script.
+    Response.Headers["X-Content-Type-Options"] = "nosniff";
+    var safeContentType = recording.ContentType.Contains("mp4", StringComparison.OrdinalIgnoreCase)
+      ? "video/mp4"
+      : "video/webm";
+
     // enableRangeProcessing lets the browser seek within the video while watching.
     var downloadName = download ? BuildDownloadName(recording) : null;
-    return PhysicalFile(path, recording.ContentType, downloadName, enableRangeProcessing: true);
+    return PhysicalFile(path, safeContentType, downloadName, enableRangeProcessing: true);
   }
 
   [HttpDelete("{id:guid}")]
