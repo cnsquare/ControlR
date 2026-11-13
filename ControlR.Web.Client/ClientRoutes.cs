@@ -36,6 +36,8 @@ public static class ClientRoutes
   public const string ServerLogs = "/server-logs";
   public const string ServerServiceAccounts = "/server-service-accounts";
   public const string ServerSettings = "/server-settings";
+  public const string SharedView = "/shared-view/{SessionId:guid}";
+  public const string SharedViewBase = "/shared-view";
   public const string ServerStats = "/server-stats";
   public const string Settings = "/settings";
   public const string Tags = "/tags";

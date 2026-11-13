@@ -1,0 +1,143 @@
+@using ControlR.Libraries.Api.Contracts.Dtos.HubDtos
+@using ControlR.Libraries.Api.Contracts.Hubs
+@using ControlR.Libraries.Signalr.Client
+
+@inject IHubConnection<IViewerHub> ViewerHub
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IJSRuntime Js
+
+<MudDialog>
+  <DialogContent>
+    <MudText Typo="Typo.body2" Class="mb-3">
+      Invite another technician to watch <strong>this same live session</strong>. They see exactly what
+      you see — one stream from the device, shared to everyone you invite. Only you control the device.
+    </MudText>
+
+    @if (_url is null)
+    {
+      <MudText Typo="Typo.caption" Color="Color.Secondary">
+        The link works while this session is open. Close the dialog or end sharing to stop it.
+      </MudText>
+    }
+    else
+    {
+      <MudTextField Value="_url" ReadOnly="true" Variant="Variant.Outlined" Label="Co-view link"
+                    Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy"
+                    OnAdornmentClick="Copy" Lines="2" Class="mb-2" />
+      <MudText Typo="Typo.caption" Color="Color.Secondary">
+        Anyone with this link (and an account) joins as a read-only viewer.
+      </MudText>
+    }
+  </DialogContent>
+  <DialogActions>
+    @if (_url is null)
+    {
+      <MudButton OnClick="Cancel">Cancel</MudButton>
+      <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="_working" OnClick="StartCoView">
+        @(_working ? "Starting…" : "Start co-view")
+      </MudButton>
+    }
+    else
+    {
+      <MudButton Color="Color.Error" Disabled="_working" OnClick="EndCoView">End sharing</MudButton>
+      <MudButton Color="Color.Primary" OnClick="Copy" StartIcon="@Icons.Material.Filled.ContentCopy">Copy</MudButton>
+      <MudButton OnClick="Cancel">Close</MudButton>
+    }
+  </DialogActions>
+</MudDialog>
+
+@code {
+  [CascadingParameter]
+  private IMudDialogInstance MudDialog { get; set; } = default!;
+
+  [Parameter]
+  public Guid DeviceId { get; set; }
+
+  [Parameter]
+  public Guid RemoteControlSessionId { get; set; }
+
+  private bool _working;
+  private string? _url;
+  private Guid _sharedSessionId;
+
+  private async Task StartCoView()
+  {
+    if (RemoteControlSessionId == Guid.Empty)
+    {
+      Snackbar.Add("There is no active remote-control session to share.", Severity.Warning);
+      return;
+    }
+
+    _working = true;
+    try
+    {
+      var result = await ViewerHub.Server.StartSharedRemoteControlSession(
+        new StartSharedSessionRequestDto(DeviceId, RemoteControlSessionId));
+
+      if (!result.IsSuccess || result.Value is null)
+      {
+        Snackbar.Add(result.Reason ?? "Could not start co-view.", Severity.Error);
+        return;
+      }
+
+      _sharedSessionId = result.Value.SessionId;
+      var link = new Uri(
+        new Uri(Navigation.BaseUri),
+        $"shared-view/{result.Value.SessionId}?token={Uri.EscapeDataString(result.Value.ViewerToken)}");
+      _url = link.ToString();
+    }
+    catch (Exception)
+    {
+      Snackbar.Add("Could not start co-view.", Severity.Error);
+    }
+    finally
+    {
+      _working = false;
+    }
+  }
+
+  private async Task EndCoView()
+  {
+    if (_sharedSessionId == Guid.Empty)
+    {
+      MudDialog.Close();
+      return;
+    }
+
+    _working = true;
+    try
+    {
+      await ViewerHub.Server.EndSharedRemoteControlSession(new EndSharedSessionRequestDto(_sharedSessionId));
+      Snackbar.Add("Co-view ended.", Severity.Info);
+      MudDialog.Close();
+    }
+    catch (Exception)
+    {
+      Snackbar.Add("Could not end co-view cleanly.", Severity.Warning);
+    }
+    finally
+    {
+      _working = false;
+    }
+  }
+
+  private async Task Copy()
+  {
+    if (_url is null)
+    {
+      return;
+    }
+    try
+    {
+      await Js.InvokeVoidAsync("navigator.clipboard.writeText", _url);
+      Snackbar.Add("Co-view link copied", Severity.Success);
+    }
+    catch
+    {
+      Snackbar.Add("Copy failed — select and copy the link manually.", Severity.Warning);
+    }
+  }
+
+  private void Cancel() => MudDialog.Close();
+}

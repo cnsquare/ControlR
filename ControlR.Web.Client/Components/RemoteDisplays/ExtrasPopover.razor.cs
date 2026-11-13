@@ -35,6 +35,22 @@ public partial class ExtrasPopover : DisposableComponent
     await DialogService.ShowAsync<Dialogs.ShareSessionDialog>("Share session", parameters, options);
   }
 
+  private async Task CoView()
+  {
+    if (!DeviceState.IsDeviceLoaded)
+    {
+      return;
+    }
+
+    var parameters = new DialogParameters
+    {
+      [nameof(Dialogs.CoViewDialog.DeviceId)] = DeviceState.CurrentDevice.Id,
+      [nameof(Dialogs.CoViewDialog.RemoteControlSessionId)] = RemoteControlState.CurrentSession?.SessionId ?? Guid.Empty
+    };
+    var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseButton = true };
+    await DialogService.ShowAsync<Dialogs.CoViewDialog>("Co-view session", parameters, options);
+  }
+
   private bool IsWindows
   {
     get

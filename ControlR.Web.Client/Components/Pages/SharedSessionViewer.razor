@@ -1,0 +1,46 @@
+@page "/shared-view/{SessionId:guid}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+<PageTitle>Live co-view</PageTitle>
+
+<div class="shared-view-root">
+  @if (_error is not null)
+  {
+    <MudAlert Severity="Severity.Error" Class="ma-4">@_error</MudAlert>
+  }
+  else if (!_connected)
+  {
+    <div class="shared-view-status">
+      <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+      <MudText Typo="Typo.body1" Class="mt-3">Joining the live session…</MudText>
+    </div>
+  }
+
+  <canvas id="@_canvasId" class="shared-view-canvas @(_connected ? "" : "d-none")"></canvas>
+</div>
+
+<style>
+  .shared-view-root {
+    width: 100%;
+    height: calc(100vh - var(--mud-appbar-height, 64px));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+    overflow: hidden;
+  }
+
+  .shared-view-canvas {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  .shared-view-status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--mud-palette-text-primary);
+  }
+</style>
