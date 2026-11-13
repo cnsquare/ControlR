@@ -1,4 +1,5 @@
 using ControlR.Libraries.Api.Contracts.Dtos.RemoteControlDtos;
+using ControlR.Libraries.Api.Contracts.RemoteControl;
 using ControlR.Web.Server.Services.RemoteControl;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -29,7 +30,7 @@ public class RemoteControlFanoutConnectionHandlerTests
     var sessionId = Guid.NewGuid();
 
     using var producerSource = new MemoryStream();
-    await RemoteControlFanoutTransport.WriteFrameAsync(producerSource, Key(1), Ct);
+    await RemoteControlFrameCodec.WriteFrameAsync(producerSource, Key(1), Ct);
     producerSource.Position = 0;
 
     await handler.HandleProducerAsync(producerSource, sessionId, Ct);
@@ -80,7 +81,7 @@ public class RemoteControlFanoutConnectionHandlerTests
   {
     stream.Position = 0;
     var timestamps = new List<long>();
-    while (await RemoteControlFanoutTransport.ReadFrameAsync(stream, TestContext.Current.CancellationToken) is { } packet)
+    while (await RemoteControlFrameCodec.ReadFrameAsync(stream, TestContext.Current.CancellationToken) is { } packet)
     {
       timestamps.Add(packet.Timestamp);
     }

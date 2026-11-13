@@ -144,8 +144,9 @@ public partial class ViewerHub
   /// <summary>
   /// Starts a shared (fan-out) remote-control session for a device the caller may control, and returns
   /// the viewer token the caller shares with invited technicians. The producer token is never returned
-  /// here — it is delivered only to the device, which connects to the fan-out endpoint as the single
-  /// producer. (Producer delivery to the device rides the agent/IPC channel and is wired separately.)
+  /// here — it is delivered to the device over the agent/IPC channel (IAgentHubClient.StartSharedSessionProducer),
+  /// which connects to the fan-out endpoint as the single producer. If the device cannot start producing,
+  /// the grant is torn down so no viewer waits on a stream that never comes.
   /// </summary>
   public async Task<HubResult<StartSharedSessionResponseDto>> StartSharedRemoteControlSession(StartSharedSessionRequestDto request)
   {

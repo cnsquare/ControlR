@@ -31,15 +31,15 @@ public class RemoteControlFanoutEndpointTests(ITestOutputHelper testOutput)
     using var viewerSocket = await ConnectAsync(testServer, sessionId, "viewer", "viewer-token", ct);
 
     var producer = new WebSocketStreamAdapter(producerSocket);
-    await RemoteControlFanoutTransport.WriteFrameAsync(producer, Key(1), ct);
-    await RemoteControlFanoutTransport.WriteFrameAsync(producer, Delta(2), ct);
+    await RemoteControlFrameCodec.WriteFrameAsync(producer, Key(1), ct);
+    await RemoteControlFrameCodec.WriteFrameAsync(producer, Delta(2), ct);
 
     var viewer = new WebSocketStreamAdapter(viewerSocket);
     using var readTimeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
     readTimeout.CancelAfter(TimeSpan.FromSeconds(15));
 
-    var first = await RemoteControlFanoutTransport.ReadFrameAsync(viewer, readTimeout.Token);
-    var second = await RemoteControlFanoutTransport.ReadFrameAsync(viewer, readTimeout.Token);
+    var first = await RemoteControlFrameCodec.ReadFrameAsync(viewer, readTimeout.Token);
+    var second = await RemoteControlFrameCodec.ReadFrameAsync(viewer, readTimeout.Token);
 
     Assert.NotNull(first);
     Assert.Equal(1, first!.Timestamp);

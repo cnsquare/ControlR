@@ -1,4 +1,5 @@
 using ControlR.Libraries.Api.Contracts.Dtos.RemoteControlDtos;
+using ControlR.Libraries.Api.Contracts.RemoteControl;
 using ControlR.Web.Server.Services.RemoteControl;
 
 namespace ControlR.Web.Server.Tests;
@@ -11,13 +12,13 @@ public class RemoteControlFanoutTransportTests
   public async Task Codec_RoundTripsFrames_AndReturnsNullAtCleanEof()
   {
     using var stream = new MemoryStream();
-    await RemoteControlFanoutTransport.WriteFrameAsync(stream, Key(1), Ct);
-    await RemoteControlFanoutTransport.WriteFrameAsync(stream, Delta(2), Ct);
+    await RemoteControlFrameCodec.WriteFrameAsync(stream, Key(1), Ct);
+    await RemoteControlFrameCodec.WriteFrameAsync(stream, Delta(2), Ct);
     stream.Position = 0;
 
-    var first = await RemoteControlFanoutTransport.ReadFrameAsync(stream, Ct);
-    var second = await RemoteControlFanoutTransport.ReadFrameAsync(stream, Ct);
-    var end = await RemoteControlFanoutTransport.ReadFrameAsync(stream, Ct);
+    var first = await RemoteControlFrameCodec.ReadFrameAsync(stream, Ct);
+    var second = await RemoteControlFrameCodec.ReadFrameAsync(stream, Ct);
+    var end = await RemoteControlFrameCodec.ReadFrameAsync(stream, Ct);
 
     Assert.NotNull(first);
     Assert.Equal(1, first!.Timestamp);
@@ -37,7 +38,7 @@ public class RemoteControlFanoutTransportTests
     stream.Position = 0;
 
     await Assert.ThrowsAsync<EndOfStreamException>(
-      async () => await RemoteControlFanoutTransport.ReadFrameAsync(stream, Ct));
+      async () => await RemoteControlFrameCodec.ReadFrameAsync(stream, Ct));
   }
 
   [Fact]
@@ -48,8 +49,8 @@ public class RemoteControlFanoutTransportTests
     var reader = fanout.Subscribe(viewerId); // subscribed before production -> live frames
 
     using var producerSource = new MemoryStream();
-    await RemoteControlFanoutTransport.WriteFrameAsync(producerSource, Key(1), Ct);
-    await RemoteControlFanoutTransport.WriteFrameAsync(producerSource, Delta(2), Ct);
+    await RemoteControlFrameCodec.WriteFrameAsync(producerSource, Key(1), Ct);
+    await RemoteControlFrameCodec.WriteFrameAsync(producerSource, Delta(2), Ct);
     producerSource.Position = 0;
 
     await RemoteControlFanoutTransport.PumpProducerAsync(producerSource, fanout, Ct);
@@ -68,9 +69,9 @@ public class RemoteControlFanoutTransportTests
     using var fanout = new RemoteControlSessionFanout();
 
     using var producerSource = new MemoryStream();
-    await RemoteControlFanoutTransport.WriteFrameAsync(producerSource, Key(1), Ct);
-    await RemoteControlFanoutTransport.WriteFrameAsync(producerSource, Delta(2), Ct);
-    await RemoteControlFanoutTransport.WriteFrameAsync(producerSource, Delta(3), Ct);
+    await RemoteControlFrameCodec.WriteFrameAsync(producerSource, Key(1), Ct);
+    await RemoteControlFrameCodec.WriteFrameAsync(producerSource, Delta(2), Ct);
+    await RemoteControlFrameCodec.WriteFrameAsync(producerSource, Delta(3), Ct);
     producerSource.Position = 0;
 
     // Produce the whole GOP first.
@@ -95,7 +96,7 @@ public class RemoteControlFanoutTransportTests
   {
     stream.Position = 0;
     var timestamps = new List<long>();
-    while (await RemoteControlFanoutTransport.ReadFrameAsync(stream, Ct) is { } packet)
+    while (await RemoteControlFrameCodec.ReadFrameAsync(stream, Ct) is { } packet)
     {
       timestamps.Add(packet.Timestamp);
     }

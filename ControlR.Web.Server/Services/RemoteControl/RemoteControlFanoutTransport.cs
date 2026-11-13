@@ -56,17 +56,4 @@ public static class RemoteControlFanoutTransport
       await RemoteControlFrameCodec.WriteFrameAsync(destination, packet, cancellationToken).ConfigureAwait(false);
     }
   }
-
-  /// <summary>
-  /// Writes one length-prefixed MessagePack frame. Delegates to the shared <see cref="RemoteControlFrameCodec"/>.
-  /// </summary>
-  public static Task WriteFrameAsync(Stream stream, VideoStreamPacketDto packet, CancellationToken cancellationToken) =>
-    RemoteControlFrameCodec.WriteFrameAsync(stream, packet, cancellationToken);
-
-  /// <summary>
-  /// Reads one length-prefixed MessagePack frame, or null at a clean end-of-stream. Delegates to the
-  /// shared <see cref="RemoteControlFrameCodec"/>.
-  /// </summary>
-  public static Task<VideoStreamPacketDto?> ReadFrameAsync(Stream stream, CancellationToken cancellationToken) =>
-    RemoteControlFrameCodec.ReadFrameAsync(stream, cancellationToken);
 }
