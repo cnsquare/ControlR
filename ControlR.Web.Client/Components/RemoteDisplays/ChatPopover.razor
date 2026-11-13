@@ -1,0 +1,62 @@
+@inherits DisposableComponent
+
+<div class="chat-popover d-flex flex-column">
+  @if (!DeviceState.IsDeviceLoaded || RemoteControlState.CurrentSession is null)
+  {
+    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pa-2">
+      Connect to a session to chat with the person at the device.
+    </MudText>
+  }
+  else
+  {
+    <div class="d-flex align-center px-1 pb-1">
+      <MudIcon Icon="@Icons.Material.Filled.Chat" Size="Size.Small" Color="Color.Primary" Class="me-1" />
+      <MudText Typo="Typo.subtitle2">
+        @(string.IsNullOrWhiteSpace(_targetName) ? "Chat" : $"Chat with {_targetName}")
+      </MudText>
+    </div>
+
+    <div @ref="_messagesContainer" class="chat-popover-messages">
+      @if (ChatState.ChatMessages.Count == 0)
+      {
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center" Class="mt-4">
+          No messages yet. Send a message to start the conversation.
+        </MudText>
+      }
+      else
+      {
+        @foreach (var message in ChatState.ChatMessages)
+        {
+          @if (message.IsSystemMessage)
+          {
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Align="Align.Center" Class="d-block my-1">
+              @message.Message · @message.Timestamp.ToString("h:mm tt")
+            </MudText>
+          }
+          else
+          {
+            <div class="d-flex flex-column mb-2 @(message.IsFromViewer ? "align-end" : "align-start")">
+              <MudText Typo="Typo.caption" Color="Color.Secondary">
+                @message.SenderName · @message.Timestamp.ToString("h:mm tt")
+              </MudText>
+              <div class="@($"chat-bubble {(message.IsFromViewer ? "chat-bubble-viewer" : "chat-bubble-device")}")">
+                @message.Message
+              </div>
+            </div>
+          }
+        }
+      }
+    </div>
+
+    <MudTextField T="string" @ref="_inputElement"
+                  @bind-Value="ChatState.NewMessage" @bind-Text="ChatState.NewMessage"
+                  Placeholder="Enter a message" Immediate="true" AutoFocus="true"
+                  OnKeyDown="HandleInputKeyDown"
+                  Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Send"
+                  AdornmentColor="Color.Info" OnAdornmentClick="SendMessage"
+                  Lines="@(ChatState.EnableMultiline ? 3 : 1)" Class="mt-1" />
+
+    <MudSwitch @bind-Value="ChatState.EnableMultiline" Color="Color.Success" Label="Multiline"
+               Size="Size.Small" Class="mt-1" />
+  }
+</div>
