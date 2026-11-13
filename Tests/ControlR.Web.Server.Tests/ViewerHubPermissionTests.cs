@@ -11,6 +11,7 @@ using ControlR.Web.Server.Hubs;
 using ControlR.Web.Server.Options;
 using ControlR.Web.Server.Services.Authorization;
 using ControlR.Web.Server.Services.DeviceManagement;
+using ControlR.Web.Server.Services.RemoteControl;
 using ControlR.Web.Server.Services.RemoteSessions;
 using ControlR.Web.Server.Services.Settings;
 using ControlR.Web.Server.Tests.Helpers;
@@ -774,6 +775,7 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
       services.GetRequiredService<IDesktopSessionAccessAuthorizer>(),
       services.GetRequiredService<IDeviceConnectionRegistry>(),
       services.GetRequiredService<IRemoteSessionLogger>(),
+      services.GetRequiredService<IRemoteControlSharedSessionManager>(),
       services.GetRequiredService<IOptionsMonitor<AppOptions>>(),
       services.GetRequiredService<ILogger<ViewerHub>>());
     hub.Context = new TestHubCallerContext(CreatePrincipal(user, tenantId));

@@ -141,6 +141,68 @@ public partial class ViewerHub
     return RequestRemoteControlSessionCore(sessionRequestDto);
   }
 
+  /// <summary>
+  /// Starts a shared (fan-out) remote-control session for a device the caller may control, and returns
+  /// the viewer token the caller shares with invited technicians. The producer token is never returned
+  /// here — it is delivered only to the device, which connects to the fan-out endpoint as the single
+  /// producer. (Producer delivery to the device rides the agent/IPC channel and is wired separately.)
+  /// </summary>
+  public async Task<HubResult<StartSharedSessionResponseDto>> StartSharedRemoteControlSession(StartSharedSessionRequestDto request)
+  {
+    try
+    {
+      if (await TryAuthorizeAgainstDevice(request.DeviceId, DeviceResourcePolicies.RemoteControlConnect) is not { IsSuccess: true })
+      {
+        return HubResult.Fail<StartSharedSessionResponseDto>("Unauthorized.");
+      }
+
+      var grant = _sharedSessionManager.StartSession();
+
+      _logger.LogInformation(
+        "Shared remote-control session {SessionId} started for device {DeviceId} by {UserId}.",
+        grant.SessionId,
+        request.DeviceId,
+        Context.UserIdentifier);
+
+      // The caller (inviting technician) gets only the viewer token; the producer token stays secret.
+      return HubResult.Ok(new StartSharedSessionResponseDto(grant.SessionId, grant.ViewerToken));
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error while starting a shared remote-control session.");
+      return HubResult.Fail<StartSharedSessionResponseDto>("An error occurred.");
+    }
+  }
+
+  /// <summary>
+  /// Ends a shared (fan-out) session, dropping the fan-out and revoking its tokens so every invited
+  /// viewer is disconnected.
+  /// </summary>
+  public async Task<HubResult> EndSharedRemoteControlSession(EndSharedSessionRequestDto request)
+  {
+    try
+    {
+      // Only someone authorized for the shared session's device may end it. The session id alone is a
+      // secret capability; we additionally require an authenticated viewer connection.
+      if (!TryGetUserId(out _))
+      {
+        return HubResult.Fail("Unauthorized.");
+      }
+
+      _sharedSessionManager.EndSession(request.SessionId);
+      _logger.LogInformation(
+        "Shared remote-control session {SessionId} ended by {UserId}.",
+        request.SessionId,
+        Context.UserIdentifier);
+      return HubResult.Ok();
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error while ending a shared remote-control session.");
+      return HubResult.Fail("An error occurred.");
+    }
+  }
+
   private async Task<HubResult> RequestRemoteControlSessionCore(RemoteControlSessionRequestDto sessionRequestDto)
   {
     try

@@ -30,6 +30,10 @@ public partial interface IViewerHub
 
   Task<HubResult> RequestRemoteControlSession3(RemoteControlSessionRequestDto sessionRequestDto);
 
+  Task<HubResult<StartSharedSessionResponseDto>> StartSharedRemoteControlSession(StartSharedSessionRequestDto request);
+
+  Task<HubResult> EndSharedRemoteControlSession(EndSharedSessionRequestDto request);
+
   Task<HubResult> RequestVncSession2(VncSessionRequestDto sessionRequestDto);
 
   Task<HubResult> SendAgentUpdateTrigger2(SendAgentUpdateTriggerRequestDto request);
