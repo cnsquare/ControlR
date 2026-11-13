@@ -1,4 +1,5 @@
 using System.Net.WebSockets;
+using ControlR.Libraries.Api.Contracts.RemoteControl;
 
 namespace ControlR.Web.Server.Services.RemoteControl;
 

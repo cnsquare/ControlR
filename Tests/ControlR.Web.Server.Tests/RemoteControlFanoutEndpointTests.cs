@@ -1,5 +1,6 @@
 using System.Net.WebSockets;
 using ControlR.Libraries.Api.Contracts.Dtos.RemoteControlDtos;
+using ControlR.Libraries.Api.Contracts.RemoteControl;
 using ControlR.Web.Server.Services.RemoteControl;
 using ControlR.Web.Server.Tests.Helpers;
 using Microsoft.Extensions.DependencyInjection;

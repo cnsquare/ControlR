@@ -1,6 +1,6 @@
 using System.Net.WebSockets;
 
-namespace ControlR.Web.Server.Services.RemoteControl;
+namespace ControlR.Libraries.Api.Contracts.RemoteControl;
 
 /// <summary>
 /// Presents a binary <see cref="WebSocket"/> as a continuous read/write <see cref="Stream"/>, so the
