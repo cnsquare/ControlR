@@ -99,7 +99,8 @@ public sealed class SharedSessionViewerClient(ILogger<SharedSessionViewerClient>
 
   private static Uri BuildViewerUri(Uri serverBaseUri, Guid sessionId, string viewerToken)
   {
-    var scheme = serverBaseUri.Scheme == Uri.UriSchemeHttps ? "wss" : "ws";
+    var secure = serverBaseUri.Scheme is "https" or "wss";
+    var scheme = secure ? "wss" : "ws";
     var builder = new UriBuilder(serverBaseUri)
     {
       Scheme = scheme,

@@ -180,7 +180,8 @@ public sealed class SharedSessionProducer(ILogger<SharedSessionProducer> logger)
 
   private static Uri BuildProducerUri(Uri serverBaseUri, Guid sessionId, string producerToken)
   {
-    var scheme = serverBaseUri.Scheme == Uri.UriSchemeHttps ? "wss" : "ws";
+    var secure = serverBaseUri.Scheme is "https" or "wss";
+    var scheme = secure ? "wss" : "ws";
     var builder = new UriBuilder(serverBaseUri)
     {
       Scheme = scheme,

@@ -151,12 +151,44 @@ public partial class ViewerHub
   {
     try
     {
-      if (await TryAuthorizeAgainstDevice(request.DeviceId, DeviceResourcePolicies.RemoteControlConnect) is not { IsSuccess: true })
+      if (await TryAuthorizeAgainstDevice(request.DeviceId, DeviceResourcePolicies.RemoteControlConnect) is not { IsSuccess: true } authResult)
       {
         return HubResult.Fail<StartSharedSessionResponseDto>("Unauthorized.");
       }
 
+      var device = authResult.Value;
+      if (!device.IsOnline || string.IsNullOrWhiteSpace(device.ConnectionId))
+      {
+        return HubResult.Fail<StartSharedSessionResponseDto>("Device is not currently online.", OperationFailureCode.DeviceOffline);
+      }
+
       var grant = _sharedSessionManager.StartSession();
+
+      // Tell the device to tee its active remote-control session to the fan-out as the producer. If it
+      // can't (host gone, offline), tear the grant down so no viewer waits on a stream that never comes.
+      HubResult producerResult;
+      try
+      {
+        producerResult = await _agentHub.Clients
+          .Client(device.ConnectionId)
+          .StartSharedSessionProducer(new StartSharedSessionProducerDto(
+            request.RemoteControlSessionId,
+            grant.SessionId,
+            grant.ProducerToken));
+      }
+      catch (Exception ex)
+      {
+        _sharedSessionManager.EndSession(grant.SessionId);
+        _logger.LogError(ex, "The agent could not be reached to start the shared-session producer.");
+        return HubResult.Fail<StartSharedSessionResponseDto>("The device could not start sharing.");
+      }
+
+      if (!producerResult.IsSuccess)
+      {
+        _sharedSessionManager.EndSession(grant.SessionId);
+        return HubResult.Fail<StartSharedSessionResponseDto>(
+          producerResult.Reason ?? "The device could not start sharing.");
+      }
 
       _logger.LogInformation(
         "Shared remote-control session {SessionId} started for device {DeviceId} by {UserId}.",

@@ -31,6 +31,7 @@ public interface IAgentHubClient
   Task<HubResult> RequestRemoteControlPermission(int targetProcessId);
   Task<HubResult> RunScript(RunScriptRequestDto dto);
   Task<HubResult> SendChatMessage(ChatMessageHubDto dto);
+  Task<HubResult> StartSharedSessionProducer(StartSharedSessionProducerDto dto);
   Task<HubResult> StreamDirectoryContents(DirectoryContentsStreamRequestHubDto dto);
   Task<HubResult> StreamFileContents(StreamFileContentsRequestHubDto dto);
   Task<HubResult> StreamSubdirectories(SubdirectoriesStreamRequestHubDto dto);

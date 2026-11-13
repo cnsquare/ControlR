@@ -18,5 +18,6 @@ public partial interface IDesktopClientRpcService
     Task ReceiveChatMessage(ChatMessageIpcDto dto);
     Task<Result> ReceiveRemoteControlRequest(RemoteControlRequestIpcDto dto);
     Task<CheckOsPermissionsResponseIpcDto> RequestRemoteControlPermission(RequestRemoteControlPermissionIpcDto dto);
+    Task<Result> StartSharedSessionProducer(StartSharedSessionProducerIpcDto dto);
     Task ShutdownDesktopClient(ShutdownCommandDto dto);
 }

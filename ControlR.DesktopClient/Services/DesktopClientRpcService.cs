@@ -178,6 +178,41 @@ public class DesktopClientRpcService(
     }
   }
 
+  public async Task<Result> StartSharedSessionProducer(StartSharedSessionProducerIpcDto dto)
+  {
+    try
+    {
+      if (!_remoteControlHostManager.TryGetSession(dto.RemoteControlSessionId, out var session))
+      {
+        // Another user-session desktop client may be hosting it; the agent asks each in turn.
+        return Result.Fail("This desktop client is not hosting that remote control session.");
+      }
+
+      var producer = session.Host.Services.GetService<ISharedSessionProducer>();
+      if (producer is null)
+      {
+        return Result.Fail("The remote control host has no shared-session producer.");
+      }
+
+      // The producer streams to the same server the host already relays to; derive its origin from the
+      // session's websocket URI so no extra server configuration is needed.
+      var serverBaseUri = session.RequestDto.WebsocketUri;
+
+      _logger.LogInformation(
+        "Starting shared-session producer for remote control session {RemoteControlSessionId} → shared session {SharedSessionId}.",
+        dto.RemoteControlSessionId,
+        dto.SharedSessionId);
+
+      await producer.StartAsync(serverBaseUri, dto.SharedSessionId, dto.ProducerToken, CancellationToken.None);
+      return Result.Ok();
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error while starting the shared-session producer.");
+      return Result.Fail("An error occurred while starting the shared-session producer.");
+    }
+  }
+
   public async Task ShutdownDesktopClient(ShutdownCommandDto dto)
   {
     try

@@ -227,6 +227,50 @@ internal class AgentHubClient(
     }
   }
 
+  public async Task<HubResult> StartSharedSessionProducer(StartSharedSessionProducerDto dto)
+  {
+    try
+    {
+      _logger.LogInformation(
+        "Starting shared-session producer. Remote control session: {RemoteControlSessionId}, shared session: {SharedSessionId}.",
+        dto.RemoteControlSessionId,
+        dto.SharedSessionId);
+
+      var ipcDto = new StartSharedSessionProducerIpcDto(
+        dto.RemoteControlSessionId,
+        dto.SharedSessionId,
+        dto.ProducerToken);
+
+      // The remote-control host runs in one of the user-session desktop clients. We don't know which,
+      // so we ask each; only the one hosting that session acts, the rest report it's not theirs.
+      var lastReason = "No desktop client is hosting that remote control session.";
+      foreach (var record in _ipcServerStore.Servers.Values)
+      {
+        try
+        {
+          var result = await record.Server.Client.StartSharedSessionProducer(ipcDto);
+          if (result.IsSuccess)
+          {
+            return HubResult.Ok();
+          }
+
+          lastReason = result.Reason ?? lastReason;
+        }
+        catch (Exception ex)
+        {
+          _logger.LogDebug(ex, "A desktop client could not start the shared-session producer; trying the next.");
+        }
+      }
+
+      return HubResult.Fail(lastReason);
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error while starting the shared-session producer.");
+      return HubResult.Fail("An error occurred on the agent while starting the shared-session producer.");
+    }
+  }
+
   public async Task<HubResult> CreateTerminalSession(Guid terminalSessionId, string viewerConnectionId)
   {
     try

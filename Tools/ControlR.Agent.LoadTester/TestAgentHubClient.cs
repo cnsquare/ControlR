@@ -34,6 +34,12 @@ public class TestAgentHubClient : IAgentHubClient
     return Task.FromResult(HubResult.Ok());
   }
 
+  public Task<HubResult> StartSharedSessionProducer(StartSharedSessionProducerDto dto)
+  {
+    Console.WriteLine($"Received shared-session producer request for session {dto.SharedSessionId}.");
+    return HubResult.Ok().AsTaskResult();
+  }
+
   public Task<HubResult> CreateTerminalSession(Guid terminalSessionId, string viewerConnectionId)
   {
     Console.WriteLine("Received terminal session request.");
