@@ -63,6 +63,7 @@ public static class ServiceCollectionExtensions
     services.AddScoped<IChatState, ChatState>();
     services.AddScoped<IMetricsState, MetricsState>();
     services.AddScoped<IViewerRemoteControlStream, ViewerRemoteControlStream>();
+    services.AddScoped<ISharedSessionViewerClient, SharedSessionViewerClient>();
     services.AddScoped<IStreamMetrics, StreamMetrics>();
     services.AddScoped<IDeviceStore, DeviceStore>();
     services.AddScoped<ITagStore, TagStore>();
