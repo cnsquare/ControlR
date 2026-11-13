@@ -307,6 +307,38 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   }
 
   [Fact]
+  public async Task StartSharedSession_WhenInvitingTechnicianDisconnects_EndsTheSession()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
+    var tenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    await SeedAssignment(testApp, user.Id, device.Id, tenant.Id, PermissionNames.DeviceRemoteControlConnect);
+
+    var (hub, agentClient) = CreateHub(testApp, user, tenant.Id);
+    agentClient
+      .Setup(client => client.StartSharedSessionProducer(It.IsAny<StartSharedSessionProducerDto>()))
+      .ReturnsAsync(HubResult.Ok());
+
+    var store = testApp.Services.GetRequiredService<IRemoteControlSharedSessionStore>();
+
+    var start = await hub.StartSharedRemoteControlSession(
+      new StartSharedSessionRequestDto(device.Id, Guid.NewGuid()));
+
+    Assert.True(start.IsSuccess);
+    var sessionId = start.Value!.SessionId;
+    // The grant is live while the technician is connected.
+    Assert.True(store.ValidateViewer(sessionId, start.Value.ViewerToken));
+
+    // Disconnecting the inviting technician must end the shared session and revoke its tokens, so no
+    // fan-out or grant lingers past the connection that owns it.
+    await hub.OnDisconnectedAsync(null);
+
+    Assert.False(store.ValidateViewer(sessionId, start.Value.ViewerToken));
+  }
+
+  [Fact]
   public async Task RequestRemoteControlSession_AgentAccepts_LogsTheSessionBeforeTheAgentIsCalled()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);

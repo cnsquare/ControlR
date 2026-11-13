@@ -43,6 +43,28 @@ public partial class ViewerHub
     }
   }
 
+  // Shared (fan-out) session ids this connection started. A shared session is owned by the inviting
+  // technician's connection: when that connection drops, these are ended so neither the fan-out nor the
+  // grant tokens outlive the session that owns them. (Keyed by caller-member name, so it does not
+  // collide with the other Context.Items-backed collections on this hub.)
+  private ConcurrentDictionary<Guid, byte> StartedSharedSessions
+  {
+    get
+    {
+      lock (Context.Items)
+      {
+        if (GetItem<ConcurrentDictionary<Guid, byte>?>(null) is { } existing)
+        {
+          return existing;
+        }
+
+        var created = new ConcurrentDictionary<Guid, byte>();
+        SetItem(created);
+        return created;
+      }
+    }
+  }
+
   public async Task<HubResult<ActiveDesktopSessionsResponseDto>> GetActiveDesktopSessions2(GetActiveDesktopSessionsRequestDto request)
   {
     try
@@ -191,6 +213,9 @@ public partial class ViewerHub
           producerResult.Reason ?? "The device could not start sharing.");
       }
 
+      // This connection owns the session; ending it is tied to the connection's lifetime (OnDisconnected).
+      StartedSharedSessions[grant.SessionId] = 0;
+
       _logger.LogInformation(
         "Shared remote-control session {SessionId} started for device {DeviceId} by {UserId}.",
         grant.SessionId,
@@ -223,6 +248,7 @@ public partial class ViewerHub
       }
 
       _sharedSessionManager.EndSession(request.SessionId);
+      StartedSharedSessions.TryRemove(request.SessionId, out _);
       _logger.LogInformation(
         "Shared remote-control session {SessionId} ended by {UserId}.",
         request.SessionId,

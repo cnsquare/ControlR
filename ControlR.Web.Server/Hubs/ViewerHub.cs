@@ -334,6 +334,13 @@ public partial class ViewerHub(
         await _remoteSessionLogger.LogEnded(terminalId);
       }
 
+      // End any shared (fan-out) sessions this connection started, so the fan-out and its grant tokens
+      // do not outlive the inviting technician's connection.
+      foreach (var sharedSessionId in StartedSharedSessions.Keys)
+      {
+        _sharedSessionManager.EndSession(sharedSessionId);
+      }
+
       SessionActivity?.Dispose();
       SessionActivity = null;
 
