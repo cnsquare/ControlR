@@ -10,6 +10,12 @@
 #
 # .dockerignore at the repo root already excludes bin/, obj/, node_modules/, and .git.
 
+# The build SDK must satisfy the repo's global.json, which pins an exact SDK with
+# "rollForward": "disable". The floating :10.0 tag rolls forward to a newer patch (e.g. 10.0.404),
+# which that pin rejects — `dotnet restore` then fails with "The application 'restore' does not exist".
+# Keep DOTNET_SDK_VERSION in sync with global.json's sdk.version (override with --build-arg if needed).
+ARG DOTNET_SDK_VERSION=10.0.403
+
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 RUN apt update && apt -y install curl
 USER $APP_UID
@@ -17,7 +23,7 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_SDK_VERSION} AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY . .
