@@ -1,5 +1,6 @@
 using System.Net.WebSockets;
 using System.Threading.Channels;
+using ControlR.DesktopClient.Common.ServiceInterfaces.Toaster;
 using ControlR.Libraries.Api.Contracts.Dtos.RemoteControlDtos;
 using ControlR.Libraries.Api.Contracts.RemoteControl;
 using Microsoft.Extensions.Logging;
@@ -37,9 +38,12 @@ public interface ISharedSessionProducer : IAsyncDisposable
   Task StopAsync();
 }
 
-public sealed class SharedSessionProducer(ILogger<SharedSessionProducer> logger) : ISharedSessionProducer
+public sealed class SharedSessionProducer(
+  IToaster toaster,
+  ILogger<SharedSessionProducer> logger) : ISharedSessionProducer
 {
   private readonly ILogger<SharedSessionProducer> _logger = logger;
+  private readonly IToaster _toaster = toaster;
   private readonly SemaphoreSlim _sync = new(1, 1);
 
   private Channel<VideoStreamPacketDto>? _channel;
@@ -89,6 +93,10 @@ public sealed class SharedSessionProducer(ILogger<SharedSessionProducer> logger)
       _pumpTask = Task.Run(() => PumpAsync(socket, channel.Reader, cts.Token), CancellationToken.None);
 
       _logger.LogInformation("Shared remote-control producer connected for session {SessionId}.", sessionId);
+
+      // Let the person at the device know the session is now visible to additional technicians, so
+      // extra viewers are never silent. Best-effort: a failed toast must not fail the producer.
+      await NotifyDeviceSharingStartedAsync().ConfigureAwait(false);
     }
     catch (Exception ex)
     {
@@ -175,6 +183,22 @@ public sealed class SharedSessionProducer(ILogger<SharedSessionProducer> logger)
     {
       _logger.LogWarning(ex, "Shared remote-control producer link closed.");
       _active = false;
+    }
+  }
+
+  private async Task NotifyDeviceSharingStartedAsync()
+  {
+    try
+    {
+      await _toaster.ShowToast(
+        "Session shared",
+        "This support session is now being shared with additional technicians.",
+        ToastIcon.Info,
+        closeAfter: TimeSpan.FromSeconds(8)).ConfigureAwait(false);
+    }
+    catch (Exception ex)
+    {
+      _logger.LogDebug(ex, "Could not show the session-sharing notification.");
     }
   }
 

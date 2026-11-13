@@ -1,3 +1,4 @@
+using ControlR.DesktopClient.Common.ServiceInterfaces.Toaster;
 using ControlR.DesktopClient.Common.Services;
 using ControlR.Libraries.Api.Contracts.Dtos.RemoteControlDtos;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -14,14 +15,14 @@ public class SharedSessionProducerTests
   [Fact]
   public async Task IsActive_IsFalse_BeforeAnySessionStarts()
   {
-    await using var producer = new SharedSessionProducer(NullLogger<SharedSessionProducer>.Instance);
+    await using var producer = new SharedSessionProducer(new NoOpToaster(), NullLogger<SharedSessionProducer>.Instance);
     Assert.False(producer.IsActive);
   }
 
   [Fact]
   public async Task Publish_WhenIdle_IsANoOpAndNeverThrows()
   {
-    await using var producer = new SharedSessionProducer(NullLogger<SharedSessionProducer>.Instance);
+    await using var producer = new SharedSessionProducer(new NoOpToaster(), NullLogger<SharedSessionProducer>.Instance);
 
     var packet = new VideoStreamPacketDto([1, 2, 3], Timestamp: 1, IsKeyFrame: true);
 
@@ -37,11 +38,23 @@ public class SharedSessionProducerTests
   [Fact]
   public async Task StopAsync_WhenNeverStarted_IsSafe()
   {
-    var producer = new SharedSessionProducer(NullLogger<SharedSessionProducer>.Instance);
+    var producer = new SharedSessionProducer(new NoOpToaster(), NullLogger<SharedSessionProducer>.Instance);
 
     // Stopping an idle producer, and disposing it, must be safe and idempotent.
     await producer.StopAsync();
     await producer.StopAsync();
     await producer.DisposeAsync();
+  }
+
+  private sealed class NoOpToaster : IToaster
+  {
+    public Task ShowToast(string title, string message, ToastIcon toastIcon, TimeSpan? closeAfter = null) =>
+      Task.CompletedTask;
+
+    public Task ShowToast(string title, string message, ToastIcon toastIcon, Func<Task> onClick, TimeSpan? closeAfter = null) =>
+      Task.CompletedTask;
+
+    public Task ShowToast(string title, string message, ToastIcon toastIcon, Action onClick, TimeSpan? closeAfter = null) =>
+      Task.CompletedTask;
   }
 }
