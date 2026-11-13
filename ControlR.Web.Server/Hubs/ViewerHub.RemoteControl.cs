@@ -262,6 +262,30 @@ public partial class ViewerHub
     }
   }
 
+  /// <summary>
+  /// Returns how many invited technicians are currently watching a shared session. Only the connection
+  /// that started the session may ask — the session id is a capability, so we scope the answer to the
+  /// owner rather than anyone who holds the id.
+  /// </summary>
+  public Task<HubResult<int>> GetSharedSessionViewerCount(SharedSessionViewerCountRequestDto request)
+  {
+    try
+    {
+      if (!StartedSharedSessions.ContainsKey(request.SessionId))
+      {
+        return Task.FromResult(HubResult.Fail<int>("Unauthorized."));
+      }
+
+      var count = _sharedSessionManager.GetViewerCount(request.SessionId);
+      return Task.FromResult(HubResult.Ok(count));
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error while getting the shared-session viewer count.");
+      return Task.FromResult(HubResult.Fail<int>("An error occurred."));
+    }
+  }
+
   private async Task<HubResult> RequestRemoteControlSessionCore(RemoteControlSessionRequestDto sessionRequestDto)
   {
     try

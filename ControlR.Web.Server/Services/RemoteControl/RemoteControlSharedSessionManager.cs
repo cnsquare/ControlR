@@ -20,6 +20,12 @@ public interface IRemoteControlSharedSessionManager
 {
   SharedSessionGrant StartSession();
   void EndSession(Guid sessionId);
+
+  /// <summary>
+  /// The number of viewers currently connected to a shared session's fan-out, or 0 if no fan-out is
+  /// live yet (the producer hasn't connected, or the session has ended).
+  /// </summary>
+  int GetViewerCount(Guid sessionId);
 }
 
 public sealed class RemoteControlSharedSessionManager(
@@ -43,6 +49,11 @@ public sealed class RemoteControlSharedSessionManager(
     // Drop the live fan-out first so every viewer is disconnected, then revoke the tokens.
     _registry.Remove(sessionId);
     _store.Remove(sessionId);
+  }
+
+  public int GetViewerCount(Guid sessionId)
+  {
+    return _registry.TryGet(sessionId, out var fanout) ? fanout.SubscriberCount : 0;
   }
 
   private static string GenerateToken() => Convert.ToHexString(RandomNumberGenerator.GetBytes(32));

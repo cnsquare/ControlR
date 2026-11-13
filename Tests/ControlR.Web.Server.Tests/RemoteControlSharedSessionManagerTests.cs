@@ -41,6 +41,27 @@ public class RemoteControlSharedSessionManagerTests
   }
 
   [Fact]
+  public void GetViewerCount_ReflectsLiveSubscribers()
+  {
+    using var registry = new RemoteControlFanoutRegistry();
+    var store = new RemoteControlSharedSessionStore();
+    var manager = new RemoteControlSharedSessionManager(store, registry);
+
+    var grant = manager.StartSession();
+
+    // No fan-out yet (the producer has not connected), so there are no viewers.
+    Assert.Equal(0, manager.GetViewerCount(grant.SessionId));
+
+    var fanout = registry.GetOrCreate(grant.SessionId);
+    _ = fanout.Subscribe(Guid.NewGuid());
+    _ = fanout.Subscribe(Guid.NewGuid());
+
+    Assert.Equal(2, manager.GetViewerCount(grant.SessionId));
+    // An unknown session has no fan-out and reports zero rather than throwing.
+    Assert.Equal(0, manager.GetViewerCount(Guid.NewGuid()));
+  }
+
+  [Fact]
   public void EndSession_RevokesTokensAndDropsTheLiveFanout()
   {
     using var registry = new RemoteControlFanoutRegistry();

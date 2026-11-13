@@ -339,6 +339,35 @@ public class ViewerHubPermissionTests(ITestOutputHelper testOutput)
   }
 
   [Fact]
+  public async Task GetSharedSessionViewerCount_OwnerGetsCount_NonOwnerIsRefused()
+  {
+    await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);
+    await testApp.Services.SeedServerAdminAsync();
+    var tenant = await testApp.Services.CreateTestTenant();
+    var user = await testApp.Services.CreateTestUser(tenant.Id);
+    var device = await testApp.Services.CreateTestDevice(tenant.Id);
+    await SeedAssignment(testApp, user.Id, device.Id, tenant.Id, PermissionNames.DeviceRemoteControlConnect);
+
+    var (hub, agentClient) = CreateHub(testApp, user, tenant.Id);
+    agentClient
+      .Setup(client => client.StartSharedSessionProducer(It.IsAny<StartSharedSessionProducerDto>()))
+      .ReturnsAsync(HubResult.Ok());
+
+    var start = await hub.StartSharedRemoteControlSession(
+      new StartSharedSessionRequestDto(device.Id, Guid.NewGuid()));
+    Assert.True(start.IsSuccess);
+
+    // The owning connection gets the count (zero — no viewers connected in the test).
+    var owned = await hub.GetSharedSessionViewerCount(new SharedSessionViewerCountRequestDto(start.Value!.SessionId));
+    Assert.True(owned.IsSuccess);
+    Assert.Equal(0, owned.Value);
+
+    // The session id is a capability: a connection that did not start it cannot query it.
+    var foreign = await hub.GetSharedSessionViewerCount(new SharedSessionViewerCountRequestDto(Guid.NewGuid()));
+    Assert.False(foreign.IsSuccess);
+  }
+
+  [Fact]
   public async Task RequestRemoteControlSession_AgentAccepts_LogsTheSessionBeforeTheAgentIsCalled()
   {
     await using var testApp = await TestAppBuilder.CreateTestApp(_testOutput);

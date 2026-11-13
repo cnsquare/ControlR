@@ -6,6 +6,7 @@
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject IJSRuntime Js
+@implements IDisposable
 
 <MudDialog>
   <DialogContent>
@@ -25,6 +26,12 @@
       <MudTextField Value="_url" ReadOnly="true" Variant="Variant.Outlined" Label="Co-view link"
                     Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy"
                     OnAdornmentClick="Copy" Lines="2" Class="mb-2" />
+      <div class="d-flex align-center gap-2 mb-1">
+        <MudIcon Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Color="Color.Primary" />
+        <MudText Typo="Typo.body2">
+          @_viewerCount @(_viewerCount == 1 ? "technician" : "technicians") watching
+        </MudText>
+      </div>
       <MudText Typo="Typo.caption" Color="Color.Secondary">
         Anyone with this link (and an account) joins as a read-only viewer.
       </MudText>
@@ -60,6 +67,8 @@
   private bool _working;
   private string? _url;
   private Guid _sharedSessionId;
+  private int _viewerCount;
+  private CancellationTokenSource? _pollCts;
 
   private async Task StartCoView()
   {
@@ -86,6 +95,9 @@
         new Uri(Navigation.BaseUri),
         $"shared-view/{result.Value.SessionId}?token={Uri.EscapeDataString(result.Value.ViewerToken)}");
       _url = link.ToString();
+
+      _pollCts = new CancellationTokenSource();
+      _ = PollViewerCountAsync(_pollCts.Token);
     }
     catch (Exception)
     {
@@ -99,6 +111,7 @@
 
   private async Task EndCoView()
   {
+    StopPolling();
     if (_sharedSessionId == Guid.Empty)
     {
       MudDialog.Close();
@@ -139,5 +152,53 @@
     }
   }
 
-  private void Cancel() => MudDialog.Close();
+  private async Task PollViewerCountAsync(CancellationToken cancellationToken)
+  {
+    // Poll on an interval while the dialog is open so the inviting technician can see, roughly live,
+    // how many people are watching. The server scopes the answer to the session's owner.
+    using var timer = new PeriodicTimer(TimeSpan.FromSeconds(3));
+    try
+    {
+      do
+      {
+        if (_sharedSessionId == Guid.Empty)
+        {
+          continue;
+        }
+
+        var result = await ViewerHub.Server.GetSharedSessionViewerCount(
+          new SharedSessionViewerCountRequestDto(_sharedSessionId));
+
+        if (result.IsSuccess && result.Value != _viewerCount)
+        {
+          _viewerCount = result.Value;
+          await InvokeAsync(StateHasChanged);
+        }
+      }
+      while (await timer.WaitForNextTickAsync(cancellationToken));
+    }
+    catch (OperationCanceledException)
+    {
+      // Dialog closed.
+    }
+    catch (Exception)
+    {
+      // A transient hub error shouldn't take down the dialog; the next tick retries.
+    }
+  }
+
+  private void StopPolling()
+  {
+    _pollCts?.Cancel();
+    _pollCts?.Dispose();
+    _pollCts = null;
+  }
+
+  private void Cancel()
+  {
+    StopPolling();
+    MudDialog.Close();
+  }
+
+  public void Dispose() => StopPolling();
 }

@@ -32,3 +32,9 @@ public record StartSharedSessionResponseDto(Guid SessionId, string ViewerToken);
 /// </summary>
 [MessagePackObject(keyAsPropertyName: true)]
 public record EndSharedSessionRequestDto(Guid SessionId);
+
+/// <summary>
+/// Asks how many invited technicians are currently watching a shared (fan-out) session the caller owns.
+/// </summary>
+[MessagePackObject(keyAsPropertyName: true)]
+public record SharedSessionViewerCountRequestDto(Guid SessionId);
