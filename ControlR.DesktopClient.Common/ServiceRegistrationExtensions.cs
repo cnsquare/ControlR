@@ -74,6 +74,7 @@ public static class ServiceRegistrationExtensions
       .AddSingleton<IAudioStreamer, AudioStreamer>()
       .AddSingleton<IDesktopCapturerFactory, DesktopCapturerFactory>()
       .AddSingleton<IFrameEncoder, SkiaSharpEncoder>()
+      .AddSingleton<ISharedSessionProducer, SharedSessionProducer>()
       .AddSingleton<IDesktopPreviewProvider, DesktopPreviewProvider>();
 
     // TryAdd so an app that supplies its own consent service through

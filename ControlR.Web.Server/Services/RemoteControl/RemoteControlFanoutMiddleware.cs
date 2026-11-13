@@ -15,7 +15,7 @@ public sealed class RemoteControlFanoutMiddleware(
   RequestDelegate next,
   ILogger<RemoteControlFanoutMiddleware> logger)
 {
-  public const string Path = "/remote-control-fanout";
+  public const string Path = RemoteControlFanoutPaths.Path;
 
   private const string ProducerRole = "producer";
   private const string ViewerRole = "viewer";

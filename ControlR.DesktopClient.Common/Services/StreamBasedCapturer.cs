@@ -43,6 +43,7 @@ internal sealed class StreamBasedCapturer : IDesktopCapturer
   private readonly IDisposable _messengerRegistration;
   private readonly IScreenGrabber _screenGrabber;
   private readonly IRemoteControlSessionState _sessionState;
+  private readonly ISharedSessionProducer _sharedSessionProducer;
   private readonly CancellationTokenSource _stopCts = new();
   private readonly TimeProvider _timeProvider;
 
@@ -62,6 +63,7 @@ internal sealed class StreamBasedCapturer : IDesktopCapturer
     IDisplayManager displayManager,
     IMessenger messenger,
     IRemoteControlSessionState sessionState,
+    ISharedSessionProducer sharedSessionProducer,
     TimeProvider timeProvider,
     ILogger<StreamBasedCapturer> logger)
   {
@@ -70,6 +72,7 @@ internal sealed class StreamBasedCapturer : IDesktopCapturer
     _displayManager = displayManager;
     _messenger = messenger;
     _sessionState = sessionState;
+    _sharedSessionProducer = sharedSessionProducer;
     _timeProvider = timeProvider;
     _logger = logger;
 
@@ -312,6 +315,11 @@ internal sealed class StreamBasedCapturer : IDesktopCapturer
         _framesSent.Enqueue(now);
 
         var dto = new VideoStreamPacketDto(frame.Data, now.ToUnixTimeMilliseconds(), frame.IsKeyFrame);
+
+        // Tee the same encoded frame to any active shared (fan-out) session. This is a cheap no-op
+        // when no shared session is running, so the normal one-to-one path is unaffected.
+        _sharedSessionProducer.Publish(dto);
+
         var wrapper = RemoteControlDtoWrapper.Create(dto, RemoteControlDtoType.VideoStreamPacket);
         await _channel.Writer.WriteAsync(wrapper, cancellationToken);
       }
