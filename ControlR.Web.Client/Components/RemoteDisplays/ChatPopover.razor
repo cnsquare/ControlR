@@ -48,6 +48,15 @@
       }
     </div>
 
+    <div class="chat-popover-quick-replies mt-1">
+      <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary"
+                 StartIcon="@Icons.Material.Filled.Check" OnClick="@(() => SendQuickReply("OK"))">OK</MudButton>
+      <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Success"
+                 StartIcon="@Icons.Material.Filled.ThumbUp" OnClick="@(() => SendQuickReply("Yes"))">Yes</MudButton>
+      <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error"
+                 StartIcon="@Icons.Material.Filled.ThumbDown" OnClick="@(() => SendQuickReply("No"))">No</MudButton>
+    </div>
+
     <MudTextField T="string" @ref="_inputElement"
                   @bind-Value="ChatState.NewMessage" @bind-Text="ChatState.NewMessage"
                   Placeholder="Enter a message" Immediate="true" AutoFocus="true"

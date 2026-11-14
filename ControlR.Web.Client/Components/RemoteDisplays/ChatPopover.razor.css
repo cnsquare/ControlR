@@ -32,3 +32,9 @@
   background-color: var(--mud-palette-background-grey);
   color: var(--mud-palette-text-primary);
 }
+
+.chat-popover-quick-replies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
