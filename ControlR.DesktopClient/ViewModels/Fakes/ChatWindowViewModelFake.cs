@@ -46,7 +46,8 @@ public class ChatWindowViewModelFake : IChatWindowViewModel
   public bool IsAlwaysOnTop { get; set; }
   public bool IsTitleBarHidden { get; set; }
   public bool IsTransparent { get; set; }
-  public string TitleBarDecorations => IsTitleBarHidden ? "None" : "Full";
+  public Avalonia.Controls.WindowDecorations TitleBarDecorations =>
+    IsTitleBarHidden ? Avalonia.Controls.WindowDecorations.None : Avalonia.Controls.WindowDecorations.Full;
   public ObservableCollection<ChatMessageViewModel> Messages => Session?.Messages ?? [];
   public string NewMessage { get; set; } = string.Empty;
   public ICommand SendMessageCommand => new RelayCommand(() => { });

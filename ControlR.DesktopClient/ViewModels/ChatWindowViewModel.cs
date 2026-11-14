@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Windows.Input;
+using Avalonia.Controls;
 using ControlR.DesktopClient.Common.ViewModels;
 using ControlR.DesktopClient.Models;
 using ControlR.Libraries.Api.Contracts.Enums;
@@ -18,7 +19,7 @@ public interface IChatWindowViewModel
   bool IsAlwaysOnTop { get; set; }
   bool IsTitleBarHidden { get; set; }
   bool IsTransparent { get; set; }
-  string TitleBarDecorations { get; }
+  WindowDecorations TitleBarDecorations { get; }
   ObservableCollection<ChatMessageViewModel> Messages { get; }
   string NewMessage { get; set; }
   ICommand SendMessageCommand { get; }
@@ -89,10 +90,11 @@ public class ChatWindowViewModel(
   }
 
   /// <summary>
-  /// Drives the window's SystemDecorations (bound as a string so the binding converts it to the enum)
-  /// so the user can hide the OS title bar to reclaim space, and bring it back.
+  /// Drives the window's <see cref="Window.WindowDecorations"/> so the user can hide the OS title bar
+  /// to reclaim space, and bring it back.
   /// </summary>
-  public string TitleBarDecorations => _isTitleBarHidden ? "None" : "Full";
+  public WindowDecorations TitleBarDecorations =>
+    _isTitleBarHidden ? WindowDecorations.None : WindowDecorations.Full;
 
   public bool IsTransparent
   {
