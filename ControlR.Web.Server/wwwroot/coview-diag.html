@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>Co-view browser diagnostics</title>
+  <style>
+    :root {
+      --bg: #11151c;
+      --card: #1a2029;
+      --line: #2b3440;
+      --text: #e6edf3;
+      --muted: #9aa7b4;
+      --pass: #3fb950;
+      --warn: #d29922;
+      --fail: #f85149;
+      --accent: #58a6ff;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+    .wrap { max-width: 820px; margin: 0 auto; padding: 24px 16px 64px; }
+    h1 { font-size: 1.4rem; margin: 0 0 4px; }
+    .sub { color: var(--muted); margin: 0 0 20px; font-size: 0.9rem; }
+    .verdict {
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin: 0 0 20px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      font-size: 1.05rem;
+    }
+    .verdict.ok { border-color: var(--pass); }
+    .verdict.bad { border-color: var(--fail); }
+    .verdict.wait { border-color: var(--line); }
+    .verdict b { font-weight: 650; }
+    .group { margin: 22px 0 8px; color: var(--accent); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    .row {
+      display: grid;
+      grid-template-columns: 22px 1fr auto;
+      gap: 10px;
+      align-items: start;
+      padding: 11px 14px;
+      border: 1px solid var(--line);
+      border-top: none;
+      background: var(--card);
+    }
+    .row:first-of-type { border-top: 1px solid var(--line); border-radius: 8px 8px 0 0; }
+    .row:last-of-type { border-radius: 0 0 8px 8px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; margin-top: 5px; background: var(--muted); }
+    .dot.pass { background: var(--pass); }
+    .dot.warn { background: var(--warn); }
+    .dot.fail { background: var(--fail); }
+    .label { font-weight: 550; }
+    .detail { color: var(--muted); font-size: 0.86rem; margin-top: 2px; word-break: break-word; }
+    .val { color: var(--muted); font-size: 0.82rem; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .actions { margin: 24px 0 0; display: flex; gap: 10px; flex-wrap: wrap; }
+    button {
+      background: var(--accent); color: #06101f; border: 0; border-radius: 7px;
+      padding: 9px 16px; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+    }
+    button.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+    pre {
+      margin: 16px 0 0; padding: 14px; background: #0c1016; border: 1px solid var(--line);
+      border-radius: 8px; color: var(--muted); font-size: 0.8rem; overflow-x: auto; white-space: pre-wrap;
+    }
+    .foot { color: var(--muted); font-size: 0.8rem; margin-top: 24px; }
+    code { background: #0c1016; padding: 1px 5px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Co-view browser diagnostics</h1>
+    <p class="sub">Run this in the exact browser you want to troubleshoot from. It checks what the live
+      co-view viewer needs and what a server-side fallback would need. Nothing is sent anywhere.</p>
+
+    <div id="verdict" class="verdict wait">Running checks…</div>
+
+    <div class="group">Live co-view (what the viewer uses today)</div>
+    <div id="primary"></div>
+
+    <div class="group">Fallback feasibility (only relevant if co-view is unsupported)</div>
+    <div id="fallback"></div>
+
+    <div class="group">Environment</div>
+    <div id="env"></div>
+
+    <div class="actions">
+      <button onclick="copyReport()">Copy report</button>
+      <button class="ghost" onclick="location.reload()">Re-run</button>
+    </div>
+    <pre id="report">Collecting…</pre>
+
+    <p class="foot">Codec tested: <code>vp09.00.51.08</code> · WebSocket target:
+      <code id="wsurl"></code> · This page is static (no WebAssembly, no login required).</p>
+  </div>
+
+  <script>
+    const COLORS = { pass: "pass", warn: "warn", fail: "fail" };
+    const results = [];
+
+    function addRow(containerId, status, label, detail, value) {
+      results.push({ status, label, detail: detail || "", value: value == null ? "" : String(value) });
+      const el = document.getElementById(containerId);
+      const row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML =
+        '<div class="dot ' + COLORS[status] + '"></div>' +
+        '<div><div class="label"></div><div class="detail"></div></div>' +
+        '<div class="val"></div>';
+      row.querySelector(".label").textContent = label;
+      row.querySelector(".detail").textContent = detail || "";
+      row.querySelector(".val").textContent = value == null ? "" : String(value);
+      el.appendChild(row);
+      return status;
+    }
+
+    function setVerdict(cls, html) {
+      const v = document.getElementById("verdict");
+      v.className = "verdict " + cls;
+      v.innerHTML = html;
+    }
+
+    function renderReport() {
+      const lines = results.map(r =>
+        "[" + r.status.toUpperCase().padEnd(4) + "] " + r.label +
+        (r.value ? "  (" + r.value + ")" : "") +
+        (r.detail ? "\n       " + r.detail : ""));
+      document.getElementById("report").textContent =
+        "Co-view diagnostics — " + new Date().toISOString() + "\n" +
+        location.href + "\n" + navigator.userAgent + "\n\n" + lines.join("\n");
+    }
+
+    function copyReport() {
+      const text = document.getElementById("report").textContent;
+      navigator.clipboard?.writeText(text).then(
+        () => { const b = event.target; const t = b.textContent; b.textContent = "Copied"; setTimeout(() => b.textContent = t, 1500); },
+        () => alert("Copy failed — select the text below manually."));
+    }
+
+    async function run() {
+      const wsUrl = (location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/remote-control-fanout";
+      document.getElementById("wsurl").textContent = wsUrl;
+
+      // ---- Live co-view requirements ----
+      const secure = window.isSecureContext === true;
+      addRow("primary", secure ? "pass" : "fail", "Secure context (HTTPS)",
+        secure ? "" : "WebCodecs only works over HTTPS. Over plain HTTP the video API is disabled.",
+        secure ? "yes" : "no");
+
+      const hasWS = typeof WebSocket !== "undefined";
+      addRow("primary", hasWS ? "pass" : "fail", "WebSocket API present",
+        hasWS ? "" : "Co-view streams frames over a WebSocket; it is unavailable in this browser.",
+        hasWS ? "yes" : "no");
+
+      const hasDecoder = typeof VideoDecoder !== "undefined" && typeof EncodedVideoChunk !== "undefined";
+      addRow("primary", hasDecoder ? "pass" : "fail", "WebCodecs VideoDecoder",
+        hasDecoder ? "" : "The WebCodecs API is missing. This is the usual blocker in locked-down or older browsers.",
+        hasDecoder ? "yes" : "no");
+
+      let vp9 = false;
+      if (hasDecoder) {
+        try {
+          const s = await VideoDecoder.isConfigSupported({ codec: "vp09.00.51.08" });
+          vp9 = !!(s && s.supported);
+        } catch (e) { vp9 = false; }
+      }
+      addRow("primary", vp9 ? "pass" : "fail", "VP9 decode supported",
+        vp9 ? "" : "Even with WebCodecs, this browser can't decode the VP9 profile co-view uses.",
+        vp9 ? "yes" : "no");
+
+      // WebSocket reachability — does an upgrade actually get through (proxy/policy)?
+      const wsStatus = await testWebSocket(wsUrl);
+      addRow("primary", wsStatus.status, "WebSocket upgrade reaches server", wsStatus.detail, wsStatus.value);
+
+      // ---- Fallback feasibility (server transcode -> H.264 over MSE) ----
+      const hasMse = typeof MediaSource !== "undefined";
+      addRow("fallback", hasMse ? "pass" : "warn", "Media Source Extensions (MSE)",
+        hasMse ? "Needed to play a server-transcoded H.264 stream." : "MSE is unavailable, so an MSE-based H.264 fallback wouldn't work here.",
+        hasMse ? "yes" : "no");
+
+      let h264 = false;
+      try { h264 = hasMse && MediaSource.isTypeSupported('video/mp4; codecs="avc1.42E01E"'); } catch (e) {}
+      addRow("fallback", h264 ? "pass" : "warn", "H.264 (avc1) in MSE",
+        h264 ? "The native pipeline can decode H.264 — a server-transcode fallback is viable." : "H.264 playback via MSE isn't available; a transcode fallback would need another delivery path.",
+        h264 ? "yes" : "no");
+
+      const sab = typeof SharedArrayBuffer !== "undefined";
+      const coi = window.crossOriginIsolated === true;
+      addRow("fallback", sab && coi ? "pass" : "warn", "SharedArrayBuffer + cross-origin isolated",
+        "Only needed for multithreaded ffmpeg.wasm (not recommended). SAB=" + sab + ", isolated=" + coi + ".",
+        sab && coi ? "yes" : "no");
+
+      const hasWasm = typeof WebAssembly !== "undefined";
+      addRow("fallback", hasWasm ? "pass" : "warn", "WebAssembly",
+        hasWasm ? "Present (the Blazor app itself needs this)." : "Absent — the main app wouldn't load here either.",
+        hasWasm ? "yes" : "no");
+
+      // ---- Environment ----
+      addRow("env", "pass", "User agent", navigator.userAgent, "");
+      addRow("env", "pass", "Origin", location.origin, "");
+      addRow("env", hasWasm ? "pass" : "fail", "Platform", navigator.platform || "unknown", "");
+
+      // ---- Verdict ----
+      const coViewOk = secure && hasWS && vp9 && wsStatus.status !== "fail";
+      if (coViewOk) {
+        setVerdict("ok", "<b>Live co-view should work in this browser.</b> All required capabilities are present.");
+      } else {
+        const reasons = [];
+        if (!secure) reasons.push("not a secure (HTTPS) context");
+        if (!hasWS) reasons.push("no WebSocket");
+        if (!hasDecoder) reasons.push("no WebCodecs");
+        else if (!vp9) reasons.push("no VP9 decode");
+        if (wsStatus.status === "fail") reasons.push("WebSocket upgrade blocked");
+        const fallbackViable = hasMse && h264;
+        setVerdict("bad",
+          "<b>Live co-view will NOT work here</b> — " + reasons.join(", ") + ".<br>" +
+          (fallbackViable
+            ? "A server-side VP9→H.264 transcode over MSE <b>would be viable</b> in this browser (gate 2 passes)."
+            : "A server-side H.264/MSE fallback <b>also looks unavailable</b> here — check the fallback rows."));
+      }
+
+      renderReport();
+    }
+
+    function testWebSocket(url) {
+      return new Promise(resolve => {
+        if (typeof WebSocket === "undefined") {
+          return resolve({ status: "fail", detail: "WebSocket constructor is unavailable.", value: "n/a" });
+        }
+        let settled = false;
+        let ws;
+        const done = (r) => { if (settled) return; settled = true; try { ws && ws.close(); } catch (e) {} resolve(r); };
+        const timer = setTimeout(() => done({ status: "warn", detail: "No open/close within 4s — inconclusive (server may be slow or path filtered).", value: "timeout" }), 4000);
+        try {
+          ws = new WebSocket(url);
+        } catch (e) {
+          clearTimeout(timer);
+          return done({ status: "fail", detail: "Constructing the WebSocket threw (blocked by policy/CSP): " + e.message, value: "blocked" });
+        }
+        ws.onopen = () => { clearTimeout(timer); done({ status: "pass", detail: "Upgrade succeeded (server accepted the socket).", value: "open" }); };
+        ws.onclose = (ev) => { clearTimeout(timer); done({ status: "pass", detail: "Upgrade reached the server, which closed it (expected without a token). Transport works. code=" + ev.code, value: "reached" }); };
+        ws.onerror = () => { clearTimeout(timer); done({ status: "warn", detail: "Error before open. Often just the tokenless rejection, but can mean a proxy/policy block. Compare with the rows above.", value: "error" }); };
+      });
+    }
+
+    run().catch(e => {
+      setVerdict("bad", "<b>Diagnostics crashed:</b> " + e.message);
+      renderReport();
+    });
+  </script>
+</body>
+</html>

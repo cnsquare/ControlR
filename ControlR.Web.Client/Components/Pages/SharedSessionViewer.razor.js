@@ -25,6 +25,37 @@ export function initializeViewer(canvasId) {
 }
 
 /**
+ * Checks whether this browser can actually display a co-view session before we try to connect, so a
+ * locked-down or outdated browser shows a clear message instead of a silent black canvas. Returns an
+ * empty string when everything required is present, otherwise a human-readable reason.
+ * @returns {Promise<string>}
+ */
+export async function getUnsupportedReason() {
+  if (typeof WebSocket === "undefined") {
+    return "This browser has WebSocket disabled, which live co-view requires.";
+  }
+
+  if (!window.isSecureContext) {
+    return "Live co-view needs a secure (HTTPS) connection so this browser can decode the video. Open this site over HTTPS and try again.";
+  }
+
+  if (typeof VideoDecoder === "undefined" || typeof EncodedVideoChunk === "undefined") {
+    return "This browser doesn't support the WebCodecs video API that live co-view needs. Use a current version of Chrome or Edge.";
+  }
+
+  try {
+    const support = await VideoDecoder.isConfigSupported({ codec: "vp09.00.51.08" });
+    if (!support || support.supported !== true) {
+      return "This browser can't decode the VP9 video that live co-view uses. Use a current version of Chrome or Edge.";
+    }
+  } catch (e) {
+    return "This browser can't decode the VP9 video that live co-view uses. Use a current version of Chrome or Edge.";
+  }
+
+  return "";
+}
+
+/**
  * Decodes one VP9 frame onto the canvas.
  * @returns {boolean} False if the decoder is waiting for a key frame (the caller should expect the
  * server to replay one on join).

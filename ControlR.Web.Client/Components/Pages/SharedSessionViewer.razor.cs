@@ -88,6 +88,18 @@ public partial class SharedSessionViewer : ComponentBase, IAsyncDisposable
     try
     {
       _module = await Js.InvokeAsync<IJSObjectReference>("import", ModulePath);
+
+      // Fail loudly in a browser that can't decode the stream (e.g. a locked-down or outdated one)
+      // rather than connecting and showing a black canvas forever.
+      var unsupportedReason = await _module.InvokeAsync<string>("getUnsupportedReason");
+      if (!string.IsNullOrEmpty(unsupportedReason))
+      {
+        Logger.LogWarning("Co-view not supported in this browser: {Reason}", unsupportedReason);
+        _error = unsupportedReason;
+        StateHasChanged();
+        return;
+      }
+
       await _module.InvokeAsync<bool>("initializeViewer", _canvasId);
       _streamTask = StreamAsync();
     }

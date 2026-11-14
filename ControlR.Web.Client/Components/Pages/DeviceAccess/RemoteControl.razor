@@ -56,6 +56,14 @@
             <MudSwitch T="bool" Value="RemoteControlState.UseVp9Video" ValueChanged="HandleUseVp9Changed" Color="Color.Secondary"
               Disabled="!_isVp9Supported" Label="VP9 Video" ThumbIcon="@(Icons.Material.Filled.Movie)" />
           </MudTooltip>
+          @if (!_isVp9Supported)
+          {
+            <MudText Typo="Typo.caption" Color="Color.Warning" Class="d-flex align-center mt-1">
+              <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="me-1" />
+              This browser can't decode VP9, so sessions will use image frames. Live co-view isn't
+              available here — use a current version of Chrome or Edge for that.
+            </MudText>
+          }
         </div>
 
         @if (_systemSessions is null || _systemSessions.Count == 0)
