@@ -17,6 +17,7 @@
         Background="Transparent"
         TransparencyLevelHint="Transparent"
         Topmost="{Binding IsAlwaysOnTop}"
+        SystemDecorations="{Binding TitleBarDecorations}"
         Title="{Binding ChatTitle}">
 
     <Design.DataContext>
@@ -40,6 +41,9 @@
                     Command="{Binding IncreaseOpacityCommand}" />
             <ToggleButton Content="{x:Static common:Localization.ChatAlwaysOnTopButton}"
                           IsChecked="{Binding IsAlwaysOnTop}" />
+            <ToggleButton Content="Hide Title Bar"
+                          ToolTip.Tip="Hide or show the window's title bar"
+                          IsChecked="{Binding IsTitleBarHidden}" />
         </StackPanel>
 
         <!-- Messages Area -->

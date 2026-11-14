@@ -16,7 +16,9 @@ public interface IChatWindowViewModel
   ICommand DecreaseOpacityCommand { get; }
   ICommand IncreaseOpacityCommand { get; }
   bool IsAlwaysOnTop { get; set; }
+  bool IsTitleBarHidden { get; set; }
   bool IsTransparent { get; set; }
+  string TitleBarDecorations { get; }
   ObservableCollection<ChatMessageViewModel> Messages { get; }
   string NewMessage { get; set; }
   ICommand SendMessageCommand { get; }
@@ -48,6 +50,7 @@ public class ChatWindowViewModel(
   private readonly IToaster _toaster = toaster;
 
   private bool _isAlwaysOnTop;
+  private bool _isTitleBarHidden;
   private bool _isTransparent;
   private string _newMessage = string.Empty;
   private double _opacityBeforeTransparent = FullOpacity;
@@ -72,6 +75,24 @@ public class ChatWindowViewModel(
     get => _isAlwaysOnTop;
     set => SetProperty(ref _isAlwaysOnTop, value);
   }
+
+  public bool IsTitleBarHidden
+  {
+    get => _isTitleBarHidden;
+    set
+    {
+      if (SetProperty(ref _isTitleBarHidden, value))
+      {
+        OnPropertyChanged(nameof(TitleBarDecorations));
+      }
+    }
+  }
+
+  /// <summary>
+  /// Drives the window's SystemDecorations (bound as a string so the binding converts it to the enum)
+  /// so the user can hide the OS title bar to reclaim space, and bring it back.
+  /// </summary>
+  public string TitleBarDecorations => _isTitleBarHidden ? "None" : "Full";
 
   public bool IsTransparent
   {

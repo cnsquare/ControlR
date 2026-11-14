@@ -44,7 +44,9 @@ public class ChatWindowViewModelFake : IChatWindowViewModel
   public ICommand DecreaseOpacityCommand => new RelayCommand(() => { });
   public ICommand IncreaseOpacityCommand => new RelayCommand(() => { });
   public bool IsAlwaysOnTop { get; set; }
+  public bool IsTitleBarHidden { get; set; }
   public bool IsTransparent { get; set; }
+  public string TitleBarDecorations => IsTitleBarHidden ? "None" : "Full";
   public ObservableCollection<ChatMessageViewModel> Messages => Session?.Messages ?? [];
   public string NewMessage { get; set; } = string.Empty;
   public ICommand SendMessageCommand => new RelayCommand(() => { });
