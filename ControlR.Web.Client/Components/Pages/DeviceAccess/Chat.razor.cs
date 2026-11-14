@@ -211,14 +211,45 @@ public partial class Chat : ComponentBase, IDisposable
   }
   private async Task SendMessage()
   {
-    if (string.IsNullOrWhiteSpace(ChatState.NewMessage) || ChatState.CurrentSession is null)
+    if (string.IsNullOrWhiteSpace(ChatState.NewMessage))
     {
       return;
     }
 
+    var text = ChatState.NewMessage.Trim();
+
+    // Clear the input optimistically; restore it if the send fails.
+    ChatState.NewMessage = string.Empty;
+
+    var sent = await SendText(text);
+    if (!sent)
+    {
+      ChatState.NewMessage = text;
+    }
+
+    await _chatInputElement.FocusAsync();
+  }
+
+  /// <summary>
+  /// Sends a canned one-tap reply (e.g. OK / Yes / No) without touching the compose box, so the
+  /// technician can answer a prompt from the device user with a single click.
+  /// </summary>
+  private async Task SendQuickReply(string text)
+  {
+    await SendText(text);
+    await _chatInputElement.FocusAsync();
+  }
+
+  private async Task<bool> SendText(string messageText)
+  {
+    if (string.IsNullOrWhiteSpace(messageText) || ChatState.CurrentSession is null)
+    {
+      return false;
+    }
+
     try
     {
-      var newMessage = ChatState.NewMessage.Trim();
+      var newMessage = messageText.Trim();
 
       var chatDto = new ChatMessageHubDto(
         DeviceAccessState.CurrentDevice.Id,
@@ -243,28 +274,25 @@ public partial class Chat : ComponentBase, IDisposable
 
       ChatState.ChatMessages.Add(chatMessage);
 
-      // Clear the input
-      ChatState.NewMessage = string.Empty;
-
       // Send to the device
       var result = await ViewerHub.Server.SendChatMessage2(chatDto);
       if (!result.IsSuccess)
       {
         Logger.LogError("Failed to send chat message: {Error}", result.Reason);
         Snackbar.Add("Failed to send message", Severity.Error);
-         _ = ChatState.ChatMessages.Remove(chatMessage);
-         ChatState.NewMessage = newMessage;
+        _ = ChatState.ChatMessages.Remove(chatMessage);
+        return false;
       }
 
       await InvokeAsync(StateHasChanged);
-      // Focus back to input
-      await _chatInputElement.FocusAsync();
       await JsInterop.ScrollToEnd(_chatMessagesContainer);
+      return true;
     }
     catch (Exception ex)
     {
       Logger.LogError(ex, "Error sending chat message.");
       Snackbar.Add("Error sending message", Severity.Error);
+      return false;
     }
   }
   private async Task StartChatSession(DesktopSession session)

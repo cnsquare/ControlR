@@ -113,3 +113,10 @@
   white-space: pre-wrap;
   word-wrap: break-word;
 }
+
+.chat-quick-replies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}

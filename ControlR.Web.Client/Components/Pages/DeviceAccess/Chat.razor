@@ -154,6 +154,14 @@
               }
             </div>
             <div class="chat-input">
+              <div class="chat-quick-replies">
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary"
+                  StartIcon="@Icons.Material.Filled.Check" OnClick="@(() => SendQuickReply("OK"))">OK</MudButton>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Success"
+                  StartIcon="@Icons.Material.Filled.ThumbUp" OnClick="@(() => SendQuickReply("Yes"))">Yes</MudButton>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error"
+                  StartIcon="@Icons.Material.Filled.ThumbDown" OnClick="@(() => SendQuickReply("No"))">No</MudButton>
+              </div>
               <MudTextField T="string" @ref="@(_chatInputElement)" InputId="@(_chatInputElementId)"
                 @bind-Value="@ChatState.NewMessage" @bind-Text="@ChatState.NewMessage" Label="Enter a message"
                 HelperText="@ChatInputHelperText" Lines="@ChatInputLineCount"
