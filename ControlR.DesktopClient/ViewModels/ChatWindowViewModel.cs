@@ -20,6 +20,7 @@ public interface IChatWindowViewModel
   ObservableCollection<ChatMessageViewModel> Messages { get; }
   string NewMessage { get; set; }
   ICommand SendMessageCommand { get; }
+  ICommand SendQuickReplyCommand { get; }
   ChatSession? Session { get; set; }
   double WindowOpacity { get; }
 
@@ -102,6 +103,8 @@ public class ChatWindowViewModel(
 
   public ICommand SendMessageCommand => new AsyncRelayCommand(SendMessage);
 
+  public ICommand SendQuickReplyCommand => new AsyncRelayCommand<string?>(SendQuickReply);
+
   public double WindowOpacity
   {
     get => _windowOpacity;
@@ -173,12 +176,37 @@ public class ChatWindowViewModel(
 
   public async Task SendMessage()
   {
-    if (Session is null || string.IsNullOrWhiteSpace(NewMessage))
+    if (string.IsNullOrWhiteSpace(NewMessage))
     {
       return;
     }
 
     var message = NewMessage.Trim();
+    if (await SendText(message))
+    {
+      NewMessage = string.Empty;
+    }
+  }
+
+  /// <summary>
+  /// Sends a canned one-tap reply (OK / Yes / No) back to the technician without typing.
+  /// </summary>
+  private async Task SendQuickReply(string? text)
+  {
+    if (!string.IsNullOrWhiteSpace(text))
+    {
+      await SendText(text);
+    }
+  }
+
+  private async Task<bool> SendText(string messageText)
+  {
+    if (Session is null || string.IsNullOrWhiteSpace(messageText))
+    {
+      return false;
+    }
+
+    var message = messageText.Trim();
 
     // Send the response via the chat session manager
     var success = await _chatSessionManager.SendResponse(
@@ -191,17 +219,16 @@ public class ChatWindowViewModel(
       // Add the message to our local collection immediately
       var messageViewModel = new ChatMessageViewModel(message, Localization.You, false);
       Messages.Add(messageViewModel);
-      NewMessage = string.Empty;
       _logger.LogDebug("Message sent successfully for session {SessionId}", Session.SessionId);
+      return true;
     }
-    else
-    {
-      _logger.LogWarning("Failed to send message for session {SessionId}", Session.SessionId);
-      await _toaster.ShowToast(
-        Localization.ChatMessageSendFailureTitle, 
-        Localization.ChatMessageSendFailureMessage, 
-        ToastIcon.Error);
-    }
+
+    _logger.LogWarning("Failed to send message for session {SessionId}", Session.SessionId);
+    await _toaster.ShowToast(
+      Localization.ChatMessageSendFailureTitle,
+      Localization.ChatMessageSendFailureMessage,
+      ToastIcon.Error);
+    return false;
   }
 
   private void OnMessagesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

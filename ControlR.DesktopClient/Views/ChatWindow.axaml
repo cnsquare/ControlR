@@ -115,32 +115,54 @@
                 Padding="10"
                 BorderBrush="{DynamicResource ChatInputBorderBrush}"
                 BorderThickness="0,1,0,0">
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+            <StackPanel Spacing="8">
 
-                <!-- Text Input -->
-                <TextBox Grid.Column="0"
-                         x:Name="_chatInputTextBox"
-                         Text="{Binding NewMessage}"
-                         PlaceholderText="{x:Static common:Localization.EnterMessagePlaceholder}"
-                         TextWrapping="Wrap"
-                         MinHeight="40"
-                         MaxHeight="120"
-                         KeyDown="OnTextBoxKeyDown" />
+                <!-- Quick replies -->
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Button Content="OK"
+                            Command="{Binding SendQuickReplyCommand}"
+                            CommandParameter="OK"
+                            Cursor="Hand"
+                            Padding="18,6" />
+                    <Button Content="Yes"
+                            Command="{Binding SendQuickReplyCommand}"
+                            CommandParameter="Yes"
+                            Cursor="Hand"
+                            Padding="18,6" />
+                    <Button Content="No"
+                            Command="{Binding SendQuickReplyCommand}"
+                            CommandParameter="No"
+                            Cursor="Hand"
+                            Padding="18,6" />
+                </StackPanel>
 
-                <!-- Send Button -->
-                <Button Grid.Column="1"
-                        Command="{Binding SendMessageCommand}"
-                        Background="{DynamicResource PrimaryColor}"
-                        Foreground="{DynamicResource TextPrimaryBrush}"
-                        Cursor="Hand"
-                        Padding="16,10">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
 
-                    <PathIcon Data="{StaticResource send_regular}"
-                              Width="24"
-                              Height="24"
-                              Foreground="{DynamicResource TextPrimaryBrush}" />
-                </Button>
-            </Grid>
+                    <!-- Text Input -->
+                    <TextBox Grid.Column="0"
+                             x:Name="_chatInputTextBox"
+                             Text="{Binding NewMessage}"
+                             PlaceholderText="{x:Static common:Localization.EnterMessagePlaceholder}"
+                             TextWrapping="Wrap"
+                             MinHeight="40"
+                             MaxHeight="120"
+                             KeyDown="OnTextBoxKeyDown" />
+
+                    <!-- Send Button -->
+                    <Button Grid.Column="1"
+                            Command="{Binding SendMessageCommand}"
+                            Background="{DynamicResource PrimaryColor}"
+                            Foreground="{DynamicResource TextPrimaryBrush}"
+                            Cursor="Hand"
+                            Padding="16,10">
+
+                        <PathIcon Data="{StaticResource send_regular}"
+                                  Width="24"
+                                  Height="24"
+                                  Foreground="{DynamicResource TextPrimaryBrush}" />
+                    </Button>
+                </Grid>
+            </StackPanel>
         </Border>
     </Grid>
     </Border>

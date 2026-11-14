@@ -48,6 +48,7 @@ public class ChatWindowViewModelFake : IChatWindowViewModel
   public ObservableCollection<ChatMessageViewModel> Messages => Session?.Messages ?? [];
   public string NewMessage { get; set; } = string.Empty;
   public ICommand SendMessageCommand => new RelayCommand(() => { });
+  public ICommand SendQuickReplyCommand => new RelayCommand<string?>(_ => { });
 
   public ChatSession? Session { get; set; }
   public double WindowOpacity => 1;
